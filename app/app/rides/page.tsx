@@ -1,0 +1,309 @@
+"use client";
+
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+    MapPin,
+    Users,
+    Calendar,
+    Clock,
+    ChevronRight,
+    Plus,
+    Navigation
+} from "lucide-react";
+import Link from "next/link";
+
+// Mock data
+const mockUpcomingRides = [
+    {
+        id: "r1",
+        title: "Superstition Mountain Loop",
+        description: "Epic sunrise ride through the Superstition Mountains. Full loop - 180 miles of pure desert beauty.",
+        status: "scheduled" as const,
+        startLocation: { name: "Mesa Gateway" },
+        scheduledAt: "2026-01-25T06:00:00Z",
+        estimatedDuration: 240,
+        participantsCount: 12,
+        maxParticipants: 20,
+        club: { id: "c1", name: "Desert Eagles MC", avatar: null },
+        organizer: { id: "u1", name: "Mike Rodriguez", avatar: null },
+    },
+    {
+        id: "r2",
+        title: "Night City Lights",
+        description: "Evening cruise through downtown Phoenix and Scottsdale. Perfect for sunset lovers.",
+        status: "scheduled" as const,
+        startLocation: { name: "Tempe Town Lake" },
+        scheduledAt: "2026-01-24T18:30:00Z",
+        estimatedDuration: 120,
+        participantsCount: 8,
+        maxParticipants: 15,
+        club: null,
+        organizer: { id: "u2", name: "Sarah Chen", avatar: null },
+    },
+];
+
+const mockActiveRide = {
+    id: "r3",
+    title: "Weekend Desert Run",
+    status: "active" as const,
+    participantsCount: 6,
+    startedAt: "2026-01-22T09:00:00Z",
+};
+
+const mockPastRides = [
+    {
+        id: "r4",
+        title: "Route 66 Adventure",
+        status: "completed" as const,
+        scheduledAt: "2026-01-18T07:00:00Z",
+        participantsCount: 15,
+        distance: 320,
+    },
+    {
+        id: "r5",
+        title: "Flagstaff Mountain Run",
+        status: "completed" as const,
+        scheduledAt: "2026-01-11T08:00:00Z",
+        participantsCount: 9,
+        distance: 240,
+    },
+];
+
+function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+function formatTime(dateString: string) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit"
+    });
+}
+
+function formatDuration(minutes: number) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins}min`;
+    if (mins === 0) return `${hours}h`;
+    return `${hours}h ${mins}min`;
+}
+
+type TabType = "upcoming" | "my" | "past";
+
+export default function RidesPage() {
+    const [activeTab, setActiveTab] = useState<TabType>("upcoming");
+
+    return (
+        <div className="max-w-2xl mx-auto px-4 py-6">
+            {/* Active Ride Banner */}
+            {mockActiveRide && (
+                <Link href={`/app/rides/${mockActiveRide.id}`}>
+                    <Card className="bg-linear-to-r from-green-500 to-emerald-600 text-white mb-6 overflow-hidden">
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+                                        <Navigation className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <Badge className="bg-white/20 text-white border-0 mb-1">Live Now</Badge>
+                                        <h3 className="font-semibold">{mockActiveRide.title}</h3>
+                                        <p className="text-sm text-white/80">
+                                            {mockActiveRide.participantsCount} riders on route
+                                        </p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-6 h-6" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+            )}
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                <Button
+                    variant={activeTab === "upcoming" ? "default" : "outline"}
+                    onClick={() => setActiveTab("upcoming")}
+                    className="rounded-full whitespace-nowrap"
+                >
+                    Upcoming
+                </Button>
+                <Button
+                    variant={activeTab === "my" ? "default" : "outline"}
+                    onClick={() => setActiveTab("my")}
+                    className="rounded-full whitespace-nowrap"
+                >
+                    My Rides
+                </Button>
+                <Button
+                    variant={activeTab === "past" ? "default" : "outline"}
+                    onClick={() => setActiveTab("past")}
+                    className="rounded-full whitespace-nowrap"
+                >
+                    Past
+                </Button>
+            </div>
+
+            {activeTab === "upcoming" && (
+                <div className="space-y-4">
+                    {mockUpcomingRides.map((ride) => (
+                        <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+                            <Card className="hover:border-primary/50 transition-colors">
+                                <CardContent className="p-4">
+                                    <div className="flex items-start gap-4">
+                                        {/* Date Badge */}
+                                        <div className="shrink-0 w-14 text-center">
+                                            <div className="bg-primary/10 rounded-lg p-2">
+                                                <div className="text-xs text-primary font-medium uppercase">
+                                                    {formatDate(ride.scheduledAt).split(" ")[0]}
+                                                </div>
+                                                <div className="text-xl font-bold text-primary">
+                                                    {new Date(ride.scheduledAt).getDate()}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <h3 className="font-semibold">{ride.title}</h3>
+                                                    {ride.club && (
+                                                        <Badge variant="outline" className="mt-1 text-[10px]">
+                                                            {ride.club.name}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    {formatTime(ride.scheduledAt)}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {ride.startLocation.name}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" />
+                                                    {formatDuration(ride.estimatedDuration)}
+                                                </span>
+                                            </div>
+
+                                            {/* Participants */}
+                                            <div className="flex items-center justify-between mt-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex -space-x-2">
+                                                        {[...Array(Math.min(4, ride.participantsCount))].map((_, i) => (
+                                                            <Avatar key={i} className="w-6 h-6 border-2 border-background">
+                                                                <AvatarFallback className="bg-muted text-[10px]">
+                                                                    {String.fromCharCode(65 + i)}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                        ))}
+                                                        {ride.participantsCount > 4 && (
+                                                            <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px]">
+                                                                +{ride.participantsCount - 4}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {ride.participantsCount}/{ride.maxParticipants} riders
+                                                    </span>
+                                                </div>
+                                                <Button size="sm" className="rounded-full h-7 text-xs">
+                                                    Join
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+
+                    <Separator className="my-6" />
+
+                    {/* Create Ride CTA */}
+                    <Card className="bg-linear-to-r from-primary/10 to-amber-100/50 border-primary/20">
+                        <CardContent className="p-6 text-center">
+                            <h3 className="font-semibold mb-2">Plan Your Own Ride</h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Set the route, invite riders, and lead the convoy.
+                            </p>
+                            <Button className="gap-2">
+                                <Plus className="w-4 h-4" />
+                                Create Ride
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {activeTab === "my" && (
+                <div className="text-center py-16">
+                    <Calendar className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                    <h3 className="font-semibold mb-2">No upcoming rides</h3>
+                    <p className="text-muted-foreground mb-4">
+                        Join a ride or create your own adventure!
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                        <Button variant="outline" onClick={() => setActiveTab("upcoming")}>
+                            Browse Rides
+                        </Button>
+                        <Button className="gap-2">
+                            <Plus className="w-4 h-4" />
+                            Create Ride
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === "past" && (
+                <div className="space-y-4">
+                    {mockPastRides.map((ride) => (
+                        <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+                            <Card className="hover:border-primary/50 transition-colors opacity-80">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-semibold">{ride.title}</h3>
+                                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                                <span>{formatDate(ride.scheduledAt)}</span>
+                                                <span>•</span>
+                                                <span className="flex items-center gap-1">
+                                                    <Users className="w-3 h-3" />
+                                                    {ride.participantsCount} riders
+                                                </span>
+                                                {ride.distance && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span>{ride.distance} km</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <Badge variant="secondary">Completed</Badge>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
