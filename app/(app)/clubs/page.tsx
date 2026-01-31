@@ -171,10 +171,12 @@ export default function ClubsPage() {
                             <p className="text-sm text-muted-foreground mb-4">
                                 Build your motorcycle community from the ground up.
                             </p>
-                            <Button className="gap-2">
-                                <Plus className="w-4 h-4" />
-                                Create Club
-                            </Button>
+                            <Link href="/app/clubs/create">
+                                <Button className="gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    Create Club
+                                </Button>
+                            </Link>
                         </CardContent>
                     </Card>
                 </>

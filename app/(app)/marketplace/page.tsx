@@ -6,8 +6,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  MapPin, 
+import {
+  MapPin,
   Star,
   Search,
   Filter,
@@ -206,12 +206,12 @@ export default function MarketplacePage() {
                   {listing.condition}
                 </Badge>
               </div>
-              
+
               <CardContent className="p-3">
                 <h3 className="font-medium text-sm line-clamp-2 mb-1 leading-tight">
                   {listing.title}
                 </h3>
-                
+
                 <div className="text-lg font-bold text-primary mb-2">
                   ${listing.price.toLocaleString()}
                 </div>
@@ -242,9 +242,9 @@ export default function MarketplacePage() {
                 {listing.seller.clubs.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {listing.seller.clubs.slice(0, 1).map((club) => (
-                      <Badge 
-                        key={club.id} 
-                        variant="secondary" 
+                      <Badge
+                        key={club.id}
+                        variant="secondary"
                         className="text-[9px] px-1.5 py-0"
                       >
                         {club.name}
@@ -264,12 +264,14 @@ export default function MarketplacePage() {
       </div>
 
       {/* Floating Create Button */}
-      <Button 
-        className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 rounded-full w-14 h-14 shadow-lg"
-        size="icon"
-      >
-        <Plus className="w-6 h-6" />
-      </Button>
+      <Link href="/app/marketplace/create">
+        <Button
+          className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 rounded-full w-14 h-14 shadow-lg"
+          size="icon"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      </Link>
     </div>
   );
 }

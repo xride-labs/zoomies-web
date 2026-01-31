@@ -1,0 +1,480 @@
+"use client";
+
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Search,
+    MoreHorizontal,
+    Download,
+    Eye,
+    MapPin,
+    Calendar,
+    Users,
+    Clock,
+    CheckCircle,
+    XCircle,
+    PlayCircle,
+    Pause,
+} from "lucide-react";
+
+// Mock rides data
+const mockRides = [
+    {
+        id: "1",
+        title: "Superstition Mountain Loop",
+        description: "Epic sunrise ride through the Superstition Mountains",
+        startLocation: "Phoenix, AZ",
+        endLocation: "Apache Junction, AZ",
+        distance: 180,
+        duration: 240,
+        scheduledAt: "2026-02-01T06:00:00Z",
+        status: "PLANNED",
+        experienceLevel: "Intermediate",
+        pace: "Moderate",
+        participantCount: 12,
+        creator: { id: "1", name: "Mike Rodriguez", username: "roadking_mike" },
+    },
+    {
+        id: "2",
+        title: "Weekend City Cruise",
+        description: "Casual ride through downtown Phoenix",
+        startLocation: "Scottsdale, AZ",
+        endLocation: "Tempe, AZ",
+        distance: 45,
+        duration: 90,
+        scheduledAt: "2026-01-31T17:00:00Z",
+        status: "IN_PROGRESS",
+        experienceLevel: "Beginner",
+        pace: "Leisurely",
+        participantCount: 8,
+        creator: { id: "2", name: "Sarah Chen", username: "sarah_twowheels" },
+    },
+    {
+        id: "3",
+        title: "Desert Night Ride",
+        description: "Cool evening ride under the stars",
+        startLocation: "Mesa, AZ",
+        endLocation: "Gilbert, AZ",
+        distance: 60,
+        duration: 120,
+        scheduledAt: "2026-01-30T20:00:00Z",
+        status: "COMPLETED",
+        experienceLevel: "All Levels",
+        pace: "Moderate",
+        participantCount: 15,
+        creator: { id: "3", name: "Raj Patel", username: "raj_thunder" },
+    },
+    {
+        id: "4",
+        title: "Highway 89 Adventure",
+        description: "Long distance touring to Flagstaff",
+        startLocation: "Phoenix, AZ",
+        endLocation: "Flagstaff, AZ",
+        distance: 280,
+        duration: 360,
+        scheduledAt: "2026-02-05T07:00:00Z",
+        status: "PLANNED",
+        experienceLevel: "Expert",
+        pace: "Fast",
+        participantCount: 6,
+        creator: { id: "4", name: "Sneha Reddy", username: "sneha_rides" },
+    },
+    {
+        id: "5",
+        title: "Morning Coffee Run",
+        description: "Quick ride to the best coffee spot in town",
+        startLocation: "Chandler, AZ",
+        endLocation: "Gilbert, AZ",
+        distance: 25,
+        duration: 45,
+        scheduledAt: "2026-01-29T08:00:00Z",
+        status: "CANCELLED",
+        experienceLevel: "Beginner",
+        pace: "Leisurely",
+        participantCount: 4,
+        creator: { id: "5", name: "Vikram Singh", username: "vikram_speed" },
+    },
+];
+
+const statusColors = {
+    PLANNED: "bg-blue-100 text-blue-700",
+    IN_PROGRESS: "bg-green-100 text-green-700",
+    COMPLETED: "bg-gray-100 text-gray-700",
+    CANCELLED: "bg-red-100 text-red-700",
+};
+
+const statusIcons = {
+    PLANNED: Calendar,
+    IN_PROGRESS: PlayCircle,
+    COMPLETED: CheckCircle,
+    CANCELLED: XCircle,
+};
+
+export default function AdminRidesPage() {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [selectedRide, setSelectedRide] = useState<typeof mockRides[0] | null>(null);
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
+    const filteredRides = mockRides.filter((ride) => {
+        const matchesSearch =
+            ride.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ride.startLocation.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === "all" || ride.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const stats = {
+        total: mockRides.length,
+        planned: mockRides.filter((r) => r.status === "PLANNED").length,
+        inProgress: mockRides.filter((r) => r.status === "IN_PROGRESS").length,
+        completed: mockRides.filter((r) => r.status === "COMPLETED").length,
+        cancelled: mockRides.filter((r) => r.status === "CANCELLED").length,
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Stats */}
+            <div className="grid gap-4 md:grid-cols-5">
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold">{stats.total}</p>
+                        <p className="text-sm text-muted-foreground">Total Rides</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-blue-600">{stats.planned}</p>
+                        <p className="text-sm text-muted-foreground">Planned</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-green-600">{stats.inProgress}</p>
+                        <p className="text-sm text-muted-foreground">In Progress</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-gray-600">{stats.completed}</p>
+                        <p className="text-sm text-muted-foreground">Completed</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-red-600">{stats.cancelled}</p>
+                        <p className="text-sm text-muted-foreground">Cancelled</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Rides Table Card */}
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle>Ride Management</CardTitle>
+                            <CardDescription>Monitor and manage all rides</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm">
+                                <Download className="w-4 h-4 mr-2" />
+                                Export
+                            </Button>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {/* Filters */}
+                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search rides..."
+                                className="pl-9"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-45">
+                                <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="PLANNED">Planned</SelectItem>
+                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                <SelectItem value="COMPLETED">Completed</SelectItem>
+                                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Table */}
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Ride</TableHead>
+                                    <TableHead>Creator</TableHead>
+                                    <TableHead>Schedule</TableHead>
+                                    <TableHead>Distance</TableHead>
+                                    <TableHead>Participants</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="w-12.5"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredRides.map((ride) => {
+                                    const StatusIcon = statusIcons[ride.status as keyof typeof statusIcons];
+                                    return (
+                                        <TableRow key={ride.id}>
+                                            <TableCell>
+                                                <div>
+                                                    <p className="font-medium">{ride.title}</p>
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {ride.startLocation} → {ride.endLocation}
+                                                    </p>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-7 w-7">
+                                                        <AvatarFallback className="text-xs">
+                                                            {ride.creator.name.split(" ").map((n) => n[0]).join("")}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-sm">@{ride.creator.username}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-1 text-sm">
+                                                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                                                    {formatDate(ride.scheduledAt)}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm">
+                                                    <p>{ride.distance} km</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        ~{Math.floor(ride.duration / 60)}h {ride.duration % 60}m
+                                                    </p>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-1">
+                                                    <Users className="w-4 h-4 text-muted-foreground" />
+                                                    {ride.participantCount}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    className={`gap-1 ${statusColors[ride.status as keyof typeof statusColors]}`}
+                                                >
+                                                    <StatusIcon className="w-3 h-3" />
+                                                    {ride.status.replace("_", " ")}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreHorizontal className="w-4 h-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setSelectedRide(ride);
+                                                                setIsViewDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <Eye className="w-4 h-4 mr-2" />
+                                                            View Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem>
+                                                            <Users className="w-4 h-4 mr-2" />
+                                                            View Participants
+                                                        </DropdownMenuItem>
+                                                        {ride.status === "IN_PROGRESS" && (
+                                                            <DropdownMenuItem>
+                                                                <MapPin className="w-4 h-4 mr-2" />
+                                                                Track Live
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuSeparator />
+                                                        {ride.status !== "CANCELLED" && ride.status !== "COMPLETED" && (
+                                                            <DropdownMenuItem className="text-red-600">
+                                                                <XCircle className="w-4 h-4 mr-2" />
+                                                                Cancel Ride
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between mt-4">
+                        <p className="text-sm text-muted-foreground">
+                            Showing {filteredRides.length} of {mockRides.length} rides
+                        </p>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" disabled>
+                                Previous
+                            </Button>
+                            <Button variant="outline" size="sm">
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* View Ride Dialog */}
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Ride Details</DialogTitle>
+                        <DialogDescription>Full ride information</DialogDescription>
+                    </DialogHeader>
+                    {selectedRide && (
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="font-semibold text-lg">{selectedRide.title}</h3>
+                                <p className="text-muted-foreground text-sm">{selectedRide.description}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-muted-foreground">Route</p>
+                                        <p className="font-medium">
+                                            {selectedRide.startLocation} → {selectedRide.endLocation}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-muted-foreground">Scheduled</p>
+                                        <p className="font-medium">{formatDate(selectedRide.scheduledAt)}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Distance</p>
+                                    <p className="font-medium">{selectedRide.distance} km</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Duration</p>
+                                    <p className="font-medium">
+                                        {Math.floor(selectedRide.duration / 60)}h {selectedRide.duration % 60}m
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Experience Level</p>
+                                    <p className="font-medium">{selectedRide.experienceLevel}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Pace</p>
+                                    <p className="font-medium">{selectedRide.pace}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Participants</p>
+                                    <p className="font-medium">{selectedRide.participantCount} riders</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Status</p>
+                                    <Badge
+                                        className={statusColors[selectedRide.status as keyof typeof statusColors]}
+                                    >
+                                        {selectedRide.status.replace("_", " ")}
+                                    </Badge>
+                                </div>
+                            </div>
+                            <div className="p-3 bg-muted rounded-lg">
+                                <p className="text-sm text-muted-foreground">Ride Creator</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarFallback className="text-xs">
+                                            {selectedRide.creator.name.split(" ").map((n) => n[0]).join("")}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-medium text-sm">{selectedRide.creator.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            @{selectedRide.creator.username}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                            Close
+                        </Button>
+                        {selectedRide?.status === "IN_PROGRESS" && (
+                            <Button>
+                                <MapPin className="w-4 h-4 mr-2" />
+                                Track Live
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

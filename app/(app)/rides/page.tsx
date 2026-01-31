@@ -244,10 +244,12 @@ export default function RidesPage() {
                             <p className="text-sm text-muted-foreground mb-4">
                                 Set the route, invite riders, and lead the convoy.
                             </p>
-                            <Button className="gap-2">
-                                <Plus className="w-4 h-4" />
-                                Create Ride
-                            </Button>
+                            <Link href="/app/rides/create">
+                                <Button className="gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    Create Ride
+                                </Button>
+                            </Link>
                         </CardContent>
                     </Card>
                 </div>
@@ -264,10 +266,12 @@ export default function RidesPage() {
                         <Button variant="outline" onClick={() => setActiveTab("upcoming")}>
                             Browse Rides
                         </Button>
-                        <Button className="gap-2">
-                            <Plus className="w-4 h-4" />
-                            Create Ride
-                        </Button>
+                        <Link href="/app/rides/create">
+                            <Button className="gap-2">
+                                <Plus className="w-4 h-4" />
+                                Create Ride
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             )}
