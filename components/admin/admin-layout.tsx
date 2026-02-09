@@ -18,6 +18,7 @@ import {
     ChevronLeft,
     Bell,
     Search,
+    Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -32,6 +33,7 @@ const adminNavigation = [
     { name: "Rides", href: "/admin/rides", icon: MapPin },
     { name: "Marketplace", href: "/admin/marketplace", icon: ShoppingBag },
     { name: "Reports", href: "/admin/reports", icon: Flag },
+    { name: "Monitoring", href: "/admin/monitoring", icon: Activity, superAdminOnly: true },
     { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
@@ -50,7 +52,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             router.push("/login");
             return;
         }
-        if (session.user.role !== "ADMIN") {
+        if (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") {
             router.push("/app");
             return;
         }
@@ -82,9 +84,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         );
     }
 
-    if (!session || session.user.role !== "ADMIN") {
+    if (!session || (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN")) {
         return null;
     }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+    const navigationItems = adminNavigation.filter(
+        (item) => !item.superAdminOnly || isSuperAdmin,
+    );
 
     return (
         <div className="min-h-screen bg-background">
@@ -103,7 +110,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
                 {/* Navigation */}
                 <nav className="flex-1 px-4 py-6 space-y-1">
-                    {adminNavigation.map((item) => {
+                    {navigationItems.map((item) => {
                         const isActive = pathname === item.href ||
                             (item.href !== "/admin" && pathname.startsWith(item.href));
                         return (
@@ -144,7 +151,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     </Button>
                 </div>
 
-                {/* Admin Profile */}
+                        <Badge variant="destructive" className="ml-2 text-[10px]">
+                            {isSuperAdmin ? "Super Admin" : "Admin"}
+                        </Badge>
                 <div className="p-4 border-t border-border">
                     <div className="flex items-center gap-3 p-2 rounded-lg">
                         <Avatar>
@@ -154,7 +163,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                         </Avatar>
                         <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{session.user.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">Administrator</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                                {isSuperAdmin ? "Super Administrator" : "Administrator"}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -167,7 +178,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <div className="flex items-center justify-between h-full px-6">
                         <div>
                             <h1 className="text-xl font-semibold">
-                                {adminNavigation.find((n) =>
+                                {navigationItems.find((n) =>
                                     pathname === n.href || (n.href !== "/admin" && pathname.startsWith(n.href))
                                 )?.name || "Admin Dashboard"}
                             </h1>

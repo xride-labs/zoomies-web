@@ -1,5 +1,11 @@
 // User roles matching Prisma schema
-export type UserRole = "ADMIN" | "USER" | "RIDER" | "SELLER";
+export type UserRole =
+  | "SUPER_ADMIN"
+  | "ADMIN"
+  | "CLUB_OWNER"
+  | "USER"
+  | "RIDER"
+  | "SELLER";
 
 export type ClubMemberRole = "MEMBER" | "OFFICER" | "ADMIN" | "FOUNDER";
 
