@@ -65,16 +65,35 @@ api.interceptors.response.use(
 
 export default api;
 
-// Typed API methods
+// Backend API response format (matches backend ApiResponse class)
+interface BackendResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: {
+    code: string;
+    details?: unknown;
+  };
+}
+
+// Typed API methods - automatically unwrap the 'data' property from backend response
 export const apiClient = {
   get: <T>(url: string, config = {}) =>
-    api.get<T>(url, config).then((res) => res.data),
+    api.get<BackendResponse<T>>(url, config).then((res) => res.data.data as T),
   post: <T>(url: string, data = {}, config = {}) =>
-    api.post<T>(url, data, config).then((res) => res.data),
+    api
+      .post<BackendResponse<T>>(url, data, config)
+      .then((res) => res.data.data as T),
   put: <T>(url: string, data = {}, config = {}) =>
-    api.put<T>(url, data, config).then((res) => res.data),
+    api
+      .put<BackendResponse<T>>(url, data, config)
+      .then((res) => res.data.data as T),
   patch: <T>(url: string, data = {}, config = {}) =>
-    api.patch<T>(url, data, config).then((res) => res.data),
+    api
+      .patch<BackendResponse<T>>(url, data, config)
+      .then((res) => res.data.data as T),
   delete: <T>(url: string, config = {}) =>
-    api.delete<T>(url, config).then((res) => res.data),
+    api
+      .delete<BackendResponse<T>>(url, config)
+      .then((res) => res.data.data as T),
 };

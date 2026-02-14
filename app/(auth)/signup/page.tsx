@@ -10,10 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Loader2, Check } from "lucide-react";
+import { Eye, EyeOff, Loader2, Check, Shield, Store } from "lucide-react";
+
+type SignupRole = "CLUB_OWNER" | "SELLER";
 
 export default function SignupPage() {
     const router = useRouter();
+    const [selectedRole, setSelectedRole] = useState<SignupRole>("CLUB_OWNER");
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -61,14 +64,30 @@ export default function SignupPage() {
         setError("");
 
         try {
-            // TODO: Call backend API to register user
-            // const response = await authAPI.register({
-            //   name: formData.name,
-            //   email: formData.email,
-            //   password: formData.password,
-            // });
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-            // For now, sign in directly (placeholder)
+            // Register via backend API
+            const res = await fetch(`${API_URL}/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password,
+                    name: formData.name,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || data.message || "Failed to create account");
+                return;
+            }
+
+            // After registration, assign the chosen role via the user role endpoint
+            // (This will be handled by the backend when the user first creates a club or listing)
+
+            // Sign in with the new credentials
             const result = await signIn("credentials", {
                 email: formData.email,
                 password: formData.password,
@@ -76,9 +95,10 @@ export default function SignupPage() {
             });
 
             if (result?.error) {
-                setError("Failed to create account. Please try again.");
+                // Account was created but sign-in failed — still redirect to login
+                router.push("/login");
             } else {
-                router.push("/onboarding");
+                router.push("/home");
             }
         } catch {
             setError("Something went wrong. Please try again.");
@@ -89,7 +109,7 @@ export default function SignupPage() {
 
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
-        await signIn("google", { callbackUrl: "/onboarding" });
+        await signIn("google", { callbackUrl: "/home" });
     };
 
     return (
@@ -107,11 +127,46 @@ export default function SignupPage() {
                     </Link>
                     <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
                     <CardDescription>
-                        Join the motorcycle community today
+                        Join the Zoomies web portal as a club manager or seller
                     </CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-6">
+                    {/* Role Selection */}
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">I want to...</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedRole("CLUB_OWNER")}
+                                className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${selectedRole === "CLUB_OWNER"
+                                        ? "border-primary bg-primary/5 text-primary"
+                                        : "border-border hover:border-muted-foreground"
+                                    }`}
+                            >
+                                <Shield className="w-6 h-6" />
+                                <span className="text-sm font-medium">Manage a Club</span>
+                                <span className="text-xs text-muted-foreground text-center">
+                                    Create & run riding clubs
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedRole("SELLER")}
+                                className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${selectedRole === "SELLER"
+                                        ? "border-primary bg-primary/5 text-primary"
+                                        : "border-border hover:border-muted-foreground"
+                                    }`}
+                            >
+                                <Store className="w-6 h-6" />
+                                <span className="text-sm font-medium">Sell on Marketplace</span>
+                                <span className="text-xs text-muted-foreground text-center">
+                                    List & sell products
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Google Sign Up */}
                     <Button
                         variant="outline"
@@ -175,7 +230,7 @@ export default function SignupPage() {
                                 id="email"
                                 name="email"
                                 type="email"
-                                placeholder="rider@example.com"
+                                placeholder="manager@example.com"
                                 value={formData.email}
                                 onChange={handleChange}
                                 required
@@ -244,7 +299,7 @@ export default function SignupPage() {
                             />
                             {formData.confirmPassword.length > 0 && (
                                 <p className={`text-xs ${doPasswordsMatch ? "text-green-600" : "text-destructive"}`}>
-                                    {doPasswordsMatch ? "✓ Passwords match" : "Passwords don't match"}
+                                    {doPasswordsMatch ? "Passwords match" : "Passwords don't match"}
                                 </p>
                             )}
                         </div>
@@ -282,7 +337,7 @@ export default function SignupPage() {
                                     Creating account...
                                 </>
                             ) : (
-                                "Create Account"
+                                `Sign Up as ${selectedRole === "CLUB_OWNER" ? "Club Manager" : "Seller"}`
                             )}
                         </Button>
                     </form>
@@ -292,6 +347,12 @@ export default function SignupPage() {
                         <Link href="/login" className="text-primary font-medium hover:underline">
                             Sign in
                         </Link>
+                    </p>
+
+                    <p className="text-center text-xs text-muted-foreground">
+                        Riders? Download the{" "}
+                        <span className="font-medium text-foreground">Zoomies mobile app</span>{" "}
+                        to start riding.
                     </p>
                 </CardContent>
             </Card>

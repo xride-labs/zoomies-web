@@ -93,7 +93,7 @@ export function MarketplaceSection() {
     };
 
     return (
-        <section id="marketplace" className="py-24 bg-white">
+        <section id="marketplace" className="py-24 bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section header */}
                 <motion.div
@@ -104,7 +104,7 @@ export function MarketplaceSection() {
                     viewport={{ once: true }}
                 >
                     <motion.div variants={itemVariants}>
-                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0">
+                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-brand-red/10 text-brand-red-light border-0">
                             <ShoppingBag className="w-4 h-4 mr-1 inline" />
                             Marketplace
                         </Badge>
@@ -115,7 +115,7 @@ export function MarketplaceSection() {
                     </motion.h2>
 
                     <motion.p variants={itemVariants} className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                        Buy and sell motorcycle parts & gear. Every seller's clubs and reputation visible.
+                        Buy and sell motorcycle parts & gear. Every seller&apos;s clubs and reputation visible.
                         No faceless transactions.
                     </motion.p>
                 </motion.div>
@@ -130,9 +130,9 @@ export function MarketplaceSection() {
                 >
                     {listings.map((listing, index) => (
                         <motion.div key={index} variants={cardVariants} whileHover="hover">
-                            <Card className="border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg group cursor-pointer overflow-hidden h-full">
+                            <Card className="border-border hover:border-brand-red-light/30 transition-all duration-300 hover:shadow-lg group cursor-pointer overflow-hidden h-full">
                                 {/* Image placeholder */}
-                                <div className="aspect-square bg-linear-to-br from-zinc-100 to-zinc-200 flex items-center justify-center relative overflow-hidden">
+                                <div className="aspect-square bg-linear-to-br from-[#2a2a2a] to-brand-grey flex items-center justify-center relative overflow-hidden">
                                     <motion.div
                                         animate={{ scale: [1, 1.1, 1] }}
                                         transition={{ duration: 2, repeat: Infinity }}
@@ -145,20 +145,20 @@ export function MarketplaceSection() {
                                             className="opacity-30"
                                         />
                                     </motion.div>
-                                    <Badge className="absolute top-3 left-3 bg-white/90 text-foreground border-0 shadow-sm">
+                                    <Badge className="absolute top-3 left-3 bg-card/90 text-foreground border-0 shadow-sm">
                                         {listing.condition}
                                     </Badge>
                                 </div>
 
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between mb-2">
-                                        <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                                        <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-brand-red-light transition-colors">
                                             {listing.title}
                                         </h3>
                                     </div>
 
                                     <motion.div
-                                        className="text-xl font-bold text-primary mb-3"
+                                        className="text-xl font-bold text-brand-green mb-3"
                                         whileHover={{ scale: 1.05 }}
                                     >
                                         {listing.price}
@@ -167,12 +167,12 @@ export function MarketplaceSection() {
                                     {/* Seller info */}
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-linear-to-br from-orange-300 to-amber-400 flex items-center justify-center text-white text-xs font-semibold">
+                                            <div className="w-6 h-6 rounded-full bg-linear-to-br from-brand-red to-brand-red-light flex items-center justify-center text-white text-xs font-semibold">
                                                 {listing.seller[0]}
                                             </div>
                                             <span className="text-sm text-muted-foreground">{listing.seller}</span>
                                             <div className="flex items-center gap-0.5 ml-auto">
-                                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                                <Star className="w-3 h-3 fill-brand-teal text-brand-teal" />
                                                 <span className="text-xs font-medium">{listing.rating}</span>
                                             </div>
                                         </div>

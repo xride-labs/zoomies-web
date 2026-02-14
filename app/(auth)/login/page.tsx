@@ -9,10 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Shield, Store } from "lucide-react";
+
+type LoginTab = "admin" | "manager";
 
 export default function LoginPage() {
     const router = useRouter();
+    const [activeTab, setActiveTab] = useState<LoginTab>("manager");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -32,9 +35,11 @@ export default function LoginPage() {
             });
 
             if (result?.error) {
-                setError("Invalid email or password");
+                setError(result.error === "CredentialsSignin"
+                    ? "Invalid email or password"
+                    : result.error);
             } else {
-                router.push("/app");
+                router.push(activeTab === "admin" ? "/admin" : "/home");
             }
         } catch {
             setError("Something went wrong. Please try again.");
@@ -45,7 +50,9 @@ export default function LoginPage() {
 
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
-        await signIn("google", { callbackUrl: "/app" });
+        await signIn("google", {
+            callbackUrl: activeTab === "admin" ? "/admin" : "/home",
+        });
     };
 
     return (
@@ -63,8 +70,40 @@ export default function LoginPage() {
                     </Link>
                     <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
                     <CardDescription>
-                        Sign in to continue your riding journey
+                        Sign in to the Zoomies web portal
                     </CardDescription>
+
+                    {/* Tab Switcher */}
+                    <div className="flex rounded-lg border border-border bg-muted p-1 gap-1">
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab("manager"); setError(""); }}
+                            className={`flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${activeTab === "manager"
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                                }`}
+                        >
+                            <Store className="w-4 h-4" />
+                            Manager
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab("admin"); setError(""); }}
+                            className={`flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${activeTab === "admin"
+                                    ? "bg-red-600 text-white shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                                }`}
+                        >
+                            <Shield className="w-4 h-4" />
+                            Admin
+                        </button>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                        {activeTab === "admin"
+                            ? "For platform administrators only"
+                            : "For club owners & marketplace sellers"}
+                    </p>
                 </CardHeader>
 
                 <CardContent className="space-y-6">
@@ -116,7 +155,7 @@ export default function LoginPage() {
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="rider@example.com"
+                                placeholder={activeTab === "admin" ? "admin@zoomies.com" : "manager@example.com"}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -161,7 +200,7 @@ export default function LoginPage() {
 
                         <Button
                             type="submit"
-                            className="w-full h-12"
+                            className={`w-full h-12 ${activeTab === "admin" ? "bg-red-600 hover:bg-red-700" : ""}`}
                             disabled={isLoading}
                         >
                             {isLoading ? (
@@ -170,16 +209,24 @@ export default function LoginPage() {
                                     Signing in...
                                 </>
                             ) : (
-                                "Sign In"
+                                `Sign In${activeTab === "admin" ? " as Admin" : ""}`
                             )}
                         </Button>
                     </form>
 
-                    <p className="text-center text-sm text-muted-foreground">
-                        Don&apos;t have an account?{" "}
-                        <Link href="/signup" className="text-primary font-medium hover:underline">
-                            Sign up
-                        </Link>
+                    {activeTab === "manager" && (
+                        <p className="text-center text-sm text-muted-foreground">
+                            Want to sell or manage a club?{" "}
+                            <Link href="/signup" className="text-primary font-medium hover:underline">
+                                Sign up
+                            </Link>
+                        </p>
+                    )}
+
+                    <p className="text-center text-xs text-muted-foreground">
+                        Riders? Download the{" "}
+                        <span className="font-medium text-foreground">Zoomies mobile app</span>{" "}
+                        instead.
                     </p>
                 </CardContent>
             </Card>

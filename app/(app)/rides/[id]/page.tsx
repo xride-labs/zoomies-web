@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ridesAPI } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
     Gauge,
     Mountain,
     Fuel,
+    Loader2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -43,68 +45,64 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
-// Mock ride data
-const mockRide = {
-    id: "r1",
-    title: "Superstition Mountain Loop",
-    description: `A scenic morning ride through the Superstition Mountains. We'll take some amazing twisty roads with beautiful views of the desert landscape.
+interface Organizer {
+    id: string;
+    name: string;
+    username?: string;
+    avatar?: string | null;
+    image?: string | null;
+    ridesLed?: number;
+}
 
-**Route Highlights:**
-- Apache Trail (State Route 88)
-- Tortilla Flat historic stop
-- Canyon Lake overlook
-- Fish Creek Hill switchbacks
+interface Club {
+    id: string;
+    name: string;
+}
 
-Pace will be moderate with plenty of photo stops. All skill levels welcome but be prepared for some technical sections.
+interface Weather {
+    temp: string;
+    condition: string;
+    wind: string;
+}
 
-**Requirements:**
-- Full tank of gas
-- Proper riding gear
-- Working communication device`,
-    startLocation: "Gilbert Road Parking Lot, Mesa, AZ",
-    endLocation: "Same as start (loop route)",
-    scheduledAt: "2026-02-01T07:00:00Z",
-    estimatedDuration: 240, // minutes
-    distance: 85, // miles
-    difficulty: "Intermediate",
-    terrain: "Mixed (Paved & Some Gravel)",
-    maxParticipants: 15,
-    status: "PLANNED",
-    organizer: {
-        id: "u1",
-        name: "Mike Rodriguez",
-        username: "roadking_mike",
-        avatar: null,
-        ridesLed: 34,
-    },
-    club: {
-        id: "c1",
-        name: "Desert Eagles MC",
-    },
-    weather: {
-        temp: "68°F",
-        condition: "Sunny",
-        wind: "5 mph",
-    },
-};
+interface Participant {
+    id: string;
+    name: string;
+    username?: string;
+    status: string;
+    role?: string;
+    user?: {
+        id: string;
+        name: string;
+        image: string | null;
+    };
+}
 
-const mockParticipants = [
-    { id: "u1", name: "Mike Rodriguez", username: "roadking_mike", status: "CONFIRMED", role: "organizer" },
-    { id: "u2", name: "Sarah Chen", username: "sarah_twowheels", status: "CONFIRMED", role: "participant" },
-    { id: "u3", name: "Raj Patel", username: "raj_thunder", status: "CONFIRMED", role: "participant" },
-    { id: "u4", name: "Sneha Reddy", username: "sneha_rides", status: "CONFIRMED", role: "participant" },
-    { id: "u5", name: "Tom Johnson", username: "tomjmoto", status: "PENDING", role: "participant" },
-    { id: "u6", name: "Maria Garcia", username: "maria_moto", status: "PENDING", role: "participant" },
-];
+interface Waypoint {
+    name: string;
+    time?: string;
+    type: string;
+}
 
-const mockWaypoints = [
-    { name: "Start: Gilbert Road Parking", time: "7:00 AM", type: "start" },
-    { name: "Bush Highway Junction", time: "7:25 AM", type: "waypoint" },
-    { name: "Tortilla Flat (Rest Stop)", time: "8:15 AM", type: "stop" },
-    { name: "Canyon Lake Overlook", time: "9:00 AM", type: "waypoint" },
-    { name: "Fish Creek Hill", time: "9:30 AM", type: "waypoint" },
-    { name: "End: Gilbert Road Parking", time: "11:00 AM", type: "end" },
-];
+interface Ride {
+    id: string;
+    title: string;
+    description: string;
+    startLocation?: string | { name: string; lat: number; lng: number };
+    endLocation?: string | { name: string; lat: number; lng: number };
+    scheduledAt: string;
+    estimatedDuration?: number;
+    distance?: number;
+    difficulty?: string;
+    terrain?: string;
+    maxParticipants?: number;
+    status: string;
+    organizer?: Organizer;
+    club?: Club | null;
+    weather?: Weather;
+    participants?: Participant[];
+    waypoints?: Waypoint[];
+}
 
 const statusColors = {
     PLANNED: "bg-blue-100 text-blue-700",
@@ -124,6 +122,29 @@ export default function RideDetailPage() {
     const router = useRouter();
     const [isJoined, setIsJoined] = useState(false);
     const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
+    const [ride, setRide] = useState<Ride | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchRide = async () => {
+            try {
+                setLoading(true);
+                const rideId = params.id as string;
+                const response = await ridesAPI.getRide(rideId);
+                setRide(response.ride);
+            } catch (err) {
+                setError("Failed to load ride details");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (params.id) {
+            fetchRide();
+        }
+    }, [params.id]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-US", {
@@ -147,8 +168,28 @@ export default function RideDetailPage() {
         return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
     };
 
-    const confirmedCount = mockParticipants.filter((p) => p.status === "CONFIRMED").length;
-    const participantPercentage = (confirmedCount / mockRide.maxParticipants) * 100;
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error || !ride) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <p className="text-muted-foreground">{error || "Ride not found"}</p>
+                <Button onClick={() => router.back()}>Go Back</Button>
+            </div>
+        );
+    }
+
+    const participants = ride.participants || [];
+    const waypoints = ride.waypoints || [];
+    const confirmedCount = participants.filter((p) => p.status === "CONFIRMED").length;
+    const maxParticipants = ride.maxParticipants || 1;
+    const participantPercentage = (confirmedCount / maxParticipants) * 100;
 
     const handleJoinRide = () => {
         setIsJoined(true);
@@ -212,15 +253,15 @@ export default function RideDetailPage() {
                 {/* Title & Status */}
                 <div>
                     <div className="flex items-start justify-between gap-4">
-                        <h1 className="text-2xl font-bold">{mockRide.title}</h1>
-                        <Badge className={statusColors[mockRide.status as keyof typeof statusColors]}>
-                            {mockRide.status}
+                        <h1 className="text-2xl font-bold">{ride.title}</h1>
+                        <Badge className={statusColors[ride.status as keyof typeof statusColors]}>
+                            {ride.status}
                         </Badge>
                     </div>
-                    {mockRide.club && (
-                        <Link href={`/app/clubs/${mockRide.club.id}`}>
+                    {ride.club && (
+                        <Link href={`/app/clubs/${ride.club.id}`}>
                             <Badge variant="outline" className="mt-2">
-                                {mockRide.club.name}
+                                {ride.club.name}
                             </Badge>
                         </Link>
                     )}
@@ -235,7 +276,7 @@ export default function RideDetailPage() {
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">Date</p>
-                                <p className="font-medium text-sm">{formatDate(mockRide.scheduledAt)}</p>
+                                <p className="font-medium text-sm">{formatDate(ride.scheduledAt)}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -246,7 +287,7 @@ export default function RideDetailPage() {
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">Time</p>
-                                <p className="font-medium text-sm">{formatTime(mockRide.scheduledAt)}</p>
+                                <p className="font-medium text-sm">{formatTime(ride.scheduledAt)}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -258,22 +299,22 @@ export default function RideDetailPage() {
                         <div className="grid grid-cols-4 gap-4 text-center">
                             <div>
                                 <Route className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="font-semibold">{mockRide.distance} mi</p>
+                                <p className="font-semibold">{ride.distance || 0} mi</p>
                                 <p className="text-xs text-muted-foreground">Distance</p>
                             </div>
                             <div>
                                 <Clock className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="font-semibold">{formatDuration(mockRide.estimatedDuration)}</p>
+                                <p className="font-semibold">{formatDuration(ride.estimatedDuration || 0)}</p>
                                 <p className="text-xs text-muted-foreground">Duration</p>
                             </div>
                             <div>
                                 <Gauge className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="font-semibold">{mockRide.difficulty}</p>
+                                <p className="font-semibold">{ride.difficulty || 'N/A'}</p>
                                 <p className="text-xs text-muted-foreground">Difficulty</p>
                             </div>
                             <div>
                                 <Mountain className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="font-semibold text-xs">{mockRide.terrain}</p>
+                                <p className="font-semibold text-xs">{ride.terrain || 'N/A'}</p>
                                 <p className="text-xs text-muted-foreground">Terrain</p>
                             </div>
                         </div>
@@ -289,7 +330,7 @@ export default function RideDetailPage() {
                         <div className="flex items-start gap-3">
                             <MapPin className="w-5 h-5 text-primary mt-0.5" />
                             <div className="flex-1">
-                                <p className="font-medium">{mockRide.startLocation}</p>
+                                <p className="font-medium">{typeof ride.startLocation === 'string' ? ride.startLocation : ride.startLocation?.name || 'N/A'}</p>
                                 <Button variant="link" className="h-auto p-0 text-sm">
                                     Open in Maps
                                 </Button>
@@ -305,12 +346,12 @@ export default function RideDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
-                            {mockWaypoints.map((waypoint, index) => (
+                            {waypoints.map((waypoint, index) => (
                                 <div key={index} className="flex items-center gap-3">
                                     <div className={`w-3 h-3 rounded-full ${waypoint.type === "start" ? "bg-green-500" :
-                                            waypoint.type === "end" ? "bg-red-500" :
-                                                waypoint.type === "stop" ? "bg-amber-500" :
-                                                    "bg-primary"
+                                        waypoint.type === "end" ? "bg-red-500" :
+                                            waypoint.type === "stop" ? "bg-amber-500" :
+                                                "bg-primary"
                                         }`} />
                                     <div className="flex-1">
                                         <p className="text-sm font-medium">{waypoint.name}</p>
@@ -323,38 +364,40 @@ export default function RideDetailPage() {
                 </Card>
 
                 {/* Organizer */}
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Organizer</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Link href={`/app/profile/${mockRide.organizer.username}`}>
-                            <div className="flex items-center gap-4">
-                                <Avatar className="w-12 h-12">
-                                    <AvatarFallback>
-                                        {mockRide.organizer.name.split(" ").map((n) => n[0]).join("")}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <p className="font-semibold">{mockRide.organizer.name}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {mockRide.organizer.ridesLed} rides led
-                                    </p>
+                {ride.organizer && (
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base">Organizer</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href={`/app/profile/${ride.organizer.username || ride.organizer.id}`}>
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="w-12 h-12">
+                                        <AvatarFallback>
+                                            {ride.organizer.name.split(" ").map((n) => n[0]).join("")}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <p className="font-semibold">{ride.organizer.name}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {ride.organizer.ridesLed || 0} rides led
+                                        </p>
+                                    </div>
+                                    <Button variant="outline" size="sm">
+                                        <MessageCircle className="w-4 h-4" />
+                                    </Button>
                                 </div>
-                                <Button variant="outline" size="sm">
-                                    <MessageCircle className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </Link>
-                    </CardContent>
-                </Card>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Participants */}
                 <Card>
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-base">
-                                Riders ({confirmedCount}/{mockRide.maxParticipants})
+                                Riders ({confirmedCount}/{ride.maxParticipants})
                             </CardTitle>
                         </div>
                     </CardHeader>
@@ -362,7 +405,7 @@ export default function RideDetailPage() {
                         <Progress value={participantPercentage} className="mb-4" />
                         <ScrollArea className="h-[200px]">
                             <div className="space-y-3">
-                                {mockParticipants.map((participant) => (
+                                {participants.map((participant) => (
                                     <Link
                                         key={participant.id}
                                         href={`/app/profile/${participant.username}`}
@@ -393,27 +436,29 @@ export default function RideDetailPage() {
                 <div>
                     <h2 className="font-semibold mb-3">About This Ride</h2>
                     <div className="text-muted-foreground whitespace-pre-line text-sm">
-                        {mockRide.description}
+                        {ride.description}
                     </div>
                 </div>
 
                 {/* Weather */}
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="text-3xl">☀️</div>
-                                <div>
-                                    <p className="font-semibold">{mockRide.weather.temp}</p>
-                                    <p className="text-sm text-muted-foreground">{mockRide.weather.condition}</p>
+                {ride.weather && (
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-3xl">☀️</div>
+                                    <div>
+                                        <p className="font-semibold">{ride.weather.temp}</p>
+                                        <p className="text-sm text-muted-foreground">{ride.weather.condition}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right text-sm text-muted-foreground">
+                                    <p>Wind: {ride.weather.wind}</p>
                                 </div>
                             </div>
-                            <div className="text-right text-sm text-muted-foreground">
-                                <p>Wind: {mockRide.weather.wind}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             {/* Fixed Bottom Action */}

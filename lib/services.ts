@@ -33,19 +33,19 @@ export const authAPI = {
 
 // ============ User API ============
 export const userAPI = {
-  getProfile: () => apiClient.get<UserProfile>("/users/me"),
+  getProfile: () => apiClient.get<{ user: UserProfile }>("/users/me"),
 
   updateProfile: (data: Partial<UserProfile>) =>
-    apiClient.patch<UserProfile>("/users/me", data),
+    apiClient.patch<{ user: UserProfile }>("/users/me", data),
 
   getPublicProfile: (username: string) =>
-    apiClient.get<UserProfile>(`/users/${username}`),
+    apiClient.get<{ user: UserProfile }>(`/users/${username}`),
 
   addBike: (data: Omit<Bike, "id">) =>
-    apiClient.post<Bike>("/users/me/bikes", data),
+    apiClient.post<{ bike: Bike }>("/users/me/bikes", data),
 
   updateBike: (bikeId: string, data: Partial<Bike>) =>
-    apiClient.patch<Bike>(`/users/me/bikes/${bikeId}`, data),
+    apiClient.patch<{ bike: Bike }>(`/users/me/bikes/${bikeId}`, data),
 
   deleteBike: (bikeId: string) => apiClient.delete(`/users/me/bikes/${bikeId}`),
 
@@ -66,23 +66,30 @@ export const userAPI = {
 
 // ============ Clubs API ============
 export const clubsAPI = {
-  getMyClubs: () => apiClient.get<Club[]>("/clubs/my"),
+  getMyClubs: () => apiClient.get<{ clubs: Club[] }>("/clubs/my"),
 
-  getClub: (clubId: string) => apiClient.get<ClubDetails>(`/clubs/${clubId}`),
+  discoverClubs: (page = 1) =>
+    apiClient.get<{ clubs: Club[]; hasMore: boolean }>(
+      `/clubs/discover?page=${page}`,
+    ),
+
+  getClub: (clubId: string) =>
+    apiClient.get<{ club: ClubDetails }>(`/clubs/${clubId}`),
 
   createClub: (data: {
     name: string;
     description: string;
     location: string;
     isPrivate: boolean;
-  }) => apiClient.post<Club>("/clubs", data),
+  }) => apiClient.post<{ club: Club }>("/clubs", data),
 
   updateClub: (clubId: string, data: Partial<Club>) =>
-    apiClient.patch<Club>(`/clubs/${clubId}`, data),
+    apiClient.patch<{ club: Club }>(`/clubs/${clubId}`, data),
 
   deleteClub: (clubId: string) => apiClient.delete(`/clubs/${clubId}`),
 
-  requestToJoin: (clubId: string) => apiClient.post(`/clubs/${clubId}/join`),
+  requestToJoin: (clubId: string) =>
+    apiClient.post<{ membership: unknown }>(`/clubs/${clubId}/join`),
 
   cancelJoinRequest: (clubId: string) =>
     apiClient.delete(`/clubs/${clubId}/join`),
@@ -95,13 +102,16 @@ export const clubsAPI = {
     ),
 
   updateMemberRole: (clubId: string, userId: string, role: string) =>
-    apiClient.patch(`/clubs/${clubId}/members/${userId}`, { role }),
+    apiClient.patch<{ membership: unknown }>(
+      `/clubs/${clubId}/members/${userId}`,
+      { role },
+    ),
 
   removeMember: (clubId: string, userId: string) =>
     apiClient.delete(`/clubs/${clubId}/members/${userId}`),
 
   getPendingRequests: (clubId: string) =>
-    apiClient.get<UserProfile[]>(`/clubs/${clubId}/requests`),
+    apiClient.get<{ requests: UserProfile[] }>(`/clubs/${clubId}/requests`),
 
   approveRequest: (clubId: string, userId: string) =>
     apiClient.post(`/clubs/${clubId}/requests/${userId}/approve`),
@@ -127,22 +137,27 @@ export const ridesAPI = {
       `/rides/past?page=${page}`,
     ),
 
-  getRide: (rideId: string) => apiClient.get<RideDetails>(`/rides/${rideId}`),
+  getRide: (rideId: string) =>
+    apiClient.get<{ ride: RideDetails }>(`/rides/${rideId}`),
 
-  createRide: (data: Partial<Ride>) => apiClient.post<Ride>("/rides", data),
+  createRide: (data: Partial<Ride>) =>
+    apiClient.post<{ ride: Ride }>("/rides", data),
 
   updateRide: (rideId: string, data: Partial<Ride>) =>
-    apiClient.patch<Ride>(`/rides/${rideId}`, data),
+    apiClient.patch<{ ride: Ride }>(`/rides/${rideId}`, data),
 
   deleteRide: (rideId: string) => apiClient.delete(`/rides/${rideId}`),
 
-  joinRide: (rideId: string) => apiClient.post(`/rides/${rideId}/join`),
+  joinRide: (rideId: string) =>
+    apiClient.post<{ participant: unknown }>(`/rides/${rideId}/join`),
 
   leaveRide: (rideId: string) => apiClient.delete(`/rides/${rideId}/leave`),
 
-  startRide: (rideId: string) => apiClient.post(`/rides/${rideId}/start`),
+  startRide: (rideId: string) =>
+    apiClient.post<{ ride: Ride }>(`/rides/${rideId}/start`),
 
-  endRide: (rideId: string) => apiClient.post(`/rides/${rideId}/end`),
+  endRide: (rideId: string) =>
+    apiClient.post<{ ride: Ride }>(`/rides/${rideId}/end`),
 
   updateLocation: (rideId: string, location: { lat: number; lng: number }) =>
     apiClient.post(`/rides/${rideId}/location`, location),
@@ -178,18 +193,20 @@ export const marketplaceAPI = {
     );
   },
 
-  getMyListings: () => apiClient.get<Listing[]>("/marketplace/my"),
+  getMyListings: () =>
+    apiClient.get<{ listings: Listing[] }>("/marketplace/my"),
 
-  getSavedListings: () => apiClient.get<Listing[]>("/marketplace/saved"),
+  getSavedListings: () =>
+    apiClient.get<{ listings: Listing[] }>("/marketplace/saved"),
 
   getListing: (listingId: string) =>
-    apiClient.get<ListingDetails>(`/marketplace/${listingId}`),
+    apiClient.get<{ listing: ListingDetails }>(`/marketplace/${listingId}`),
 
   createListing: (data: Partial<Listing>) =>
-    apiClient.post<Listing>("/marketplace", data),
+    apiClient.post<{ listing: Listing }>("/marketplace", data),
 
   updateListing: (listingId: string, data: Partial<Listing>) =>
-    apiClient.patch<Listing>(`/marketplace/${listingId}`, data),
+    apiClient.patch<{ listing: Listing }>(`/marketplace/${listingId}`, data),
 
   deleteListing: (listingId: string) =>
     apiClient.delete(`/marketplace/${listingId}`),
@@ -201,7 +218,118 @@ export const marketplaceAPI = {
     apiClient.delete(`/marketplace/${listingId}/save`),
 
   markAsSold: (listingId: string) =>
-    apiClient.patch(`/marketplace/${listingId}`, { isSold: true }),
+    apiClient.patch<{ listing: Listing }>(`/marketplace/${listingId}`, {
+      isSold: true,
+    }),
+};
+
+// ============ Admin API ============
+export const adminAPI = {
+  getStats: () =>
+    apiClient.get<{
+      overview: {
+        totalUsers: number;
+        totalRides: number;
+        totalClubs: number;
+        totalListings: number;
+        activeRides: number;
+        completedRides: number;
+        verifiedClubs: number;
+      };
+      recent: { newUsersLast7Days: number; newRidesLast7Days: number };
+      breakdown: {
+        usersByRole: Record<string, number>;
+        ridesByStatus: Record<string, number>;
+      };
+    }>("/admin/stats"),
+
+  getUsers: (params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    status?: string;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null)
+          queryParams.append(key, String(value));
+      });
+    }
+    return apiClient.get<{
+      users: any[];
+      pagination: { total: number; page: number; pages: number };
+    }>(`/admin/users?${queryParams}`);
+  },
+
+  getUserById: (userId: string) => apiClient.get<any>(`/admin/users/${userId}`),
+
+  updateUserRole: (userId: string, role: string) =>
+    apiClient.patch(`/admin/users/${userId}/role`, { role }),
+
+  updateUserStatus: (userId: string, status: string) =>
+    apiClient.patch(`/admin/users/${userId}/status`, { status }),
+
+  getRides: (params?: { page?: number; status?: string; search?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null)
+          queryParams.append(key, String(value));
+      });
+    }
+    return apiClient.get<any>(`/admin/rides?${queryParams}`);
+  },
+
+  getClubs: (params?: {
+    page?: number;
+    verified?: boolean;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null)
+          queryParams.append(key, String(value));
+      });
+    }
+    return apiClient.get<any>(`/admin/clubs?${queryParams}`);
+  },
+
+  getListings: (params?: {
+    page?: number;
+    status?: string;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null)
+          queryParams.append(key, String(value));
+      });
+    }
+    return apiClient.get<any>(`/admin/marketplace?${queryParams}`);
+  },
+
+  getReports: (params?: { page?: number; status?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null)
+          queryParams.append(key, String(value));
+      });
+    }
+    return apiClient.get<any>(`/admin/reports?${queryParams}`);
+  },
+
+  updateReport: (
+    reportId: string,
+    data: { status: string; resolution?: string },
+  ) => apiClient.patch(`/admin/reports/${reportId}`, data),
+
+  verifyClub: (clubId: string) =>
+    apiClient.patch(`/admin/clubs/${clubId}/verify`, {}),
 };
 
 // ============ Feed API ============

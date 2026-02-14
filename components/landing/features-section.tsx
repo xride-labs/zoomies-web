@@ -17,37 +17,37 @@ const features = [
         icon: Users,
         title: "Rider Identity",
         description: "Build your motorcycle profile. Show off your clubs, rides, and reputation. Your profile tells your riding story.",
-        color: "bg-orange-100 text-orange-600",
+        color: "bg-brand-red/10 text-brand-red-light",
     },
     {
         icon: Shield,
         title: "Motorcycle Clubs",
         description: "Join exclusive clubs. Request access through rider profiles. Club badges show your brotherhood on your profile.",
-        color: "bg-blue-100 text-blue-600",
+        color: "bg-brand-teal/10 text-brand-teal",
     },
     {
         icon: Compass,
         title: "Organized Rides",
         description: "Like clan wars for bikers. Schedule rides, track countdowns, and participate in epic group journeys.",
-        color: "bg-green-100 text-green-600",
+        color: "bg-brand-green/10 text-brand-green",
     },
     {
         icon: MapPin,
         title: "Live Convoy Tracking",
         description: "Real-time GPS tracking for your entire convoy. See all riders, their status, and keep everyone safe on the road.",
-        color: "bg-purple-100 text-purple-600",
+        color: "bg-brand-teal/10 text-brand-teal",
     },
     {
         icon: Radio,
         title: "Ride Chat",
         description: "Chat activates when rides start. Keep communication clean and focused. Auto-archives after rides end.",
-        color: "bg-amber-100 text-amber-600",
+        color: "bg-brand-red/10 text-brand-red-light",
     },
     {
         icon: ShoppingBag,
         title: "Marketplace",
         description: "Buy and sell bike parts, gear, and accessories. See seller's clubs and reputation before you deal.",
-        color: "bg-pink-100 text-pink-600",
+        color: "bg-brand-green/10 text-brand-green",
     },
 ];
 
@@ -98,7 +98,7 @@ export function FeaturesSection() {
     };
 
     return (
-        <section id="features" className="py-24 bg-white">
+        <section id="features" className="py-24 bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section header */}
                 <motion.div
@@ -109,7 +109,7 @@ export function FeaturesSection() {
                     viewport={{ once: true }}
                 >
                     <motion.div variants={itemVariants}>
-                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0">
+                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-brand-red/10 text-brand-red-light border-0">
                             Features
                         </Badge>
                     </motion.div>
@@ -135,7 +135,7 @@ export function FeaturesSection() {
                         const Icon = feature.icon;
                         return (
                             <motion.div key={index} variants={cardVariants} whileHover="hover">
-                                <Card className="border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg group h-full">
+                                <Card className="border-border hover:border-brand-red-light/30 transition-all duration-300 hover:shadow-lg group h-full">
                                     <CardContent className="p-6">
                                         <motion.div
                                             className={`w-14 h-14 rounded-2xl ${feature.color} flex items-center justify-center mb-4`}

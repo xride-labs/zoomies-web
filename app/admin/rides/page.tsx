@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,95 +50,34 @@ import {
     XCircle,
     PlayCircle,
     Pause,
+    Loader2,
 } from "lucide-react";
+import { adminAPI } from "@/lib/services";
 
-// Mock rides data
-const mockRides = [
-    {
-        id: "1",
-        title: "Superstition Mountain Loop",
-        description: "Epic sunrise ride through the Superstition Mountains",
-        startLocation: "Phoenix, AZ",
-        endLocation: "Apache Junction, AZ",
-        distance: 180,
-        duration: 240,
-        scheduledAt: "2026-02-01T06:00:00Z",
-        status: "PLANNED",
-        experienceLevel: "Intermediate",
-        pace: "Moderate",
-        participantCount: 12,
-        creator: { id: "1", name: "Mike Rodriguez", username: "roadking_mike" },
-    },
-    {
-        id: "2",
-        title: "Weekend City Cruise",
-        description: "Casual ride through downtown Phoenix",
-        startLocation: "Scottsdale, AZ",
-        endLocation: "Tempe, AZ",
-        distance: 45,
-        duration: 90,
-        scheduledAt: "2026-01-31T17:00:00Z",
-        status: "IN_PROGRESS",
-        experienceLevel: "Beginner",
-        pace: "Leisurely",
-        participantCount: 8,
-        creator: { id: "2", name: "Sarah Chen", username: "sarah_twowheels" },
-    },
-    {
-        id: "3",
-        title: "Desert Night Ride",
-        description: "Cool evening ride under the stars",
-        startLocation: "Mesa, AZ",
-        endLocation: "Gilbert, AZ",
-        distance: 60,
-        duration: 120,
-        scheduledAt: "2026-01-30T20:00:00Z",
-        status: "COMPLETED",
-        experienceLevel: "All Levels",
-        pace: "Moderate",
-        participantCount: 15,
-        creator: { id: "3", name: "Raj Patel", username: "raj_thunder" },
-    },
-    {
-        id: "4",
-        title: "Highway 89 Adventure",
-        description: "Long distance touring to Flagstaff",
-        startLocation: "Phoenix, AZ",
-        endLocation: "Flagstaff, AZ",
-        distance: 280,
-        duration: 360,
-        scheduledAt: "2026-02-05T07:00:00Z",
-        status: "PLANNED",
-        experienceLevel: "Expert",
-        pace: "Fast",
-        participantCount: 6,
-        creator: { id: "4", name: "Sneha Reddy", username: "sneha_rides" },
-    },
-    {
-        id: "5",
-        title: "Morning Coffee Run",
-        description: "Quick ride to the best coffee spot in town",
-        startLocation: "Chandler, AZ",
-        endLocation: "Gilbert, AZ",
-        distance: 25,
-        duration: 45,
-        scheduledAt: "2026-01-29T08:00:00Z",
-        status: "CANCELLED",
-        experienceLevel: "Beginner",
-        pace: "Leisurely",
-        participantCount: 4,
-        creator: { id: "5", name: "Vikram Singh", username: "vikram_speed" },
-    },
-];
+interface AdminRide {
+    id: string;
+    title: string;
+    description?: string;
+    startLocation: string;
+    endLocation?: string;
+    distance?: number;
+    duration?: number;
+    scheduledAt: string;
+    status: string;
+    experienceLevel?: string;
+    pace?: string;
+    participantCount?: number;
+    creator: { id: string; name: string; username: string };
+}
 
-const statusColors = {
+const statusColors: Record<string, string> = {
     PLANNED: "bg-blue-100 text-blue-700",
     IN_PROGRESS: "bg-green-100 text-green-700",
     COMPLETED: "bg-gray-100 text-gray-700",
     CANCELLED: "bg-red-100 text-red-700",
 };
 
-const statusIcons = {
+const statusIcons: Record<string, any> = {
     PLANNED: Calendar,
     IN_PROGRESS: PlayCircle,
     COMPLETED: CheckCircle,
@@ -146,25 +85,50 @@ const statusIcons = {
 };
 
 export default function AdminRidesPage() {
+    const [rides, setRides] = useState<AdminRide[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [selectedRide, setSelectedRide] = useState<typeof mockRides[0] | null>(null);
+    const [selectedRide, setSelectedRide] = useState<AdminRide | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-    const filteredRides = mockRides.filter((ride) => {
+    useEffect(() => {
+        fetchRides();
+    }, [statusFilter]);
+
+    const fetchRides = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const params: Record<string, string> = {};
+            if (statusFilter !== "all") params.status = statusFilter;
+            if (searchQuery) params.search = searchQuery;
+
+            const response = await adminAPI.getRides(params);
+            const data = response.data?.data || response.data;
+            setRides(data.rides || data || []);
+        } catch (err) {
+            setError("Failed to load rides");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredRides = rides.filter((ride) => {
         const matchesSearch =
-            ride.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            ride.startLocation.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === "all" || ride.status === statusFilter;
-        return matchesSearch && matchesStatus;
+            ride.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ride.startLocation?.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
     });
 
     const stats = {
-        total: mockRides.length,
-        planned: mockRides.filter((r) => r.status === "PLANNED").length,
-        inProgress: mockRides.filter((r) => r.status === "IN_PROGRESS").length,
-        completed: mockRides.filter((r) => r.status === "COMPLETED").length,
-        cancelled: mockRides.filter((r) => r.status === "CANCELLED").length,
+        total: rides.length,
+        planned: rides.filter((r) => r.status === "PLANNED").length,
+        inProgress: rides.filter((r) => r.status === "IN_PROGRESS").length,
+        completed: rides.filter((r) => r.status === "COMPLETED").length,
+        cancelled: rides.filter((r) => r.status === "CANCELLED").length,
     };
 
     const formatDate = (dateString: string) => {
@@ -300,9 +264,9 @@ export default function AdminRidesPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="text-sm">
-                                                    <p>{ride.distance} km</p>
+                                                    <p>{ride.distance || 0} km</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        ~{Math.floor(ride.duration / 60)}h {ride.duration % 60}m
+                                                        ~{Math.floor((ride.duration || 0) / 60)}h {(ride.duration || 0) % 60}m
                                                     </p>
                                                 </div>
                                             </TableCell>
@@ -369,7 +333,7 @@ export default function AdminRidesPage() {
                     {/* Pagination */}
                     <div className="flex items-center justify-between mt-4">
                         <p className="text-sm text-muted-foreground">
-                            Showing {filteredRides.length} of {mockRides.length} rides
+                            Showing {filteredRides.length} of {rides.length} rides
                         </p>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" disabled>
@@ -415,25 +379,25 @@ export default function AdminRidesPage() {
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Distance</p>
-                                    <p className="font-medium">{selectedRide.distance} km</p>
+                                    <p className="font-medium">{selectedRide.distance || 0} km</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Duration</p>
                                     <p className="font-medium">
-                                        {Math.floor(selectedRide.duration / 60)}h {selectedRide.duration % 60}m
+                                        {Math.floor((selectedRide.duration || 0) / 60)}h {(selectedRide.duration || 0) % 60}m
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Experience Level</p>
-                                    <p className="font-medium">{selectedRide.experienceLevel}</p>
+                                    <p className="font-medium">{selectedRide.experienceLevel || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Pace</p>
-                                    <p className="font-medium">{selectedRide.pace}</p>
+                                    <p className="font-medium">{selectedRide.pace || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Participants</p>
-                                    <p className="font-medium">{selectedRide.participantCount} riders</p>
+                                    <p className="font-medium">{selectedRide.participantCount || 0} riders</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Status</p>

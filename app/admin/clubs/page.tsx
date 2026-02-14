@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,107 +52,84 @@ import {
     MapPin,
     Calendar,
     Trophy,
+    Loader2,
 } from "lucide-react";
+import { adminAPI } from "@/lib/services";
 
-// Mock clubs data
-const mockClubs = [
-    {
-        id: "1",
-        name: "Desert Eagles MC",
-        description: "Brotherhood of riders exploring the Arizona desert roads.",
-        location: "Phoenix, AZ",
-        memberCount: 128,
-        ridesCount: 45,
-        verified: true,
-        isPublic: true,
-        owner: { id: "1", name: "Mike Rodriguez", username: "roadking_mike" },
-        reputation: 4.8,
-        establishedAt: "2023-06-15",
-        status: "active",
-    },
-    {
-        id: "2",
-        name: "Phoenix Riders",
-        description: "Casual weekend riders. All skill levels welcome.",
-        location: "Phoenix, AZ",
-        memberCount: 67,
-        ridesCount: 23,
-        verified: true,
-        isPublic: true,
-        owner: { id: "2", name: "Sarah Chen", username: "sarah_twowheels" },
-        reputation: 4.5,
-        establishedAt: "2024-01-20",
-        status: "active",
-    },
-    {
-        id: "3",
-        name: "Thunder Riders MC",
-        description: "Speed enthusiasts and track day lovers.",
-        location: "Tempe, AZ",
-        memberCount: 42,
-        ridesCount: 18,
-        verified: false,
-        isPublic: true,
-        owner: { id: "3", name: "Raj Patel", username: "raj_thunder" },
-        reputation: 4.2,
-        establishedAt: "2025-08-10",
-        status: "pending",
-    },
-    {
-        id: "4",
-        name: "Night Riders AZ",
-        description: "City lights and cool evening rides through the valley.",
-        location: "Scottsdale, AZ",
-        memberCount: 89,
-        ridesCount: 34,
-        verified: true,
-        isPublic: false,
-        owner: { id: "4", name: "Sneha Reddy", username: "sneha_rides" },
-        reputation: 4.7,
-        establishedAt: "2024-05-22",
-        status: "active",
-    },
-    {
-        id: "5",
-        name: "Highway Kings",
-        description: "Long distance touring club for adventure seekers.",
-        location: "Flagstaff, AZ",
-        memberCount: 156,
-        ridesCount: 67,
-        verified: false,
-        isPublic: true,
-        owner: { id: "5", name: "Vikram Singh", username: "vikram_speed" },
-        reputation: 4.3,
-        establishedAt: "2025-11-05",
-        status: "pending",
-    },
-];
+interface AdminClub {
+    id: string;
+    name: string;
+    description?: string;
+    location?: string;
+    memberCount?: number;
+    ridesCount?: number;
+    verified: boolean;
+    isPublic?: boolean;
+    owner?: { id: string; name: string; username: string };
+    reputation?: number;
+    establishedAt?: string;
+    status?: string;
+    createdAt?: string;
+}
 
 export default function AdminClubsPage() {
+    const [clubs, setClubs] = useState<AdminClub[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [verifiedFilter, setVerifiedFilter] = useState<string>("all");
-    const [selectedClub, setSelectedClub] = useState<typeof mockClubs[0] | null>(null);
+    const [selectedClub, setSelectedClub] = useState<AdminClub | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
 
-    const filteredClubs = mockClubs.filter((club) => {
+    const fetchClubs = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const params: Record<string, boolean | string> = {};
+            if (verifiedFilter === "verified") params.verified = true;
+            if (verifiedFilter === "unverified") params.verified = false;
+            if (searchQuery) params.search = searchQuery;
+
+            const response = await adminAPI.getClubs(params);
+            setClubs(response.clubs || []);
+        } catch (err) {
+            setError("Failed to load clubs");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }, [verifiedFilter, searchQuery]);
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => {
+        fetchClubs();
+    }, [fetchClubs]);
+
+    const handleVerifyClub = async (clubId: string) => {
+        try {
+            await adminAPI.verifyClub(clubId);
+            fetchClubs();
+            setIsVerifyDialogOpen(false);
+        } catch (err) {
+            console.error("Failed to verify club", err);
+        }
+    };
+
+    const filteredClubs = clubs.filter((club) => {
         const matchesSearch =
-            club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            club.location.toLowerCase().includes(searchQuery.toLowerCase());
+            club.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            club.location?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === "all" || club.status === statusFilter;
-        const matchesVerified =
-            verifiedFilter === "all" ||
-            (verifiedFilter === "verified" && club.verified) ||
-            (verifiedFilter === "unverified" && !club.verified);
-        return matchesSearch && matchesStatus && matchesVerified;
+        return matchesSearch && matchesStatus;
     });
 
     const stats = {
-        total: mockClubs.length,
-        verified: mockClubs.filter((c) => c.verified).length,
-        pending: mockClubs.filter((c) => c.status === "pending").length,
-        totalMembers: mockClubs.reduce((sum, c) => sum + c.memberCount, 0),
+        total: clubs.length,
+        verified: clubs.filter((c) => c.verified).length,
+        pending: clubs.filter((c) => c.status === "pending").length,
+        totalMembers: clubs.reduce((sum, c) => sum + (c.memberCount || 0), 0),
     };
 
     return (
@@ -320,9 +297,9 @@ export default function AdminClubsPage() {
                                         </TableCell>
                                         <TableCell>
                                             <div>
-                                                <p className="text-sm">{club.owner.name}</p>
+                                                <p className="text-sm">{club.owner?.name || 'N/A'}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    @{club.owner.username}
+                                                    @{club.owner?.username || 'unknown'}
                                                 </p>
                                             </div>
                                         </TableCell>
@@ -409,7 +386,7 @@ export default function AdminClubsPage() {
                     {/* Pagination */}
                     <div className="flex items-center justify-between mt-4">
                         <p className="text-sm text-muted-foreground">
-                            Showing {filteredClubs.length} of {mockClubs.length} clubs
+                            Showing {filteredClubs.length} of {clubs.length} clubs
                         </p>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" disabled>
@@ -480,19 +457,21 @@ export default function AdminClubsPage() {
                             </div>
                             <div className="p-3 bg-muted rounded-lg">
                                 <p className="text-sm text-muted-foreground">Owner</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarFallback className="text-xs">
-                                            {selectedClub.owner.name.split(" ").map((n) => n[0]).join("")}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-medium text-sm">{selectedClub.owner.name}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            @{selectedClub.owner.username}
-                                        </p>
+                                {selectedClub.owner && (
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarFallback className="text-xs">
+                                                {selectedClub.owner.name.split(" ").map((n) => n[0]).join("")}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-medium text-sm">{selectedClub.owner.name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                @{selectedClub.owner.username}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     )}

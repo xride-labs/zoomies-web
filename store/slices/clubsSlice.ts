@@ -10,6 +10,7 @@ export interface Club {
   membersCount: number;
   ridesCount: number;
   isPrivate: boolean;
+  isPublic?: boolean;
   tags: string[];
   createdAt: string;
   founder: {
@@ -34,6 +35,10 @@ export interface ClubDetails extends Club {
   isMember: boolean;
   isPending: boolean;
   userRole: "member" | "officer" | "admin" | "founder" | null;
+  // Management settings (may not be present in all responses)
+  requireApproval?: boolean;
+  allowMemberInvites?: boolean;
+  showMemberList?: boolean;
 }
 
 interface ClubsState {

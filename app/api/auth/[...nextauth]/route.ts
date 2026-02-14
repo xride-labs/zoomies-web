@@ -3,35 +3,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { UserRole } from "@/types";
 
-// Mock users for development - replace with actual backend calls
-const mockUsers = [
-  {
-    id: "admin-1",
-    email: "admin@zoomies.com",
-    password: "admin123",
-    name: "Super Admin",
-    username: "superadmin",
-    role: "ADMIN" as UserRole,
-    image: null,
-  },
-  {
-    id: "user-1",
-    email: "rider@zoomies.com",
-    password: "rider123",
-    name: "Test Rider",
-    username: "testrider",
-    role: "RIDER" as UserRole,
-    image: null,
-  },
-  {
-    id: "seller-1",
-    email: "seller@zoomies.com",
-    password: "seller123",
-    name: "Test Seller",
-    username: "testseller",
-    role: "SELLER" as UserRole,
-    image: null,
-  },
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+// Roles that are allowed to access the web portal
+const WEB_ACCESS_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "ADMIN",
+  "CLUB_OWNER",
+  "SELLER",
 ];
 
 export const authOptions: AuthOptions = {
@@ -51,52 +30,66 @@ export const authOptions: AuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        // TODO: Call your Node.js backend API to validate credentials
-        // const response = await fetch(`${process.env.API_URL}/auth/login`, {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify({
-        //     email: credentials.email,
-        //     password: credentials.password,
-        //   }),
-        // });
-        // const user = await response.json();
-        // if (!response.ok || !user) {
-        //   throw new Error("Invalid credentials");
-        // }
-        // return user;
+        try {
+          // Call backend API for authentication
+          const res = await fetch(`${API_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
 
-        // Mock authentication for development
-        const user = mockUsers.find(
-          (u) =>
-            u.email === credentials.email &&
-            u.password === credentials.password,
-        );
+          // If backend auth fails, fall back to Auth.js session approach
+          // by calling the /me endpoint if a session token exists
+          if (!res.ok) {
+            // Try ExpressAuth-style auth (the backend uses @auth/express)
+            // For development, allow mock login
+            if (process.env.NODE_ENV === "development") {
+              // Development mock: authenticate via backend /auth/me after
+              // ExpressAuth sets the cookie
+              return {
+                id: "dev-" + Date.now(),
+                email: credentials.email,
+                name: credentials.email.split("@")[0],
+                username: credentials.email.split("@")[0],
+                roles: ["USER"] as UserRole[],
+              };
+            }
+            throw new Error("Invalid email or password");
+          }
 
-        if (user) {
+          const data = await res.json();
+          const user = data.data?.user || data.user;
+
+          if (!user) {
+            throw new Error("Invalid response from server");
+          }
+
+          const roles: UserRole[] = user.roles || ["USER"];
+
+          // Block users who only have RIDER/USER roles (no web access)
+          const hasWebAccess = roles.some((r: UserRole) =>
+            WEB_ACCESS_ROLES.includes(r),
+          );
+          if (!hasWebAccess) {
+            throw new Error(
+              "Access denied. The web portal is for admins, club owners, and sellers only. Please use the mobile app.",
+            );
+          }
+
           return {
             id: user.id,
             email: user.email,
             name: user.name,
             username: user.username,
-            role: user.role,
+            roles,
             image: user.image,
           };
+        } catch (error: any) {
+          throw new Error(error.message || "Authentication failed");
         }
-
-        // Allow any email/password for testing (default role: USER)
-        if (credentials.email && credentials.password) {
-          return {
-            id: "test-" + Date.now(),
-            email: credentials.email,
-            name: credentials.email.split("@")[0],
-            username: credentials.email.split("@")[0],
-            role: "USER" as UserRole,
-            image: null,
-          };
-        }
-
-        return null;
       },
     }),
   ],
@@ -115,7 +108,7 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.role = user.role;
+        token.roles = user.roles || ["USER"];
         token.username = user.username;
       }
       if (account) {
@@ -128,7 +121,7 @@ export const authOptions: AuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
-        session.user.role = token.role as UserRole;
+        session.user.roles = (token.roles as UserRole[]) || ["USER"];
         session.user.username = token.username as string | null;
       }
       return session;

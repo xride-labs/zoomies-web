@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { clubsAPI } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ import {
     Check,
     X,
     AlertTriangle,
+    Loader2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -59,30 +61,42 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Mock data
-const mockClub = {
-    id: "c1",
-    name: "Desert Eagles MC",
-    description: "Brotherhood of riders exploring the Arizona desert roads.",
-    location: "Phoenix, AZ",
-    isPublic: true,
-    requireApproval: true,
-    allowMemberInvites: true,
-    showMemberList: true,
-};
+interface ClubSettings {
+    id: string;
+    name: string;
+    description: string;
+    location: string;
+    isPublic: boolean;
+    requireApproval: boolean;
+    allowMemberInvites: boolean;
+    showMemberList: boolean;
+}
 
-const mockMembers = [
-    { id: "u1", name: "Mike Rodriguez", username: "roadking_mike", role: "FOUNDER", joinedAt: "2023-06-15", status: "active" },
-    { id: "u2", name: "Sarah Chen", username: "sarah_twowheels", role: "ADMIN", joinedAt: "2023-07-20", status: "active" },
-    { id: "u3", name: "Raj Patel", username: "raj_thunder", role: "OFFICER", joinedAt: "2023-08-10", status: "active" },
-    { id: "u4", name: "Sneha Reddy", username: "sneha_rides", role: "MEMBER", joinedAt: "2023-09-05", status: "active" },
-    { id: "u5", name: "Tom Johnson", username: "tomjmoto", role: "MEMBER", joinedAt: "2024-01-15", status: "active" },
-];
+interface Member {
+    id: string;
+    userId?: string;
+    name: string;
+    username?: string;
+    role: string;
+    joinedAt: string;
+    status?: string;
+    user?: {
+        id: string;
+        name: string;
+        image: string | null;
+    };
+}
 
-const mockPendingRequests = [
-    { id: "r1", user: { id: "u6", name: "Alex Thompson", username: "alex_rider" }, message: "Been riding for 5 years, looking for a solid crew!", requestedAt: "2026-01-28" },
-    { id: "r2", user: { id: "u7", name: "Maria Garcia", username: "maria_moto" }, message: "Love desert rides! Would be honored to join.", requestedAt: "2026-01-27" },
-];
+interface PendingRequest {
+    id: string;
+    user: {
+        id: string;
+        name: string;
+        username: string;
+    };
+    message: string;
+    requestedAt: string;
+}
 
 const roleOptions = ["MEMBER", "OFFICER", "ADMIN"];
 
@@ -97,11 +111,60 @@ export default function ClubManagePage() {
     const params = useParams();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("members");
-    const [clubSettings, setClubSettings] = useState(mockClub);
-    const [selectedMember, setSelectedMember] = useState<typeof mockMembers[0] | null>(null);
+    const [clubSettings, setClubSettings] = useState<ClubSettings | null>(null);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
+    const [selectedMember, setSelectedMember] = useState<Member | null>(null);
     const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
     const [isDeleteClubDialogOpen, setIsDeleteClubDialogOpen] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchClubData = async () => {
+            try {
+                setLoading(true);
+                const clubId = params.id as string;
+
+                const clubResponse = await clubsAPI.getClub(clubId);
+
+                const clubData = clubResponse.club;
+                setClubSettings({
+                    id: clubData.id,
+                    name: clubData.name,
+                    description: clubData.description,
+                    location: clubData.location,
+                    isPublic: clubData.isPublic ?? !clubData.isPrivate,
+                    requireApproval: clubData.requireApproval ?? true,
+                    allowMemberInvites: clubData.allowMemberInvites ?? true,
+                    showMemberList: clubData.showMemberList ?? true,
+                });
+
+                // Extract members from club details, transform to local Member type
+                const clubMembers = (clubData.members || []).map((m: { id?: string; userId?: string; role: string; joinedAt?: string; user?: { id: string; name: string; image: string | null } }) => ({
+                    id: m.id || m.userId || '',
+                    name: m.user?.name || 'Unknown',
+                    role: m.role,
+                    joinedAt: m.joinedAt || new Date().toISOString(),
+                    user: m.user,
+                }));
+                setMembers(clubMembers);
+
+                // No separate pending requests endpoint - set empty
+                setPendingRequests([]);
+            } catch (err) {
+                setError("Failed to load club management data");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (params.id) {
+            fetchClubData();
+        }
+    }, [params.id]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-US", {
@@ -134,12 +197,29 @@ export default function ClubManagePage() {
     };
 
     const handleDeleteClub = () => {
-        if (deleteConfirmText === mockClub.name) {
+        if (clubSettings && deleteConfirmText === clubSettings.name) {
             // API call would go here
             console.log("Deleting club");
             router.push("/app/clubs");
         }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error || !clubSettings) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <p className="text-muted-foreground">{error || "Club not found"}</p>
+                <Button onClick={() => router.back()}>Go Back</Button>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen p-4 lg:p-6">
@@ -150,7 +230,7 @@ export default function ClubManagePage() {
                 </Button>
                 <div>
                     <h1 className="text-2xl font-bold">Manage Club</h1>
-                    <p className="text-sm text-muted-foreground">{mockClub.name}</p>
+                    <p className="text-sm text-muted-foreground">{clubSettings.name}</p>
                 </div>
             </div>
 
@@ -163,9 +243,9 @@ export default function ClubManagePage() {
                     <TabsTrigger value="requests" className="gap-2">
                         <Bell className="w-4 h-4" />
                         Requests
-                        {mockPendingRequests.length > 0 && (
+                        {pendingRequests.length > 0 && (
                             <Badge variant="destructive" className="ml-1">
-                                {mockPendingRequests.length}
+                                {pendingRequests.length}
                             </Badge>
                         )}
                     </TabsTrigger>
@@ -183,7 +263,7 @@ export default function ClubManagePage() {
                 <TabsContent value="members">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Club Members ({mockMembers.length})</CardTitle>
+                            <CardTitle>Club Members ({members.length})</CardTitle>
                             <CardDescription>
                                 Manage member roles and permissions
                             </CardDescription>
@@ -200,7 +280,7 @@ export default function ClubManagePage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {mockMembers.map((member) => (
+                                    {members.map((member) => (
                                         <TableRow key={member.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
@@ -291,14 +371,14 @@ export default function ClubManagePage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {mockPendingRequests.length === 0 ? (
+                            {pendingRequests.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground">
                                     No pending requests
                                 </div>
                             ) : (
                                 <ScrollArea className="h-[400px]">
                                     <div className="space-y-4">
-                                        {mockPendingRequests.map((request) => (
+                                        {pendingRequests.map((request) => (
                                             <div
                                                 key={request.id}
                                                 className="flex items-start gap-4 p-4 border rounded-lg"
@@ -541,7 +621,7 @@ export default function ClubManagePage() {
                     </DialogHeader>
                     <div className="py-4">
                         <Label htmlFor="confirm">
-                            Type <strong>{mockClub.name}</strong> to confirm deletion
+                            Type <strong>{clubSettings.name}</strong> to confirm deletion
                         </Label>
                         <Input
                             id="confirm"
@@ -563,7 +643,7 @@ export default function ClubManagePage() {
                         </Button>
                         <Button
                             variant="destructive"
-                            disabled={deleteConfirmText !== mockClub.name}
+                            disabled={deleteConfirmText !== clubSettings.name}
                             onClick={handleDeleteClub}
                         >
                             Delete Forever

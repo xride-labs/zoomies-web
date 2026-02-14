@@ -79,7 +79,7 @@ export function HowItWorksSection() {
     };
 
     return (
-        <section id="how-it-works" className="py-24 bg-linear-to-b from-orange-50/50 to-white">
+        <section id="how-it-works" className="py-24 bg-linear-to-b from-[#1e1e1e] to-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section header */}
                 <motion.div
@@ -90,7 +90,7 @@ export function HowItWorksSection() {
                     viewport={{ once: true }}
                 >
                     <motion.div variants={itemVariants}>
-                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0">
+                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-brand-red/10 text-brand-red-light border-0">
                             How It Works
                         </Badge>
                     </motion.div>
@@ -129,16 +129,16 @@ export function HowItWorksSection() {
                             >
                                 <div className="relative">
                                     <motion.div
-                                        className="absolute inset-0 bg-linear-to-br from-primary/20 to-amber-200/40 rounded-3xl transform rotate-3"
+                                        className="absolute inset-0 bg-linear-to-br from-brand-red/20 to-brand-teal/20 rounded-3xl transform rotate-3"
                                         animate={{ rotate: [3, 5, 3] }}
                                         transition={{ duration: 3, repeat: Infinity }}
                                     />
                                     <motion.div
-                                        className="relative bg-white rounded-3xl shadow-xl border border-border overflow-hidden aspect-4/3"
+                                        className="relative bg-card rounded-3xl shadow-xl border border-border overflow-hidden aspect-4/3"
                                         whileHover={{ scale: 1.05 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <div className="absolute inset-0 bg-linear-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-linear-to-br from-[#222222] to-[#2a2a2a] flex items-center justify-center">
                                             <div className="text-center p-8">
                                                 <motion.div
                                                     className="w-24 h-24 mx-auto mb-4 flex items-center justify-center"
@@ -185,7 +185,7 @@ export function HowItWorksSection() {
                                     className="inline-flex items-center gap-4 mb-4"
                                     whileHover={{ scale: 1.1 }}
                                 >
-                                    <span className="text-6xl font-bold text-primary/20">{step.step}</span>
+                                    <span className="text-6xl font-bold text-brand-red-light/20">{step.step}</span>
                                 </motion.div>
                                 <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
                                     {step.title}

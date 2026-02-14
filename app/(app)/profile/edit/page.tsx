@@ -1,39 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { userAPI } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronLeft, Camera } from "lucide-react";
+import { ChevronLeft, Camera, Loader2 } from "lucide-react";
+
+interface ProfileData {
+    name: string;
+    username: string;
+    bio: string;
+    location: string;
+    email: string;
+    phone: string;
+}
 
 export default function EditProfilePage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [profileData, setProfileData] = useState({
-        name: "Mike Rodriguez",
-        username: "roadking_mike",
-        bio: "Full-time rider, part-time mechanic. 15 years on two wheels. Let's ride! 🏍️",
-        location: "Phoenix, AZ",
-        email: "mike@example.com",
-        phone: "+1 (555) 123-4567",
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [profileData, setProfileData] = useState<ProfileData>({
+        name: "",
+        username: "",
+        bio: "",
+        location: "",
+        email: "",
+        phone: "",
     });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                setLoading(true);
+                const response = await userAPI.getProfile();
+                const userData = response.user;
+                setProfileData({
+                    name: userData.name || "",
+                    username: userData.username || "",
+                    bio: userData.bio || "",
+                    location: userData.location || "",
+                    email: userData.email || "",
+                    phone: (userData as { phone?: string }).phone || "",
+                });
+            } catch (err) {
+                setError("Failed to load profile");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // API call would go here
-        console.log("Updating profile:", profileData);
-
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        router.push("/app/profile/me");
+        try {
+            await userAPI.updateProfile({
+                name: profileData.name,
+                username: profileData.username,
+                bio: profileData.bio,
+                location: profileData.location,
+                email: profileData.email,
+            });
+            router.push("/app/profile/me");
+        } catch (err) {
+            console.error("Failed to update profile:", err);
+            setIsSubmitting(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <p className="text-muted-foreground">{error}</p>
+                <Button onClick={() => router.back()}>Go Back</Button>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen p-4 lg:p-6 max-w-2xl mx-auto">

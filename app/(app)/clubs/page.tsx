@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,68 +11,57 @@ import {
     Users,
     Calendar,
     ChevronRight,
-    Plus
+    Plus,
+    Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { clubsAPI } from "@/lib/services";
 
-// Mock data
-const mockMyClubs = [
-    {
-        id: "c1",
-        name: "Desert Eagles MC",
-        description: "Brotherhood of riders exploring the Arizona desert roads.",
-        avatar: null,
-        location: "Phoenix, AZ",
-        membersCount: 128,
-        ridesCount: 45,
-        role: "member" as const,
-        unreadMessages: 5,
-    },
-    {
-        id: "c2",
-        name: "Phoenix Riders",
-        description: "Casual weekend riders. All skill levels welcome.",
-        avatar: null,
-        location: "Phoenix, AZ",
-        membersCount: 67,
-        ridesCount: 23,
-        role: "officer" as const,
-        unreadMessages: 0,
-    },
-];
-
-const mockDiscoveredClubs = [
-    {
-        id: "c3",
-        name: "Mountain Road Warriors",
-        description: "Chasing twisties in the mountains. Experienced riders only.",
-        avatar: null,
-        location: "Flagstaff, AZ",
-        membersCount: 89,
-        ridesCount: 67,
-    },
-    {
-        id: "c4",
-        name: "Route 66 Legends",
-        description: "Keeping the spirit of Route 66 alive, one ride at a time.",
-        avatar: null,
-        location: "Kingman, AZ",
-        membersCount: 234,
-        ridesCount: 112,
-    },
-    {
-        id: "c5",
-        name: "Night Riders AZ",
-        description: "City lights and cool evening rides through the valley.",
-        avatar: null,
-        location: "Scottsdale, AZ",
-        membersCount: 156,
-        ridesCount: 78,
-    },
-];
+interface Club {
+    id: string;
+    name: string;
+    description: string;
+    avatar: string | null;
+    location: string;
+    membersCount: number;
+    ridesCount: number;
+    role?: "member" | "officer" | "president";
+    unreadMessages?: number;
+}
 
 export default function ClubsPage() {
     const [activeTab, setActiveTab] = useState<"my" | "discover">("my");
+    const [myClubs, setMyClubs] = useState<Club[]>([]);
+    const [discoveredClubs, setDiscoveredClubs] = useState<Club[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchClubs();
+    }, []);
+
+    const fetchClubs = async () => {
+        try {
+            setLoading(true);
+            const [myRes, discoverRes] = await Promise.all([
+                clubsAPI.getMyClubs(),
+                clubsAPI.discoverClubs()
+            ]);
+            setMyClubs(myRes.clubs || []);
+            setDiscoveredClubs(discoverRes.clubs || []);
+        } catch (err) {
+            console.error("Failed to fetch clubs:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center py-24">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-6">
@@ -97,9 +86,9 @@ export default function ClubsPage() {
             {activeTab === "my" ? (
                 <>
                     {/* My Clubs */}
-                    {mockMyClubs.length > 0 ? (
+                    {myClubs.length > 0 ? (
                         <div className="space-y-4">
-                            {mockMyClubs.map((club) => (
+                            {myClubs.map((club) => (
                                 <Link key={club.id} href={`/app/clubs/${club.id}`}>
                                     <Card className="hover:border-primary/50 transition-colors">
                                         <CardContent className="p-4">
@@ -114,7 +103,7 @@ export default function ClubsPage() {
                                                         <div>
                                                             <h3 className="font-semibold flex items-center gap-2">
                                                                 {club.name}
-                                                                {club.unreadMessages > 0 && (
+                                                                {(club.unreadMessages ?? 0) > 0 && (
                                                                     <Badge className="h-5 min-w-5 flex items-center justify-center">
                                                                         {club.unreadMessages}
                                                                     </Badge>
@@ -193,7 +182,7 @@ export default function ClubsPage() {
                     {/* Discovered Clubs */}
                     <h2 className="font-semibold mb-4">Clubs Near You</h2>
                     <div className="space-y-4">
-                        {mockDiscoveredClubs.map((club) => (
+                        {discoveredClubs.map((club) => (
                             <Link key={club.id} href={`/app/clubs/${club.id}`}>
                                 <Card className="hover:border-primary/50 transition-colors">
                                     <CardContent className="p-4">

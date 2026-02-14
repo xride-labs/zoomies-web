@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { marketplaceAPI } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import {
     MoreHorizontal,
     ChevronRight,
     Image as ImageIcon,
+    Loader2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -39,60 +41,42 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
-// Mock listing data
-const mockListing = {
-    id: "l1",
-    title: "2021 Ducati Panigale V4S",
-    description: `Beautiful 2021 Ducati Panigale V4S in Rosso Red. This bike is in excellent condition with only 3,200 miles. 
+interface Seller {
+    id: string;
+    name: string;
+    username: string;
+    avatar: string | null;
+    rating?: number;
+    reviewsCount?: number;
+    verified?: boolean;
+    memberSince?: string;
+    responseTime?: string;
+    clubs?: { id: string; name: string }[];
+}
 
-Features include:
-- Öhlins electronic suspension (Smart EC 2.0)
-- Brembo Stylema calipers
-- Forged Marchesini wheels
-- Quick shifter (up/down)
-- Ducati Data Analyzer
-- Carbon fiber front fender and rear hugger
+interface SellerListing {
+    id: string;
+    title: string;
+    price: number;
+    image: string | null;
+}
 
-Recently serviced at authorized Ducati dealer. All maintenance records available. Clean title in hand.
-
-Reason for selling: Upgrading to the Superleggera V4.
-
-No lowballers, I know what I have. Serious inquiries only.`,
-    price: 24500,
-    images: [null, null, null, null, null],
-    category: "Motorcycles",
-    condition: "Excellent",
-    location: "Scottsdale, AZ",
-    listedAt: "2026-01-25",
-    views: 234,
-    saves: 18,
-    seller: {
-        id: "u1",
-        name: "Mike Rodriguez",
-        username: "roadking_mike",
-        avatar: null,
-        rating: 4.9,
-        reviewsCount: 23,
-        verified: true,
-        memberSince: "2023-06",
-        responseTime: "Usually within 1 hour",
-    },
-    specifications: {
-        year: "2021",
-        make: "Ducati",
-        model: "Panigale V4S",
-        mileage: "3,200 miles",
-        color: "Rosso Red",
-        engine: "1,103cc V4",
-        transmission: "6-speed",
-    },
-};
-
-const mockSellerListings = [
-    { id: "l2", title: "Dainese Racing Suit", price: 1200, image: null },
-    { id: "l3", title: "Shoei X-Fifteen Helmet", price: 850, image: null },
-    { id: "l4", title: "Ducati OEM Parts Bundle", price: 450, image: null },
-];
+interface Listing {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    images: (string | null)[];
+    category: string;
+    condition: string;
+    location: string;
+    listedAt?: string;
+    views?: number;
+    saves?: number;
+    seller?: Seller;
+    specifications?: Record<string, string>;
+    sellerListings?: SellerListing[];
+}
 
 export default function ListingDetailPage() {
     const params = useParams();
@@ -102,6 +86,29 @@ export default function ListingDetailPage() {
     const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [message, setMessage] = useState("");
+    const [listing, setListing] = useState<Listing | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchListing = async () => {
+            try {
+                setLoading(true);
+                const listingId = params.id as string;
+                const response = await marketplaceAPI.getListing(listingId);
+                setListing(response.listing);
+            } catch (err) {
+                setError("Failed to load listing details");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (params.id) {
+            fetchListing();
+        }
+    }, [params.id]);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat("en-US", {
@@ -124,6 +131,26 @@ export default function ListingDetailPage() {
         setIsContactDialogOpen(false);
         setMessage("");
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error || !listing) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <p className="text-muted-foreground">{error || "Listing not found"}</p>
+                <Button onClick={() => router.back()}>Go Back</Button>
+            </div>
+        );
+    }
+
+    const images = listing.images || [];
+    const sellerListings = listing.sellerListings || [];
 
     return (
         <div className="min-h-screen pb-24">
@@ -165,11 +192,11 @@ export default function ListingDetailPage() {
 
             {/* Image Gallery */}
             <div className="relative">
-                <div className="aspect-[4/3] bg-muted flex items-center justify-center">
+                <div className="aspect-4/3 bg-muted flex items-center justify-center">
                     <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
                 </div>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {mockListing.images.map((_, index) => (
+                    {images.map((_, index) => (
                         <button
                             key={index}
                             className={`w-2 h-2 rounded-full transition-colors ${index === selectedImageIndex ? "bg-white" : "bg-white/50"
@@ -182,7 +209,7 @@ export default function ListingDetailPage() {
 
             {/* Thumbnail Gallery */}
             <div className="flex gap-2 p-4 overflow-x-auto">
-                {mockListing.images.map((_, index) => (
+                {images.map((_, index) => (
                     <button
                         key={index}
                         className={`w-16 h-16 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center border-2 transition-colors ${index === selectedImageIndex ? "border-primary" : "border-transparent"
@@ -198,94 +225,100 @@ export default function ListingDetailPage() {
                 {/* Title & Price */}
                 <div>
                     <div className="flex items-start justify-between gap-4">
-                        <h1 className="text-2xl font-bold">{mockListing.title}</h1>
+                        <h1 className="text-2xl font-bold">{listing.title}</h1>
                     </div>
                     <p className="text-3xl font-bold text-primary mt-2">
-                        {formatPrice(mockListing.price)}
+                        {formatPrice(listing.price)}
                     </p>
                     <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                             <MapPin className="w-4 h-4" />
-                            {mockListing.location}
+                            {listing.location}
                         </span>
-                        <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(mockListing.listedAt)}
-                        </span>
+                        {listing.listedAt && (
+                            <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {formatDate(listing.listedAt)}
+                            </span>
+                        )}
                     </div>
                     <div className="flex gap-2 mt-3">
-                        <Badge variant="secondary">{mockListing.category}</Badge>
-                        <Badge variant="outline">{mockListing.condition}</Badge>
+                        <Badge variant="secondary">{listing.category}</Badge>
+                        <Badge variant="outline">{listing.condition}</Badge>
                     </div>
                 </div>
 
                 <Separator />
 
                 {/* Specifications */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Specifications</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-2 gap-4">
-                            {Object.entries(mockListing.specifications).map(([key, value]) => (
-                                <div key={key}>
-                                    <p className="text-xs text-muted-foreground capitalize">
-                                        {key.replace(/([A-Z])/g, " $1").trim()}
-                                    </p>
-                                    <p className="font-medium">{value}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                {listing.specifications && Object.keys(listing.specifications).length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Specifications</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                                {Object.entries(listing.specifications).map(([key, value]) => (
+                                    <div key={key}>
+                                        <p className="text-xs text-muted-foreground capitalize">
+                                            {key.replace(/([A-Z])/g, " $1").trim()}
+                                        </p>
+                                        <p className="font-medium">{value}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Description */}
                 <div>
                     <h2 className="font-semibold mb-3">Description</h2>
                     <p className="text-muted-foreground whitespace-pre-line">
-                        {mockListing.description}
+                        {listing.description}
                     </p>
                 </div>
 
                 <Separator />
 
                 {/* Seller Info */}
-                <Card>
-                    <CardContent className="p-4">
-                        <Link href={`/app/profile/${mockListing.seller.username}`}>
-                            <div className="flex items-center gap-4">
-                                <Avatar className="w-14 h-14">
-                                    <AvatarFallback>
-                                        {mockListing.seller.name.split(" ").map((n) => n[0]).join("")}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-semibold">{mockListing.seller.name}</p>
-                                        {mockListing.seller.verified && (
-                                            <ShieldCheck className="w-4 h-4 text-blue-500" />
-                                        )}
+                {listing.seller && (
+                    <Card>
+                        <CardContent className="p-4">
+                            <Link href={`/app/profile/${listing.seller.username}`}>
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="w-14 h-14">
+                                        <AvatarFallback>
+                                            {listing.seller.name.split(" ").map((n) => n[0]).join("")}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-semibold">{listing.seller.name}</p>
+                                            {listing.seller.verified && (
+                                                <ShieldCheck className="w-4 h-4 text-blue-500" />
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <span className="flex items-center gap-1">
+                                                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                                {listing.seller.rating || 0}
+                                            </span>
+                                            <span>({listing.seller.reviewsCount || 0} reviews)</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {listing.seller.responseTime || ''}
+                                        </p>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <span className="flex items-center gap-1">
-                                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                                            {mockListing.seller.rating}
-                                        </span>
-                                        <span>({mockListing.seller.reviewsCount} reviews)</span>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {mockListing.seller.responseTime}
-                                    </p>
+                                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                            </div>
-                        </Link>
-                    </CardContent>
-                </Card>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* More from Seller */}
-                {mockSellerListings.length > 0 && (
+                {sellerListings.length > 0 && (
                     <div>
                         <div className="flex items-center justify-between mb-3">
                             <h2 className="font-semibold">More from this seller</h2>
@@ -294,16 +327,16 @@ export default function ListingDetailPage() {
                             </Button>
                         </div>
                         <div className="flex gap-3 overflow-x-auto pb-2">
-                            {mockSellerListings.map((listing) => (
-                                <Link key={listing.id} href={`/app/marketplace/${listing.id}`}>
+                            {sellerListings.map((item) => (
+                                <Link key={item.id} href={`/app/marketplace/${item.id}`}>
                                     <Card className="w-36 flex-shrink-0">
                                         <CardContent className="p-2">
                                             <div className="aspect-square rounded-md bg-muted flex items-center justify-center mb-2">
                                                 <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
                                             </div>
-                                            <p className="text-sm font-medium truncate">{listing.title}</p>
+                                            <p className="text-sm font-medium truncate">{item.title}</p>
                                             <p className="text-sm text-primary font-semibold">
-                                                {formatPrice(listing.price)}
+                                                {formatPrice(item.price)}
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -315,9 +348,9 @@ export default function ListingDetailPage() {
 
                 {/* Stats */}
                 <div className="flex items-center justify-center gap-6 py-4 text-sm text-muted-foreground">
-                    <span>{mockListing.views} views</span>
+                    <span>{listing.views} views</span>
                     <span>•</span>
-                    <span>{mockListing.saves} saves</span>
+                    <span>{listing.saves} saves</span>
                 </div>
             </div>
 
@@ -338,7 +371,7 @@ export default function ListingDetailPage() {
                     <DialogHeader>
                         <DialogTitle>Message Seller</DialogTitle>
                         <DialogDescription>
-                            Send a message to {mockListing.seller.name} about this listing
+                            Send a message to {listing.seller?.name || 'the seller'} about this listing
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
@@ -346,7 +379,7 @@ export default function ListingDetailPage() {
                         <Textarea
                             id="message"
                             className="mt-2"
-                            placeholder={`Hi, I'm interested in your ${mockListing.title}...`}
+                            placeholder={`Hi, I'm interested in your ${listing.title}...`}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             rows={4}

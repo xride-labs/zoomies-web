@@ -54,16 +54,16 @@ export function HeroSection() {
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
             {/* Background gradient */}
-            <div className="absolute inset-0 bg-linear-to-br from-orange-50 via-white to-amber-50" />
+            <div className="absolute inset-0 bg-linear-to-br from-[#1a1a1a] via-[#222222] to-[#1a1a1a]" />
 
             {/* Decorative elements */}
             <motion.div
-                className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"
+                className="absolute top-20 left-10 w-72 h-72 bg-brand-red/10 rounded-full blur-3xl"
                 animate={{ x: [0, 20, -20, 0], y: [0, 30, -10, 0] }}
                 transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
-                className="absolute bottom-20 right-10 w-96 h-96 bg-amber-200/30 rounded-full blur-3xl"
+                className="absolute bottom-20 right-10 w-96 h-96 bg-brand-teal/10 rounded-full blur-3xl"
                 animate={{ x: [0, -30, 10, 0], y: [0, -20, 20, 0] }}
                 transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -78,7 +78,7 @@ export function HeroSection() {
                         animate="visible"
                     >
                         <motion.div variants={itemVariants}>
-                            <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0 inline-flex items-center gap-2">
+                            <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium bg-brand-red/10 text-brand-red-light border-0 inline-flex items-center gap-2">
                                 <Image src="/motorbike.png" alt="Motorbike" width={16} height={16} />
                                 Built for Real Bikers
                             </Badge>
@@ -89,7 +89,7 @@ export function HeroSection() {
                             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
                         >
                             Ride Together,{" "}
-                            <span className="text-primary">Build Your Tribe</span>
+                            <span className="text-brand-red-light">Build Your Tribe</span>
                         </motion.h1>
 
                         <motion.p
@@ -158,20 +158,20 @@ export function HeroSection() {
                                 animate={{ y: [0, -10, 0] }}
                                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                             >
-                                <div className="w-full h-full bg-white rounded-[2.5rem] overflow-hidden relative">
+                                <div className="w-full h-full bg-[#1a1a1a] rounded-[2.5rem] overflow-hidden relative">
                                     {/* Phone content placeholder */}
-                                    <div className="absolute inset-0 bg-linear-to-b from-primary/5 to-primary/20 flex flex-col items-center justify-center p-6">
+                                    <div className="absolute inset-0 bg-linear-to-b from-brand-red/5 to-brand-red/20 flex flex-col items-center justify-center p-6">
                                         <motion.div
-                                            className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-4"
+                                            className="w-20 h-20 bg-brand-red/20 rounded-full flex items-center justify-center mb-4"
                                             animate={{ scale: [1, 1.1, 1] }}
                                             transition={{ duration: 2, repeat: Infinity }}
                                         >
-                                            <Users className="w-10 h-10 text-primary" />
+                                            <Users className="w-10 h-10 text-brand-red-light" />
                                         </motion.div>
                                         <div className="text-center">
                                             <div className="font-semibold text-foreground mb-1">Desert Eagles MC</div>
                                             <div className="text-sm text-muted-foreground mb-4">128 members • Phoenix, AZ</div>
-                                            <Badge className="bg-green-100 text-green-700 border-0">
+                                            <Badge className="bg-brand-green/10 text-brand-green border-0">
                                                 <MapPin className="w-3 h-3 mr-1" />
                                                 Ride in Progress
                                             </Badge>
@@ -182,14 +182,14 @@ export function HeroSection() {
                                             {[...Array(5)].map((_, i) => (
                                                 <motion.div
                                                     key={i}
-                                                    className="w-12 h-12 rounded-full bg-linear-to-br from-orange-300 to-amber-400 border-3 border-white flex items-center justify-center text-white font-semibold shadow-md"
+                                                    className="w-12 h-12 rounded-full bg-linear-to-br from-brand-red to-brand-red-light border-3 border-brand-grey flex items-center justify-center text-white font-semibold shadow-md"
                                                     animate={{ y: [0, -5, 0] }}
                                                     transition={{ duration: 2, delay: i * 0.1, repeat: Infinity }}
                                                 >
                                                     {String.fromCharCode(65 + i)}
                                                 </motion.div>
                                             ))}
-                                            <div className="w-12 h-12 rounded-full bg-secondary border-3 border-white flex items-center justify-center text-white text-xs font-semibold shadow-md">
+                                            <div className="w-12 h-12 rounded-full bg-secondary border-3 border-brand-grey flex items-center justify-center text-white text-xs font-semibold shadow-md">
                                                 +23
                                             </div>
                                         </div>
@@ -199,14 +199,14 @@ export function HeroSection() {
 
                             {/* Floating cards */}
                             <motion.div
-                                className="absolute -left-16 top-20 bg-white rounded-2xl shadow-xl p-4 border border-border"
+                                className="absolute -left-16 top-20 bg-card rounded-2xl shadow-xl p-4 border border-border"
                                 variants={cardVariants}
                                 initial="hidden"
                                 animate={["visible", "float"]}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                        <MapPin className="w-5 h-5 text-green-600" />
+                                    <div className="w-10 h-10 bg-brand-green/10 rounded-full flex items-center justify-center">
+                                        <MapPin className="w-5 h-5 text-brand-green" />
                                     </div>
                                     <div>
                                         <div className="font-medium text-sm">Live Tracking</div>
@@ -216,15 +216,15 @@ export function HeroSection() {
                             </motion.div>
 
                             <motion.div
-                                className="absolute -right-8 bottom-32 bg-white rounded-2xl shadow-xl p-4 border border-border"
+                                className="absolute -right-8 bottom-32 bg-card rounded-2xl shadow-xl p-4 border border-border"
                                 variants={cardVariants}
                                 initial="hidden"
                                 animate={["visible", "float"]}
                                 transition={{ delay: 0.2 }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                                        <Zap className="w-5 h-5 text-amber-600" />
+                                    <div className="w-10 h-10 bg-brand-teal/10 rounded-full flex items-center justify-center">
+                                        <Zap className="w-5 h-5 text-brand-teal" />
                                     </div>
                                     <div>
                                         <div className="font-medium text-sm">Weekend Ride</div>

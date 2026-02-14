@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { clubsAPI, ridesAPI } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
     Trophy,
     Star,
     Image as ImageIcon,
+    Loader2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -42,53 +44,60 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Mock club data - in real app this would come from API
-const mockClub = {
-    id: "c1",
-    name: "Desert Eagles MC",
-    description: "Brotherhood of riders exploring the Arizona desert roads. We organize weekly rides, monthly meetups, and annual road trips. All skill levels welcome, but passion for riding is required!",
-    location: "Phoenix, AZ",
-    establishedAt: "2023-06-15",
-    verified: true,
-    image: null,
-    coverImage: null,
-    clubType: "Riding Club",
-    isPublic: true,
-    memberCount: 128,
-    ridesCount: 45,
-    trophyCount: 12,
-    reputation: 4.8,
-    owner: {
-        id: "u1",
-        name: "Mike Rodriguez",
-        username: "roadking_mike",
-        avatar: null,
-    },
-};
+interface ClubOwner {
+    id: string;
+    name: string;
+    username: string;
+    avatar: string | null;
+}
 
-const mockMembers = [
-    { id: "u1", name: "Mike Rodriguez", username: "roadking_mike", role: "FOUNDER", joinedAt: "2023-06-15", ridesCount: 45 },
-    { id: "u2", name: "Sarah Chen", username: "sarah_twowheels", role: "ADMIN", joinedAt: "2023-07-20", ridesCount: 38 },
-    { id: "u3", name: "Raj Patel", username: "raj_thunder", role: "OFFICER", joinedAt: "2023-08-10", ridesCount: 32 },
-    { id: "u4", name: "Sneha Reddy", username: "sneha_rides", role: "MEMBER", joinedAt: "2023-09-05", ridesCount: 28 },
-    { id: "u5", name: "Tom Johnson", username: "tomjmoto", role: "MEMBER", joinedAt: "2024-01-15", ridesCount: 15 },
-    { id: "u6", name: "Priya Patel", username: "priya_wheels", role: "MEMBER", joinedAt: "2024-03-20", ridesCount: 8 },
-];
+interface ClubMember {
+    id: string;
+    name: string;
+    username?: string;
+    role: string;
+    joinedAt?: string;
+    ridesCount?: number;
+    user?: {
+        id: string;
+        name: string;
+        image: string | null;
+    };
+}
 
-const mockRides = [
-    { id: "r1", title: "Superstition Mountain Loop", scheduledAt: "2026-02-01T06:00:00Z", participantCount: 12, status: "PLANNED" },
-    { id: "r2", title: "Weekend City Cruise", scheduledAt: "2026-01-31T17:00:00Z", participantCount: 8, status: "COMPLETED" },
-    { id: "r3", title: "Desert Night Ride", scheduledAt: "2026-01-30T20:00:00Z", participantCount: 15, status: "COMPLETED" },
-];
+interface ClubRide {
+    id: string;
+    title: string;
+    scheduledAt: string;
+    participantCount?: number;
+    status: string;
+}
 
-const mockGallery = [
-    { id: "g1", url: null },
-    { id: "g2", url: null },
-    { id: "g3", url: null },
-    { id: "g4", url: null },
-    { id: "g5", url: null },
-    { id: "g6", url: null },
-];
+interface GalleryItem {
+    id: string;
+    url: string | null;
+}
+
+interface Club {
+    id: string;
+    name: string;
+    description: string;
+    location: string;
+    establishedAt?: string;
+    verified?: boolean;
+    image?: string | null;
+    coverImage?: string | null;
+    clubType?: string;
+    isPublic?: boolean;
+    memberCount?: number;
+    ridesCount?: number;
+    trophyCount?: number;
+    reputation?: number;
+    owner?: ClubOwner;
+    members?: ClubMember[];
+    rides?: ClubRide[];
+    gallery?: GalleryItem[];
+}
 
 const roleColors = {
     FOUNDER: "bg-amber-100 text-amber-700",
@@ -104,6 +113,39 @@ export default function ClubDetailPage() {
     const [isPending, setIsPending] = useState(false);
     const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("about");
+    const [club, setClub] = useState<Club | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchClubData = async () => {
+            try {
+                setLoading(true);
+                const clubId = params.id as string;
+
+                const [clubResponse, ridesResponse] = await Promise.all([
+                    clubsAPI.getClub(clubId),
+                    ridesAPI.getClubRides(clubId),
+                ]);
+
+                const clubData = clubResponse.club;
+
+                setClub({
+                    ...clubData,
+                    rides: ridesResponse.rides || [],
+                });
+            } catch (err) {
+                setError("Failed to load club details");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (params.id) {
+            fetchClubData();
+        }
+    }, [params.id]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-US", {
@@ -121,6 +163,27 @@ export default function ClubDetailPage() {
     const handleLeaveClub = () => {
         setIsMember(false);
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error || !club) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <p className="text-muted-foreground">{error || "Club not found"}</p>
+                <Button onClick={() => router.back()}>Go Back</Button>
+            </div>
+        );
+    }
+
+    const members = club.members || [];
+    const rides = club.rides || [];
+    const gallery = club.gallery || [];
 
     return (
         <div className="min-h-screen">
@@ -161,35 +224,37 @@ export default function ClubDetailPage() {
                 <div className="flex flex-col md:flex-row md:items-end gap-4">
                     <Avatar className="w-32 h-32 border-4 border-background">
                         <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                            {mockClub.name.substring(0, 2).toUpperCase()}
+                            {club.name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 pb-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <h1 className="text-2xl md:text-3xl font-bold">{mockClub.name}</h1>
-                            {mockClub.verified && (
+                            <h1 className="text-2xl md:text-3xl font-bold">{club.name}</h1>
+                            {club.verified && (
                                 <ShieldCheck className="w-6 h-6 text-blue-500" />
                             )}
-                            {!mockClub.isPublic && (
+                            {!club.isPublic && (
                                 <Badge variant="outline">Private</Badge>
                             )}
                         </div>
                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
                             <span className="flex items-center gap-1">
                                 <MapPin className="w-4 h-4" />
-                                {mockClub.location}
+                                {club.location}
                             </span>
                             <span className="flex items-center gap-1">
                                 <Users className="w-4 h-4" />
-                                {mockClub.memberCount} members
+                                {club.memberCount || 0} members
                             </span>
-                            <span className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                Est. {formatDate(mockClub.establishedAt)}
-                            </span>
+                            {club.establishedAt && (
+                                <span className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    Est. {formatDate(club.establishedAt)}
+                                </span>
+                            )}
                             <span className="flex items-center gap-1">
                                 <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                                {mockClub.reputation}
+                                {club.reputation || 0}
                             </span>
                         </div>
                     </div>
@@ -223,19 +288,19 @@ export default function ClubDetailPage() {
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
                     <Card>
                         <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-bold">{mockClub.memberCount}</p>
+                            <p className="text-2xl font-bold">{club.memberCount}</p>
                             <p className="text-sm text-muted-foreground">Members</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-bold">{mockClub.ridesCount}</p>
+                            <p className="text-2xl font-bold">{club.ridesCount}</p>
                             <p className="text-sm text-muted-foreground">Rides</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-bold">{mockClub.trophyCount}</p>
+                            <p className="text-2xl font-bold">{club.trophyCount}</p>
                             <p className="text-sm text-muted-foreground">Trophies</p>
                         </CardContent>
                     </Card>
@@ -243,7 +308,7 @@ export default function ClubDetailPage() {
                         <CardContent className="p-4 text-center">
                             <p className="text-2xl font-bold flex items-center justify-center gap-1">
                                 <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                                {mockClub.reputation}
+                                {club.reputation}
                             </p>
                             <p className="text-sm text-muted-foreground">Rating</p>
                         </CardContent>
@@ -268,16 +333,16 @@ export default function ClubDetailPage() {
                                     <CardTitle>About</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-muted-foreground">{mockClub.description}</p>
+                                    <p className="text-muted-foreground">{club.description}</p>
                                     <Separator className="my-4" />
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
                                             <Shield className="w-4 h-4 text-muted-foreground" />
-                                            <span className="text-sm">{mockClub.clubType}</span>
+                                            <span className="text-sm">{club.clubType}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Trophy className="w-4 h-4 text-muted-foreground" />
-                                            <span className="text-sm">{mockClub.trophyCount} trophies earned</span>
+                                            <span className="text-sm">{club.trophyCount} trophies earned</span>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -289,7 +354,7 @@ export default function ClubDetailPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
-                                        {mockMembers
+                                        {members
                                             .filter((m) => ["FOUNDER", "ADMIN", "OFFICER"].includes(m.role))
                                             .map((member) => (
                                                 <Link
@@ -324,7 +389,7 @@ export default function ClubDetailPage() {
                         <Card>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
-                                    <CardTitle>Members ({mockMembers.length})</CardTitle>
+                                    <CardTitle>Members ({members.length})</CardTitle>
                                     {isMember && (
                                         <Button variant="outline" size="sm">
                                             <UserPlus className="w-4 h-4 mr-2" />
@@ -336,7 +401,7 @@ export default function ClubDetailPage() {
                             <CardContent>
                                 <ScrollArea className="h-[400px]">
                                     <div className="space-y-2">
-                                        {mockMembers.map((member) => (
+                                        {members.map((member) => (
                                             <Link
                                                 key={member.id}
                                                 href={`/app/profile/${member.username}`}
@@ -378,7 +443,7 @@ export default function ClubDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
-                                    {mockRides.map((ride) => (
+                                    {rides.map((ride) => (
                                         <Link
                                             key={ride.id}
                                             href={`/app/rides/${ride.id}`}
@@ -409,7 +474,7 @@ export default function ClubDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {mockGallery.map((item) => (
+                                    {gallery.map((item) => (
                                         <div
                                             key={item.id}
                                             className="aspect-square bg-muted rounded-lg flex items-center justify-center"
@@ -428,9 +493,9 @@ export default function ClubDetailPage() {
             <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Join {mockClub.name}</DialogTitle>
+                        <DialogTitle>Join {club.name}</DialogTitle>
                         <DialogDescription>
-                            {mockClub.isPublic
+                            {club.isPublic
                                 ? "You will be added as a member immediately."
                                 : "Your request will be reviewed by the club admins."}
                         </DialogDescription>
@@ -440,7 +505,7 @@ export default function ClubDetailPage() {
                             Cancel
                         </Button>
                         <Button onClick={handleJoinRequest}>
-                            {mockClub.isPublic ? "Join Now" : "Send Request"}
+                            {club.isPublic ? "Join Now" : "Send Request"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

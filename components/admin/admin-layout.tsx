@@ -52,7 +52,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             router.push("/login");
             return;
         }
-        if (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") {
+        if (
+            !session.user.roles?.includes("ADMIN") &&
+            !session.user.roles?.includes("SUPER_ADMIN")
+        ) {
             router.push("/app");
             return;
         }
@@ -84,11 +87,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         );
     }
 
-    if (!session || (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN")) {
+    if (!session || (!session.user.roles?.includes("ADMIN") && !session.user.roles?.includes("SUPER_ADMIN"))) {
         return null;
     }
 
-    const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+    const isSuperAdmin = session.user.roles?.includes("SUPER_ADMIN");
     const navigationItems = adminNavigation.filter(
         (item) => !item.superAdminOnly || isSuperAdmin,
     );
@@ -151,9 +154,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     </Button>
                 </div>
 
-                        <Badge variant="destructive" className="ml-2 text-[10px]">
-                            {isSuperAdmin ? "Super Admin" : "Admin"}
-                        </Badge>
+                <Badge variant="destructive" className="ml-2 text-[10px]">
+                    {isSuperAdmin ? "Super Admin" : "Admin"}
+                </Badge>
                 <div className="p-4 border-t border-border">
                     <div className="flex items-center gap-3 p-2 rounded-lg">
                         <Avatar>

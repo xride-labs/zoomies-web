@@ -51,7 +51,7 @@ export function AppStoreSection() {
     };
 
     return (
-        <section className="py-24 bg-linear-to-b from-white to-orange-50">
+        <section className="py-24 bg-linear-to-b from-background to-[#1e1e1e]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section header */}
                 <motion.div
@@ -62,7 +62,7 @@ export function AppStoreSection() {
                     viewport={{ once: true }}
                 >
                     <motion.div variants={itemVariants} className="mb-4">
-                        <Badge variant="secondary" className="px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0">
+                        <Badge variant="secondary" className="px-4 py-2 text-sm font-medium bg-brand-red/10 text-brand-red-light border-0">
                             📱 Download Our App
                         </Badge>
                     </motion.div>
@@ -93,7 +93,7 @@ export function AppStoreSection() {
                         whileHover="hover"
                         className="relative group cursor-pointer"
                     >
-                        <div className="relative bg-white rounded-2xl p-8 border-2 border-gray-200 overflow-hidden">
+                        <div className="relative bg-card rounded-2xl p-8 border-2 border-border overflow-hidden">
                             {/* Coming Soon Badge with Opacity */}
                             <motion.div
                                 initial={{ opacity: 0.6, y: -10 }}
@@ -101,7 +101,7 @@ export function AppStoreSection() {
                                 transition={{ duration: 0.5 }}
                                 className="absolute top-4 right-4 z-10"
                             >
-                                <Badge className="bg-yellow-100/70 text-yellow-800 border-yellow-300/50 backdrop-blur-sm">
+                                <Badge className="bg-brand-teal/20 text-brand-teal border-brand-teal/30 backdrop-blur-sm">
                                     Coming Soon
                                 </Badge>
                             </motion.div>
@@ -111,9 +111,9 @@ export function AppStoreSection() {
                                 <motion.div
                                     whileHover={{ rotate: 10, scale: 1.1 }}
                                     transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                                    className="mb-4 p-4 bg-green-50 rounded-xl"
+                                    className="mb-4 p-4 bg-brand-green/10 rounded-xl"
                                 >
-                                    <Play className="w-12 h-12 text-green-600 fill-green-600" />
+                                    <Play className="w-12 h-12 text-brand-green fill-brand-green" />
                                 </motion.div>
 
                                 {/* Text */}
@@ -125,12 +125,12 @@ export function AppStoreSection() {
                                 {/* Button */}
                                 <Button
                                     onClick={handleShowInterest}
-                                    className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl"
+                                    className="w-full bg-brand-green hover:bg-brand-green/90 text-black rounded-xl"
                                     disabled={interested}
                                 >
                                     {interested ? (
                                         <>
-                                            <Heart className="w-4 h-4 mr-2 fill-white" />
+                                            <Heart className="w-4 h-4 mr-2 fill-black" />
                                             Interest Registered
                                         </>
                                     ) : (
@@ -147,7 +147,7 @@ export function AppStoreSection() {
                                         initial={{ opacity: 0, y: -5 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0 }}
-                                        className="text-xs text-green-600 mt-3 font-medium"
+                                        className="text-xs text-brand-green mt-3 font-medium"
                                     >
                                         ✓ Thanks for your interest!
                                     </motion.p>
@@ -155,7 +155,7 @@ export function AppStoreSection() {
                             </div>
 
                             {/* Decorative gradient */}
-                            <div className="absolute inset-0 bg-linear-to-br from-green-100/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute inset-0 bg-linear-to-br from-brand-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                     </motion.div>
 
@@ -165,7 +165,7 @@ export function AppStoreSection() {
                         whileHover="hover"
                         className="relative group cursor-pointer"
                     >
-                        <div className="relative bg-white rounded-2xl p-8 border-2 border-gray-200 overflow-hidden">
+                        <div className="relative bg-card rounded-2xl p-8 border-2 border-border overflow-hidden">
                             {/* Coming Soon Badge with Opacity */}
                             <motion.div
                                 initial={{ opacity: 0.6, y: -10 }}
@@ -173,7 +173,7 @@ export function AppStoreSection() {
                                 transition={{ duration: 0.5 }}
                                 className="absolute top-4 right-4 z-10"
                             >
-                                <Badge className="bg-yellow-100/70 text-yellow-800 border-yellow-300/50 backdrop-blur-sm">
+                                <Badge className="bg-brand-teal/20 text-brand-teal border-brand-teal/30 backdrop-blur-sm">
                                     Coming Soon
                                 </Badge>
                             </motion.div>
@@ -183,9 +183,9 @@ export function AppStoreSection() {
                                 <motion.div
                                     whileHover={{ rotate: -10, scale: 1.1 }}
                                     transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                                    className="mb-4 p-4 bg-gray-50 rounded-xl"
+                                    className="mb-4 p-4 bg-white/10 rounded-xl"
                                 >
-                                    <Apple className="w-12 h-12 text-gray-900 fill-gray-900" />
+                                    <Apple className="w-12 h-12 text-white fill-white" />
                                 </motion.div>
 
                                 {/* Text */}
@@ -197,12 +197,12 @@ export function AppStoreSection() {
                                 {/* Button */}
                                 <Button
                                     onClick={handleShowInterest}
-                                    className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl"
+                                    className="w-full bg-white text-background hover:bg-white/90 rounded-xl"
                                     disabled={interested}
                                 >
                                     {interested ? (
                                         <>
-                                            <Heart className="w-4 h-4 mr-2 fill-white" />
+                                            <Heart className="w-4 h-4 mr-2 fill-current" />
                                             Interest Registered
                                         </>
                                     ) : (
@@ -219,7 +219,7 @@ export function AppStoreSection() {
                                         initial={{ opacity: 0, y: -5 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0 }}
-                                        className="text-xs text-gray-600 mt-3 font-medium"
+                                        className="text-xs text-brand-teal mt-3 font-medium"
                                     >
                                         ✓ Thanks for your interest!
                                     </motion.p>
@@ -227,7 +227,7 @@ export function AppStoreSection() {
                             </div>
 
                             {/* Decorative gradient */}
-                            <div className="absolute inset-0 bg-linear-to-br from-gray-100/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                     </motion.div>
                 </motion.div>

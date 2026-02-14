@@ -13,7 +13,7 @@ const PROMETHEUS_URL =
 
 export default function AdminMonitoringPage() {
     const { data: session } = useSession();
-    const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+    const isSuperAdmin = session?.user?.roles?.includes("SUPER_ADMIN");
 
     if (!isSuperAdmin) {
         return (

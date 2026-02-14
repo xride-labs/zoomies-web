@@ -47,7 +47,7 @@ export function CTASection() {
     };
 
     return (
-        <section className="py-24 bg-linear-to-br from-primary via-orange-500 to-amber-500 relative overflow-hidden">
+        <section className="py-24 bg-linear-to-br from-brand-red via-brand-red-light to-brand-teal relative overflow-hidden">
             {/* Decorative elements */}
             <motion.div
                 className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
@@ -90,7 +90,7 @@ export function CTASection() {
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
                             size="lg"
-                            className="text-lg px-8 py-6 rounded-full bg-white text-primary hover:bg-white/90"
+                            className="text-lg px-8 py-6 rounded-full bg-white text-brand-red hover:bg-white/90"
                             asChild
                         >
                             <Link href="/signup">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,114 +50,75 @@ import {
     CheckCircle,
     XCircle,
     Eye,
+    Loader2,
 } from "lucide-react";
 import { UserRole } from "@/types";
+import { adminAPI } from "@/lib/services";
 
-// Mock users data
-const mockUsers = [
-    {
-        id: "1",
-        name: "Rahul Sharma",
-        username: "rahul_rider",
-        email: "rahul@email.com",
-        phone: "+91 98765 43210",
-        role: "RIDER" as UserRole,
-        status: "active",
-        ridesCompleted: 47,
-        xpPoints: 2340,
-        joinedAt: "2025-06-15",
-        lastActive: "2 hours ago",
-    },
-    {
-        id: "2",
-        name: "Priya Patel",
-        username: "priya_wheels",
-        email: "priya@email.com",
-        phone: "+91 98765 43211",
-        role: "USER" as UserRole,
-        status: "active",
-        ridesCompleted: 12,
-        xpPoints: 560,
-        joinedAt: "2025-08-22",
-        lastActive: "5 hours ago",
-    },
-    {
-        id: "3",
-        name: "Amit Kumar",
-        username: "amit_moto",
-        email: "amit@email.com",
-        phone: "+91 98765 43212",
-        role: "SELLER" as UserRole,
-        status: "pending",
-        ridesCompleted: 0,
-        xpPoints: 100,
-        joinedAt: "2026-01-28",
-        lastActive: "1 day ago",
-    },
-    {
-        id: "4",
-        name: "Sneha Reddy",
-        username: "sneha_rides",
-        email: "sneha@email.com",
-        phone: "+91 98765 43213",
-        role: "RIDER" as UserRole,
-        status: "active",
-        ridesCompleted: 89,
-        xpPoints: 4520,
-        joinedAt: "2024-12-01",
-        lastActive: "Just now",
-    },
-    {
-        id: "5",
-        name: "Vikram Singh",
-        username: "vikram_speed",
-        email: "vikram@email.com",
-        phone: "+91 98765 43214",
-        role: "USER" as UserRole,
-        status: "suspended",
-        ridesCompleted: 5,
-        xpPoints: 200,
-        joinedAt: "2025-10-10",
-        lastActive: "1 week ago",
-    },
-    {
-        id: "6",
-        name: "Meera Nair",
-        username: "meera_cruiser",
-        email: "meera@email.com",
-        phone: "+91 98765 43215",
-        role: "ADMIN" as UserRole,
-        status: "active",
-        ridesCompleted: 156,
-        xpPoints: 8900,
-        joinedAt: "2024-03-15",
-        lastActive: "10 minutes ago",
-    },
-];
+interface AdminUser {
+    id: string;
+    name: string;
+    username: string;
+    email: string;
+    phone?: string;
+    roles: UserRole[];
+    status: string;
+    ridesCompleted?: number;
+    xpPoints?: number;
+    joinedAt: string;
+    lastActive?: string;
+    createdAt?: string;
+}
 
 export default function AdminUsersPage() {
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [roleFilter, setRoleFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [selectedUser, setSelectedUser] = useState<typeof mockUsers[0] | null>(null);
+    const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
 
-    const filteredUsers = mockUsers.filter((user) => {
+    useEffect(() => {
+        fetchUsers();
+    }, [roleFilter, statusFilter]);
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const params: Record<string, string | number> = { page: pagination.page, limit: 50 };
+            if (roleFilter !== "all") params.role = roleFilter;
+            if (statusFilter !== "all") params.status = statusFilter;
+            if (searchQuery) params.search = searchQuery;
+
+            const response = await adminAPI.getUsers(params);
+            setUsers(response.users || []);
+            if (response.pagination) setPagination(response.pagination);
+        } catch (err) {
+            setError("Failed to load users");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredUsers = users.filter((user) => {
         const matchesSearch =
-            user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.username.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRole = roleFilter === "all" || user.role === roleFilter;
-        const matchesStatus = statusFilter === "all" || user.status === statusFilter;
-        return matchesSearch && matchesRole && matchesStatus;
+            user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.username?.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
     });
 
     const stats = {
-        total: mockUsers.length,
-        active: mockUsers.filter((u) => u.status === "active").length,
-        pending: mockUsers.filter((u) => u.status === "pending").length,
-        suspended: mockUsers.filter((u) => u.status === "suspended").length,
+        total: pagination.total || users.length,
+        active: users.filter((u) => u.status === "active").length,
+        pending: users.filter((u) => u.status === "pending").length,
+        suspended: users.filter((u) => u.status === "suspended").length,
     };
 
     return (
@@ -228,7 +189,9 @@ export default function AdminUsersPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Roles</SelectItem>
+                                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                                 <SelectItem value="ADMIN">Admin</SelectItem>
+                                <SelectItem value="CLUB_OWNER">Club Owner</SelectItem>
                                 <SelectItem value="RIDER">Rider</SelectItem>
                                 <SelectItem value="SELLER">Seller</SelectItem>
                                 <SelectItem value="USER">User</SelectItem>
@@ -262,7 +225,26 @@ export default function AdminUsersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredUsers.map((user) => (
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-8">
+                                            <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                                            <p className="text-sm text-muted-foreground mt-2">Loading users...</p>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : error ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-8 text-destructive">
+                                            {error}
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredUsers.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                            No users found
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredUsers.map((user) => (
                                     <TableRow key={user.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
@@ -281,9 +263,9 @@ export default function AdminUsersPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge
-                                                variant={user.role === "ADMIN" ? "destructive" : "outline"}
+                                                variant={user.roles.includes("ADMIN") ? "destructive" : "outline"}
                                             >
-                                                {user.role}
+                                                {user.roles.join(", ")}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
@@ -306,10 +288,10 @@ export default function AdminUsersPage() {
                                                 {user.status}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell>{user.ridesCompleted}</TableCell>
-                                        <TableCell>{user.xpPoints.toLocaleString()}</TableCell>
+                                        <TableCell>{user.ridesCompleted || 0}</TableCell>
+                                        <TableCell>{(user.xpPoints || 0).toLocaleString()}</TableCell>
                                         <TableCell className="text-muted-foreground text-sm">
-                                            {user.lastActive}
+                                            {user.lastActive || 'N/A'}
                                         </TableCell>
                                         <TableCell>
                                             <DropdownMenu>
@@ -367,7 +349,7 @@ export default function AdminUsersPage() {
                     {/* Pagination placeholder */}
                     <div className="flex items-center justify-between mt-4">
                         <p className="text-sm text-muted-foreground">
-                            Showing {filteredUsers.length} of {mockUsers.length} users
+                            Showing {filteredUsers.length} of {users.length} users
                         </p>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" disabled>
@@ -412,7 +394,7 @@ export default function AdminUsersPage() {
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Role</p>
-                                    <Badge variant="outline">{selectedUser.role}</Badge>
+                                    <Badge variant="outline">{selectedUser.roles.join(", ")}</Badge>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Status</p>
@@ -426,19 +408,19 @@ export default function AdminUsersPage() {
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Rides Completed</p>
-                                    <p className="font-medium">{selectedUser.ridesCompleted}</p>
+                                    <p className="font-medium">{selectedUser.ridesCompleted || 0}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">XP Points</p>
-                                    <p className="font-medium">{selectedUser.xpPoints.toLocaleString()}</p>
+                                    <p className="font-medium">{(selectedUser.xpPoints || 0).toLocaleString()}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Joined</p>
-                                    <p className="font-medium">{selectedUser.joinedAt}</p>
+                                    <p className="font-medium">{selectedUser.joinedAt || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Last Active</p>
-                                    <p className="font-medium">{selectedUser.lastActive}</p>
+                                    <p className="font-medium">{selectedUser.lastActive || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
@@ -462,7 +444,7 @@ export default function AdminUsersPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <Select defaultValue={selectedUser?.role}>
+                        <Select defaultValue={selectedUser?.roles?.[0]}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select role" />
                             </SelectTrigger>
@@ -470,7 +452,9 @@ export default function AdminUsersPage() {
                                 <SelectItem value="USER">User</SelectItem>
                                 <SelectItem value="RIDER">Rider</SelectItem>
                                 <SelectItem value="SELLER">Seller</SelectItem>
+                                <SelectItem value="CLUB_OWNER">Club Owner</SelectItem>
                                 <SelectItem value="ADMIN">Admin</SelectItem>
+                                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

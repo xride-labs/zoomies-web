@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,108 +50,26 @@ import {
     Package,
     Star,
 } from "lucide-react";
+import { adminAPI } from "@/lib/services";
 
-// Mock listings data
-const mockListings = [
-    {
-        id: "1",
-        title: "Alpinestars SMX-1 R Riding Boots",
-        description: "Premium riding boots in excellent condition",
-        price: 450,
-        currency: "USD",
-        category: "Gear",
-        subcategory: "Boots",
-        condition: "Like New",
-        status: "ACTIVE",
-        images: [],
-        seller: { id: "1", name: "Mike Rodriguez", username: "roadking_mike", rating: 4.9 },
-        createdAt: "2026-01-20",
-        views: 234,
-        inquiries: 12,
-    },
-    {
-        id: "2",
-        title: "Akrapovic Exhaust System - Honda CBR600RR",
-        description: "Full titanium exhaust system with slip-on",
-        price: 1200,
-        currency: "USD",
-        category: "Parts",
-        subcategory: "Exhaust",
-        condition: "Used",
-        status: "ACTIVE",
-        images: [],
-        seller: { id: "2", name: "Sarah Chen", username: "sarah_twowheels", rating: 4.7 },
-        createdAt: "2026-01-18",
-        views: 456,
-        inquiries: 28,
-    },
-    {
-        id: "3",
-        title: "Shoei RF-1400 Helmet - Large",
-        description: "Top of the line helmet, barely used",
-        price: 550,
-        currency: "USD",
-        category: "Gear",
-        subcategory: "Helmet",
-        condition: "Excellent",
-        status: "SOLD",
-        images: [],
-        seller: { id: "3", name: "Raj Patel", username: "raj_thunder", rating: 4.5 },
-        createdAt: "2026-01-15",
-        views: 789,
-        inquiries: 45,
-    },
-    {
-        id: "4",
-        title: "2020 Yamaha R3 - Full Fairing Kit",
-        description: "Complete OEM fairing kit in blue",
-        price: 850,
-        currency: "USD",
-        category: "Parts",
-        subcategory: "Fairings",
-        condition: "Good",
-        status: "ACTIVE",
-        images: [],
-        seller: { id: "4", name: "Sneha Reddy", username: "sneha_rides", rating: 4.8 },
-        createdAt: "2026-01-22",
-        views: 178,
-        inquiries: 8,
-    },
-    {
-        id: "5",
-        title: "Suspicious Cheap Helmet",
-        description: "Brand new helmet very cheap price",
-        price: 25,
-        currency: "USD",
-        category: "Gear",
-        subcategory: "Helmet",
-        condition: "New",
-        status: "FLAGGED",
-        images: [],
-        seller: { id: "5", name: "Unknown Seller", username: "newuser123", rating: 0 },
-        createdAt: "2026-01-28",
-        views: 12,
-        inquiries: 0,
-    },
-    {
-        id: "6",
-        title: "Motorcycle Cover - XXL",
-        description: "Heavy duty outdoor cover",
-        price: 45,
-        currency: "USD",
-        category: "Accessories",
-        subcategory: "Covers",
-        condition: "New",
-        status: "INACTIVE",
-        images: [],
-        seller: { id: "6", name: "Tom Johnson", username: "tomjmoto", rating: 4.9 },
-        createdAt: "2026-01-10",
-        views: 89,
-        inquiries: 3,
-    },
-];
+interface AdminListing {
+    id: string;
+    title: string;
+    description?: string;
+    price: number;
+    currency?: string;
+    category?: string;
+    subcategory?: string;
+    condition?: string;
+    status: string;
+    images?: string[];
+    seller: { id: string; name: string; username: string; rating?: number };
+    createdAt: string;
+    views?: number;
+    inquiries?: number;
+}
 
-const statusColors = {
+const statusColors: Record<string, string> = {
     ACTIVE: "bg-green-100 text-green-700",
     SOLD: "bg-blue-100 text-blue-700",
     INACTIVE: "bg-gray-100 text-gray-700",
@@ -159,29 +77,47 @@ const statusColors = {
 };
 
 export default function AdminMarketplacePage() {
+    const [listings, setListings] = useState<AdminListing[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
-    const [selectedListing, setSelectedListing] = useState<typeof mockListings[0] | null>(null);
+    const [selectedListing, setSelectedListing] = useState<AdminListing | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-    const filteredListings = mockListings.filter((listing) => {
+    const fetchListings = useCallback(async () => {
+        try {
+            const params: Record<string, string> = {};
+            if (statusFilter !== "all") params.status = statusFilter;
+            if (searchQuery) params.search = searchQuery;
+
+            const response = await adminAPI.getListings(params);
+            setListings(response.listings || []);
+        } catch (err) {
+            console.error("Failed to load listings", err);
+        }
+    }, [statusFilter, searchQuery]);
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => {
+        fetchListings();
+    }, [fetchListings]);
+
+    const filteredListings = listings.filter((listing) => {
         const matchesSearch =
-            listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            listing.seller.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === "all" || listing.status === statusFilter;
+            listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            listing.seller?.name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
-        return matchesSearch && matchesStatus && matchesCategory;
+        return matchesSearch && matchesCategory;
     });
 
     const stats = {
-        total: mockListings.length,
-        active: mockListings.filter((l) => l.status === "ACTIVE").length,
-        sold: mockListings.filter((l) => l.status === "SOLD").length,
-        flagged: mockListings.filter((l) => l.status === "FLAGGED").length,
-        totalValue: mockListings
+        total: listings.length,
+        active: listings.filter((l) => l.status === "ACTIVE").length,
+        sold: listings.filter((l) => l.status === "SOLD").length,
+        flagged: listings.filter((l) => l.status === "FLAGGED").length,
+        totalValue: listings
             .filter((l) => l.status === "ACTIVE")
-            .reduce((sum, l) => sum + l.price, 0),
+            .reduce((sum, l) => sum + (l.price || 0), 0),
     };
 
     return (
@@ -343,15 +279,15 @@ export default function AdminMarketplacePage() {
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-7 w-7">
                                                     <AvatarFallback className="text-xs">
-                                                        {listing.seller.name.split(" ").map((n) => n[0]).join("")}
+                                                        {listing.seller?.name?.split(" ").map((n) => n[0]).join("") || "?"}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="text-sm">@{listing.seller.username}</p>
-                                                    {listing.seller.rating > 0 && (
+                                                    <p className="text-sm">@{listing.seller?.username || "unknown"}</p>
+                                                    {(listing.seller?.rating ?? 0) > 0 && (
                                                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                                                             <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                                            {listing.seller.rating}
+                                                            {listing.seller?.rating}
                                                         </p>
                                                     )}
                                                 </div>
@@ -430,7 +366,7 @@ export default function AdminMarketplacePage() {
                     {/* Pagination */}
                     <div className="flex items-center justify-between mt-4">
                         <p className="text-sm text-muted-foreground">
-                            Showing {filteredListings.length} of {mockListings.length} listings
+                            Showing {filteredListings.length} of {listings.length} listings
                         </p>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" disabled>
@@ -498,20 +434,20 @@ export default function AdminMarketplacePage() {
                                     <div className="flex items-center gap-2">
                                         <Avatar className="h-8 w-8">
                                             <AvatarFallback className="text-xs">
-                                                {selectedListing.seller.name.split(" ").map((n) => n[0]).join("")}
+                                                {selectedListing.seller?.name?.split(" ").map((n) => n[0]).join("") || "?"}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="font-medium text-sm">{selectedListing.seller.name}</p>
+                                            <p className="font-medium text-sm">{selectedListing.seller?.name || "Unknown"}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                @{selectedListing.seller.username}
+                                                @{selectedListing.seller?.username || "unknown"}
                                             </p>
                                         </div>
                                     </div>
-                                    {selectedListing.seller.rating > 0 && (
+                                    {(selectedListing.seller?.rating ?? 0) > 0 && (
                                         <div className="flex items-center gap-1">
                                             <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                                            <span className="font-medium">{selectedListing.seller.rating}</span>
+                                            <span className="font-medium">{selectedListing.seller?.rating}</span>
                                         </div>
                                     )}
                                 </div>

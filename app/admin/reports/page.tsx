@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,111 +32,80 @@ import {
     XCircle,
     Eye,
     Clock,
+    Loader2,
 } from "lucide-react";
+import { adminAPI } from "@/lib/services";
 
-// Mock reports data
-const mockReports = [
-    {
-        id: "1",
-        type: "user",
-        title: "Spam/Inappropriate Content",
-        description: "User posting promotional content repeatedly",
-        reportedItem: { id: "u5", name: "SpamUser123", type: "User" },
-        reporter: { id: "u1", name: "Mike Rodriguez" },
-        status: "pending",
-        priority: "high",
-        createdAt: "2026-01-30T10:30:00Z",
-    },
-    {
-        id: "2",
-        type: "listing",
-        title: "Fraudulent Listing",
-        description: "Selling counterfeit products as genuine",
-        reportedItem: { id: "l5", name: "Suspicious Cheap Helmet", type: "Listing" },
-        reporter: { id: "u2", name: "Sarah Chen" },
-        status: "pending",
-        priority: "high",
-        createdAt: "2026-01-29T15:45:00Z",
-    },
-    {
-        id: "3",
-        type: "club",
-        title: "Club Verification Request",
-        description: "Thunder Riders MC requesting verification",
-        reportedItem: { id: "c3", name: "Thunder Riders MC", type: "Club" },
-        reporter: { id: "u3", name: "Raj Patel" },
-        status: "pending",
-        priority: "medium",
-        createdAt: "2026-01-28T09:00:00Z",
-    },
-    {
-        id: "4",
-        type: "message",
-        title: "Harassment Report",
-        description: "User receiving threatening messages",
-        reportedItem: { id: "m123", name: "Chat Messages", type: "Message" },
-        reporter: { id: "u4", name: "Sneha Reddy" },
-        status: "investigating",
-        priority: "high",
-        createdAt: "2026-01-27T18:20:00Z",
-    },
-    {
-        id: "5",
-        type: "user",
-        title: "Fake Profile",
-        description: "User impersonating another person",
-        reportedItem: { id: "u10", name: "FakeProfile", type: "User" },
-        reporter: { id: "u6", name: "Tom Johnson" },
-        status: "resolved",
-        priority: "medium",
-        createdAt: "2026-01-25T12:00:00Z",
-    },
-    {
-        id: "6",
-        type: "listing",
-        title: "Incorrect Category",
-        description: "Listing placed in wrong category",
-        reportedItem: { id: "l8", name: "Motorcycle Parts", type: "Listing" },
-        reporter: { id: "u1", name: "Mike Rodriguez" },
-        status: "resolved",
-        priority: "low",
-        createdAt: "2026-01-24T08:30:00Z",
-    },
-];
+interface AdminReport {
+    id: string;
+    type: string;
+    title: string;
+    description?: string;
+    reportedItem: { id: string; name: string; type: string };
+    reporter: { id: string; name: string };
+    status: string;
+    priority: string;
+    createdAt: string;
+}
 
-const typeIcons = {
+const typeIcons: Record<string, any> = {
     user: User,
     listing: ShoppingBag,
     club: Shield,
     message: MessageSquare,
 };
 
-const statusColors = {
+const statusColors: Record<string, string> = {
     pending: "bg-amber-100 text-amber-700",
     investigating: "bg-blue-100 text-blue-700",
     resolved: "bg-green-100 text-green-700",
     dismissed: "bg-gray-100 text-gray-700",
 };
 
-const priorityColors = {
+const priorityColors: Record<string, string> = {
     high: "bg-red-100 text-red-700",
     medium: "bg-amber-100 text-amber-700",
     low: "bg-gray-100 text-gray-700",
 };
 
 export default function AdminReportsPage() {
+    const [reports, setReports] = useState<AdminReport[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState("all");
 
+    useEffect(() => {
+        fetchReports();
+    }, [activeTab]);
+
+    const fetchReports = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const params: Record<string, string> = {};
+            if (activeTab !== "all") params.status = activeTab;
+
+            const response = await adminAPI.getReports(params);
+            const data = response.data?.data || response.data;
+            setReports(data.reports || data || []);
+        } catch (err) {
+            setError("Failed to load reports");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const stats = {
-        total: mockReports.length,
-        pending: mockReports.filter((r) => r.status === "pending").length,
-        investigating: mockReports.filter((r) => r.status === "investigating").length,
-        resolved: mockReports.filter((r) => r.status === "resolved").length,
+        total: reports.length,
+        pending: reports.filter((r) => r.status === "pending").length,
+        investigating: reports.filter((r) => r.status === "investigating").length,
+        resolved: reports.filter((r) => r.status === "resolved").length,
     };
 
     const filteredReports = activeTab === "all"
-        ? mockReports
-        : mockReports.filter((r) => r.status === activeTab);
+        ? reports
+        : reports.filter((r) => r.status === activeTab);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-US", {

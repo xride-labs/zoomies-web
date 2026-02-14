@@ -119,7 +119,7 @@ export function Footer() {
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-white/40 text-sm">
                     <p>© 2026 Zoomies. All rights reserved.</p>
-                    <p>Made with 🧡 for the motorcycle community</p>
+                    <p>Made with ❤️ for the motorcycle community</p>
                 </div>
             </div>
         </footer>

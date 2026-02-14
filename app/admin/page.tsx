@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
     AlertTriangle,
     ArrowUpRight,
     MoreHorizontal,
+    Loader2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -33,61 +35,45 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { adminAPI } from "@/lib/services";
 
-// Mock data for dashboard
-const stats = [
-    {
-        title: "Total Users",
-        value: "12,456",
-        change: "+12.5%",
-        trend: "up",
-        icon: Users,
-        color: "text-blue-600",
-        bgColor: "bg-blue-100",
-    },
-    {
-        title: "Active Clubs",
-        value: "342",
-        change: "+8.2%",
-        trend: "up",
-        icon: Shield,
-        color: "text-purple-600",
-        bgColor: "bg-purple-100",
-    },
-    {
-        title: "Rides This Month",
-        value: "1,847",
-        change: "+23.1%",
-        trend: "up",
-        icon: MapPin,
-        color: "text-green-600",
-        bgColor: "bg-green-100",
-    },
-    {
-        title: "Marketplace Sales",
-        value: "₹4.2L",
-        change: "-2.4%",
-        trend: "down",
-        icon: DollarSign,
-        color: "text-amber-600",
-        bgColor: "bg-amber-100",
-    },
-];
+interface DashboardStats {
+    overview: {
+        totalUsers: number;
+        totalRides: number;
+        totalClubs: number;
+        totalListings: number;
+        activeRides: number;
+        completedRides: number;
+        verifiedClubs: number;
+    };
+    recent: {
+        newUsersLast7Days: number;
+        newRidesLast7Days: number;
+    };
+    breakdown: {
+        usersByRole: Record<string, number>;
+        ridesByStatus: Record<string, number>;
+    };
+}
 
-const recentUsers = [
-    { id: "1", name: "Rahul Sharma", email: "rahul@email.com", role: "RIDER", joinedAt: "2 hours ago", status: "active" },
-    { id: "2", name: "Priya Patel", email: "priya@email.com", role: "USER", joinedAt: "5 hours ago", status: "active" },
-    { id: "3", name: "Amit Kumar", email: "amit@email.com", role: "SELLER", joinedAt: "1 day ago", status: "pending" },
-    { id: "4", name: "Sneha Reddy", email: "sneha@email.com", role: "RIDER", joinedAt: "2 days ago", status: "active" },
-    { id: "5", name: "Vikram Singh", email: "vikram@email.com", role: "USER", joinedAt: "3 days ago", status: "suspended" },
-];
+interface RecentUser {
+    id: string;
+    name: string;
+    email: string;
+    roles: string[];
+    joinedAt: string;
+    status: string;
+    createdAt?: string;
+}
 
-const pendingReports = [
-    { id: "1", type: "Club Verification", title: "Thunder Riders MC", priority: "high", createdAt: "1 hour ago" },
-    { id: "2", type: "User Report", title: "Spam content reported", priority: "medium", createdAt: "3 hours ago" },
-    { id: "3", type: "Listing Report", title: "Suspicious listing flagged", priority: "high", createdAt: "5 hours ago" },
-    { id: "4", type: "Club Verification", title: "Highway Kings", priority: "low", createdAt: "1 day ago" },
-];
+interface PendingReport {
+    id: string;
+    type: string;
+    title: string;
+    priority: string;
+    createdAt: string;
+}
 
 const activityData = [
     { day: "Mon", users: 45, rides: 23, sales: 12 },
@@ -100,6 +86,105 @@ const activityData = [
 ];
 
 export default function AdminDashboardPage() {
+    const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+    const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+    const [pendingReports, setPendingReports] = useState<PendingReport[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const [statsRes, usersRes, reportsRes] = await Promise.all([
+                adminAPI.getStats(),
+                adminAPI.getUsers({ limit: 5 }),
+                adminAPI.getReports({ status: "pending" }),
+            ]);
+
+            setDashboardStats(statsRes);
+            setRecentUsers(usersRes.users || []);
+            setPendingReports((reportsRes.reports || []).slice(0, 4));
+        } catch (err) {
+            setError("Failed to load dashboard data");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatTimeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(hours / 24);
+        if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+        if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+        return "Just now";
+    };
+
+    const stats = dashboardStats ? [
+        {
+            title: "Total Users",
+            value: dashboardStats.overview.totalUsers.toLocaleString(),
+            change: `+${dashboardStats.recent.newUsersLast7Days}`,
+            trend: "up" as const,
+            icon: Users,
+            color: "text-blue-600",
+            bgColor: "bg-blue-100",
+        },
+        {
+            title: "Active Clubs",
+            value: dashboardStats.overview.totalClubs.toLocaleString(),
+            change: `${dashboardStats.overview.verifiedClubs} verified`,
+            trend: "up" as const,
+            icon: Shield,
+            color: "text-purple-600",
+            bgColor: "bg-purple-100",
+        },
+        {
+            title: "Total Rides",
+            value: dashboardStats.overview.totalRides.toLocaleString(),
+            change: `+${dashboardStats.recent.newRidesLast7Days}`,
+            trend: "up" as const,
+            icon: MapPin,
+            color: "text-green-600",
+            bgColor: "bg-green-100",
+        },
+        {
+            title: "Marketplace Listings",
+            value: dashboardStats.overview.totalListings.toLocaleString(),
+            change: `${dashboardStats.overview.activeRides} active`,
+            trend: "up" as const,
+            icon: DollarSign,
+            color: "text-amber-600",
+            bgColor: "bg-amber-100",
+        },
+    ] : [];
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8 text-destructive">
+                {error}
+                <Button onClick={fetchDashboardData} className="ml-4">Retry</Button>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Stats Grid */}
@@ -292,7 +377,9 @@ export default function AdminDashboardPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="outline">{user.role}</Badge>
+                                        {user.roles.map((r: string) => (
+                                            <Badge key={r} variant="outline" className="mr-1">{r}</Badge>
+                                        ))}
                                     </TableCell>
                                     <TableCell>
                                         <Badge
@@ -308,7 +395,7 @@ export default function AdminDashboardPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
-                                        {user.joinedAt}
+                                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                                     </TableCell>
                                     <TableCell>
                                         <DropdownMenu>

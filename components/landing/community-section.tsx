@@ -92,7 +92,7 @@ export function CommunitySection() {
     };
 
     return (
-        <section id="community" className="py-24 bg-linear-to-b from-white to-orange-50/50">
+        <section id="community" className="py-24 bg-linear-to-b from-background to-[#1e1e1e]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section header */}
                 <motion.div
@@ -103,7 +103,7 @@ export function CommunitySection() {
                     viewport={{ once: true }}
                 >
                     <motion.div variants={itemVariants}>
-                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0">
+                        <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm font-medium bg-brand-red/10 text-brand-red-light border-0">
                             Community
                         </Badge>
                     </motion.div>
@@ -130,14 +130,14 @@ export function CommunitySection() {
                             key={index}
                             variants={cardVariants}
                             whileHover="hover"
-                            className="bg-white rounded-2xl p-6 shadow-lg border border-border cursor-pointer"
+                            className="bg-card rounded-2xl p-6 shadow-lg border border-border cursor-pointer"
                         >
                             <motion.div
                                 className="flex items-start gap-4 mb-4"
                                 whileHover={{ x: 5 }}
                             >
-                                <Avatar className="w-12 h-12 bg-linear-to-br from-primary to-amber-500">
-                                    <AvatarFallback className="bg-linear-to-br from-primary to-amber-500 text-white font-semibold">
+                                <Avatar className="w-12 h-12 bg-linear-to-br from-brand-red to-brand-red-light">
+                                    <AvatarFallback className="bg-linear-to-br from-brand-red to-brand-red-light text-white font-semibold">
                                         {testimonial.avatar}
                                     </AvatarFallback>
                                 </Avatar>
@@ -148,7 +148,7 @@ export function CommunitySection() {
                             </motion.div>
                             <motion.p
                                 className="text-muted-foreground italic"
-                                whileHover={{ color: "#000" }}
+                                whileHover={{ color: "#ffffff" }}
                             >
                                 &quot;{testimonial.quote}&quot;
                             </motion.p>

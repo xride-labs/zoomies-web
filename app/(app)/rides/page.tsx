@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,66 +13,12 @@ import {
     Clock,
     ChevronRight,
     Plus,
-    Navigation
+    Navigation,
+    Loader2
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data
-const mockUpcomingRides = [
-    {
-        id: "r1",
-        title: "Superstition Mountain Loop",
-        description: "Epic sunrise ride through the Superstition Mountains. Full loop - 180 miles of pure desert beauty.",
-        status: "scheduled" as const,
-        startLocation: { name: "Mesa Gateway" },
-        scheduledAt: "2026-01-25T06:00:00Z",
-        estimatedDuration: 240,
-        participantsCount: 12,
-        maxParticipants: 20,
-        club: { id: "c1", name: "Desert Eagles MC", avatar: null },
-        organizer: { id: "u1", name: "Mike Rodriguez", avatar: null },
-    },
-    {
-        id: "r2",
-        title: "Night City Lights",
-        description: "Evening cruise through downtown Phoenix and Scottsdale. Perfect for sunset lovers.",
-        status: "scheduled" as const,
-        startLocation: { name: "Tempe Town Lake" },
-        scheduledAt: "2026-01-24T18:30:00Z",
-        estimatedDuration: 120,
-        participantsCount: 8,
-        maxParticipants: 15,
-        club: null,
-        organizer: { id: "u2", name: "Sarah Chen", avatar: null },
-    },
-];
-
-const mockActiveRide = {
-    id: "r3",
-    title: "Weekend Desert Run",
-    status: "active" as const,
-    participantsCount: 6,
-    startedAt: "2026-01-22T09:00:00Z",
-};
-
-const mockPastRides = [
-    {
-        id: "r4",
-        title: "Route 66 Adventure",
-        status: "completed" as const,
-        scheduledAt: "2026-01-18T07:00:00Z",
-        participantsCount: 15,
-        distance: 320,
-    },
-    {
-        id: "r5",
-        title: "Flagstaff Mountain Run",
-        status: "completed" as const,
-        scheduledAt: "2026-01-11T08:00:00Z",
-        participantsCount: 9,
-        distance: 240,
-    },
-];
+import { ridesAPI } from "@/lib/services";
+import { Ride } from "@/store/slices/ridesSlice";
 
 function formatDate(dateString: string) {
     const date = new Date(dateString);
@@ -103,12 +49,44 @@ type TabType = "upcoming" | "my" | "past";
 
 export default function RidesPage() {
     const [activeTab, setActiveTab] = useState<TabType>("upcoming");
+    const [upcomingRides, setUpcomingRides] = useState<Ride[]>([]);
+    const [myRides, setMyRides] = useState<Ride[]>([]);
+    const [pastRides, setPastRides] = useState<Ride[]>([]);
+    const [activeRide, setActiveRide] = useState<Ride | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchRides();
+    }, []);
+
+    const fetchRides = async () => {
+        try {
+            setLoading(true);
+            const [upcomingRes, myRes, pastRes] = await Promise.all([
+                ridesAPI.getUpcomingRides(),
+                ridesAPI.getMyRides(),
+                ridesAPI.getPastRides()
+            ]);
+            setUpcomingRides(upcomingRes.rides || []);
+            setMyRides(myRes.rides || []);
+            setPastRides(pastRes.rides || []);
+            // Check if any ride is currently active
+            const active = myRes.rides?.find((r: Ride) => r.status === "active");
+            setActiveRide(active || null);
+        } catch (err) {
+            console.error("Failed to fetch rides:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const currentRides = activeTab === "upcoming" ? upcomingRides : activeTab === "my" ? myRides : pastRides;
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-6">
             {/* Active Ride Banner */}
-            {mockActiveRide && (
-                <Link href={`/app/rides/${mockActiveRide.id}`}>
+            {activeRide && (
+                <Link href={`/app/rides/${activeRide.id}`}>
                     <Card className="bg-linear-to-r from-green-500 to-emerald-600 text-white mb-6 overflow-hidden">
                         <CardContent className="p-4">
                             <div className="flex items-center justify-between">
@@ -118,9 +96,9 @@ export default function RidesPage() {
                                     </div>
                                     <div>
                                         <Badge className="bg-white/20 text-white border-0 mb-1">Live Now</Badge>
-                                        <h3 className="font-semibold">{mockActiveRide.title}</h3>
+                                        <h3 className="font-semibold">{activeRide.title}</h3>
                                         <p className="text-sm text-white/80">
-                                            {mockActiveRide.participantsCount} riders on route
+                                            {activeRide.participantsCount} riders on route
                                         </p>
                                     </div>
                                 </div>
@@ -156,9 +134,17 @@ export default function RidesPage() {
                 </Button>
             </div>
 
-            {activeTab === "upcoming" && (
+            {loading ? (
+                <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : activeTab === "upcoming" && (
                 <div className="space-y-4">
-                    {mockUpcomingRides.map((ride) => (
+                    {upcomingRides.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">
+                            <p>No upcoming rides. Check back later!</p>
+                        </div>
+                    ) : upcomingRides.map((ride) => (
                         <Link key={ride.id} href={`/app/rides/${ride.id}`}>
                             <Card className="hover:border-primary/50 transition-colors">
                                 <CardContent className="p-4">
@@ -197,10 +183,12 @@ export default function RidesPage() {
                                                     <MapPin className="w-3 h-3" />
                                                     {ride.startLocation.name}
                                                 </span>
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {formatDuration(ride.estimatedDuration)}
-                                                </span>
+                                                {ride.estimatedDuration && (
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="w-3 h-3" />
+                                                        {formatDuration(ride.estimatedDuration)}
+                                                    </span>
+                                                )}
                                             </div>
 
                                             {/* Participants */}
@@ -256,57 +244,91 @@ export default function RidesPage() {
             )}
 
             {activeTab === "my" && (
-                <div className="text-center py-16">
-                    <Calendar className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                    <h3 className="font-semibold mb-2">No upcoming rides</h3>
-                    <p className="text-muted-foreground mb-4">
-                        Join a ride or create your own adventure!
-                    </p>
-                    <div className="flex gap-2 justify-center">
-                        <Button variant="outline" onClick={() => setActiveTab("upcoming")}>
-                            Browse Rides
-                        </Button>
-                        <Link href="/app/rides/create">
-                            <Button className="gap-2">
-                                <Plus className="w-4 h-4" />
-                                Create Ride
+                myRides.length === 0 ? (
+                    <div className="text-center py-16">
+                        <Calendar className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                        <h3 className="font-semibold mb-2">No upcoming rides</h3>
+                        <p className="text-muted-foreground mb-4">
+                            Join a ride or create your own adventure!
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                            <Button variant="outline" onClick={() => setActiveTab("upcoming")}>
+                                Browse Rides
                             </Button>
-                        </Link>
+                            <Link href="/app/rides/create">
+                                <Button className="gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    Create Ride
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="space-y-4">
+                        {myRides.map((ride) => (
+                            <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+                                <Card className="hover:border-primary/50 transition-colors">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="font-semibold">{ride.title}</h3>
+                                                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                                    <span>{formatDate(ride.scheduledAt)}</span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Users className="w-3 h-3" />
+                                                        {ride.participantsCount} riders
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <Badge variant={ride.status === "active" ? "default" : "secondary"}>
+                                                {ride.status}
+                                            </Badge>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+                )
             )}
 
             {activeTab === "past" && (
-                <div className="space-y-4">
-                    {mockPastRides.map((ride) => (
-                        <Link key={ride.id} href={`/app/rides/${ride.id}`}>
-                            <Card className="hover:border-primary/50 transition-colors opacity-80">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h3 className="font-semibold">{ride.title}</h3>
-                                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                                <span>{formatDate(ride.scheduledAt)}</span>
-                                                <span>•</span>
-                                                <span className="flex items-center gap-1">
-                                                    <Users className="w-3 h-3" />
-                                                    {ride.participantsCount} riders
-                                                </span>
-                                                {ride.distance && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span>{ride.distance} km</span>
-                                                    </>
-                                                )}
+                pastRides.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                        <p>No past rides yet.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {pastRides.map((ride) => (
+                            <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+                                <Card className="hover:border-primary/50 transition-colors opacity-80">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="font-semibold">{ride.title}</h3>
+                                                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                                    <span>{formatDate(ride.scheduledAt)}</span>
+                                                    <span>•</span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Users className="w-3 h-3" />
+                                                        {ride.participantsCount} riders
+                                                    </span>
+                                                    {ride.distance && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span>{ride.distance} km</span>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
+                                            <Badge variant="secondary">Completed</Badge>
                                         </div>
-                                        <Badge variant="secondary">Completed</Badge>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+                )
             )}
         </div>
     );

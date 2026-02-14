@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -14,111 +14,48 @@ import {
     MoreHorizontal,
     Calendar,
     Users,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { feedAPI } from "@/lib/services";
 
-// Mock data for demonstration
-const mockPosts = [
-    {
-        id: "1",
-        type: "ride" as const,
-        author: {
-            id: "u1",
-            name: "Mike Rodriguez",
-            username: "roadking_mike",
-            avatar: null,
-            clubs: [
-                { id: "c1", name: "Desert Eagles MC", avatar: null },
-                { id: "c2", name: "Phoenix Riders", avatar: null },
-            ],
-        },
-        content: "Epic sunrise ride through the Superstition Mountains this weekend! 🏜️ Who's joining? We're doing the full loop - 180 miles of pure desert beauty.",
-        images: [],
-        ride: {
-            id: "r1",
-            title: "Superstition Mountain Loop",
-            scheduledAt: "2026-01-25T06:00:00Z",
-            participantsCount: 12,
-        },
-        likesCount: 47,
-        commentsCount: 8,
-        isLiked: false,
-        isSaved: false,
-        createdAt: "2026-01-22T10:30:00Z",
-    },
-    {
-        id: "2",
-        type: "content" as const,
-        author: {
-            id: "u2",
-            name: "Sarah Chen",
-            username: "sarah_twowheels",
-            avatar: null,
-            clubs: [
-                { id: "c3", name: "Bay Area Cruisers", avatar: null },
-            ],
-        },
-        content: "Finally installed my new Akrapovic exhaust! The sound is absolutely incredible. Totally worth the investment. 🔥",
-        images: [],
-        likesCount: 89,
-        commentsCount: 23,
-        isLiked: true,
-        isSaved: true,
-        createdAt: "2026-01-22T08:15:00Z",
-    },
-    {
-        id: "3",
-        type: "listing" as const,
-        author: {
-            id: "u3",
-            name: "James Wilson",
-            username: "jwilson_moto",
-            avatar: null,
-            clubs: [
-                { id: "c4", name: "Texas Thunder", avatar: null },
-                { id: "c5", name: "Hill Country Riders", avatar: null },
-            ],
-        },
-        content: "Selling my Shoei RF-1400 helmet. Only used for one season, in excellent condition. Grab it before it's gone!",
-        images: [],
-        listing: {
-            id: "l1",
-            title: "Shoei RF-1400 Helmet - Large",
-            price: 450,
-            currency: "USD",
-            isSold: false,
-        },
-        likesCount: 12,
-        commentsCount: 5,
-        isLiked: false,
-        isSaved: false,
-        createdAt: "2026-01-21T18:45:00Z",
-    },
-    {
-        id: "4",
-        type: "club-activity" as const,
-        author: {
-            id: "u4",
-            name: "Rocky Mountain MC",
-            username: "rockymtn_mc",
-            avatar: null,
-            clubs: [],
-        },
-        content: "New members welcome! 🏔️ Just completed our monthly meeting and planned some amazing rides for February. DM us to learn more about joining.",
-        images: [],
-        club: {
-            id: "c6",
-            name: "Rocky Mountain MC",
-            avatar: null,
-        },
-        likesCount: 156,
-        commentsCount: 34,
-        isLiked: false,
-        isSaved: false,
-        createdAt: "2026-01-21T15:00:00Z",
-    },
-];
+interface FeedPost {
+    id: string;
+    type: "ride" | "content" | "listing" | "club-activity";
+    author: {
+        id: string;
+        name: string;
+        username: string;
+        avatar: string | null;
+        clubs: Array<{ id: string; name: string; avatar: string | null }>;
+    };
+    content: string;
+    images: string[];
+    ride?: {
+        id: string;
+        title: string;
+        scheduledAt: string;
+        participantsCount: number;
+    };
+    listing?: {
+        id: string;
+        title: string;
+        price: number;
+        currency: string;
+        isSold: boolean;
+    };
+    club?: {
+        id: string;
+        name: string;
+        avatar: string | null;
+    };
+    likesCount: number;
+    commentsCount: number;
+    isLiked: boolean;
+    isSaved: boolean;
+    createdAt: string;
+}
 
 function formatTimeAgo(dateString: string) {
     const date = new Date(dateString);
@@ -144,7 +81,26 @@ function formatDate(dateString: string) {
 }
 
 export default function FeedPage() {
-    const [posts, setPosts] = useState(mockPosts);
+    const [posts, setPosts] = useState<FeedPost[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchFeed();
+    }, []);
+
+    const fetchFeed = async () => {
+        try {
+            setLoading(true);
+            const response = await feedAPI.getFeed();
+            setPosts(response.posts || []);
+        } catch (err) {
+            setError("Failed to load feed");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleLike = (postId: string) => {
         setPosts(posts.map(post => {
@@ -198,7 +154,20 @@ export default function FeedPage() {
 
             {/* Posts Feed */}
             <div className="space-y-6">
-                {posts.map((post) => (
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-12">
+                        <p className="text-destructive mb-4">{error}</p>
+                        <Button onClick={fetchFeed} variant="outline">Retry</Button>
+                    </div>
+                ) : posts.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                        <p>No posts yet. Follow some clubs or riders to see their updates!</p>
+                    </div>
+                ) : posts.map((post) => (
                     <Card key={post.id} className="overflow-hidden">
                         <CardContent className="p-4">
                             {/* Author Header */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,7 @@ import {
     Trophy,
     Bike,
     Image as ImageIcon,
+    Loader2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -43,83 +44,82 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { userAPI } from "@/lib/services";
 
-// Mock user data
-const mockUser = {
-    id: "u1",
-    name: "Mike Rodriguez",
-    username: "roadking_mike",
-    bio: "Full-time rider, part-time mechanic. 15 years on two wheels. Let's ride! 🏍️",
-    location: "Phoenix, AZ",
-    memberSince: "2023-06-15",
-    avatar: null,
-    coverImage: null,
-    verified: true,
-    role: "USER",
-    stats: {
-        rides: 156,
-        distance: 12450,
-        followers: 234,
-        following: 89,
-        clubs: 3,
-        reviewsGiven: 23,
-        reviewRating: 4.9,
-    },
-    badges: [
-        { id: "b1", name: "Road Warrior", description: "1000+ miles ridden", icon: "🏆" },
-        { id: "b2", name: "Club Founder", description: "Started a club", icon: "👑" },
-        { id: "b3", name: "Early Adopter", description: "Joined in beta", icon: "⭐" },
-    ],
-};
-
-const mockBikes = [
-    {
-        id: "bike1",
-        name: "My Panigale",
-        make: "Ducati",
-        model: "Panigale V4S",
-        year: 2021,
-        isPrimary: true,
-    },
-    {
-        id: "bike2",
-        name: "Adventure Rig",
-        make: "BMW",
-        model: "R 1250 GS",
-        year: 2020,
-        isPrimary: false,
-    },
-];
-
-const mockClubs = [
-    { id: "c1", name: "Desert Eagles MC", role: "FOUNDER", memberCount: 128 },
-    { id: "c2", name: "Phoenix Riders", role: "MEMBER", memberCount: 67 },
-];
-
-const mockRecentRides = [
-    { id: "r1", title: "Superstition Mountain Loop", date: "2026-01-25", distance: 85, status: "COMPLETED" },
-    { id: "r2", title: "Weekend City Cruise", date: "2026-01-20", distance: 45, status: "COMPLETED" },
-    { id: "r3", title: "Desert Night Ride", date: "2026-01-15", distance: 62, status: "COMPLETED" },
-];
-
-const mockGallery = [
-    { id: "g1", url: null },
-    { id: "g2", url: null },
-    { id: "g3", url: null },
-    { id: "g4", url: null },
-    { id: "g5", url: null },
-    { id: "g6", url: null },
-];
+interface UserProfile {
+    id: string;
+    name: string;
+    username: string;
+    bio?: string;
+    location?: string;
+    memberSince?: string;
+    avatar?: string | null;
+    image?: string | null;
+    coverImage?: string | null;
+    verified?: boolean;
+    role?: string;
+    stats?: {
+        rides: number;
+        distance: number;
+        followers: number;
+        following: number;
+        clubs: number;
+        reviewsGiven: number;
+        reviewRating: number;
+    };
+    badges?: Array<{ id: string; name: string; description: string; icon: string }>;
+    bikes?: Array<{
+        id: string;
+        name: string;
+        make: string;
+        model: string;
+        year: number;
+        isPrimary: boolean;
+    }>;
+    clubs?: Array<{ id: string; name: string; role: string; memberCount: number }>;
+    recentRides?: Array<{ id: string; title: string; date: string; distance: number; status: string }>;
+    gallery?: Array<{ id: string; url: string | null }>;
+}
 
 export default function ProfilePage() {
     const params = useParams();
     const router = useRouter();
     const username = params.username as string;
-    const isOwnProfile = username === "me" || username === mockUser.username;
 
+    const [user, setUser] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
     const [isFollowing, setIsFollowing] = useState(false);
     const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
+
+    const isOwnProfile = username === "me";
+
+    useEffect(() => {
+        fetchProfile();
+    }, [username]);
+
+    const fetchProfile = async () => {
+        try {
+            setLoading(true);
+            const response = username === "me"
+                ? await userAPI.getProfile()
+                : await userAPI.getPublicProfile(username);
+            // Map API response to local UserProfile type
+            const userData = response.user;
+            setUser({
+                id: userData.id,
+                name: userData.name || '',
+                username: userData.username || '',
+                bio: userData.bio,
+                location: userData.location,
+                avatar: userData.avatar,
+            });
+        } catch (err) {
+            console.error("Failed to fetch profile:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-US", {
@@ -140,6 +140,25 @@ export default function ProfilePage() {
         setIsFollowing(false);
         setIsUnfollowDialogOpen(false);
     };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center py-24">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="text-center py-24">
+                <p className="text-muted-foreground">User not found</p>
+                <Button onClick={() => router.back()} variant="outline" className="mt-4">
+                    Go Back
+                </Button>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen">
@@ -186,26 +205,30 @@ export default function ProfilePage() {
                 <div className="flex flex-col md:flex-row md:items-end gap-4">
                     <Avatar className="w-28 h-28 border-4 border-background">
                         <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                            {mockUser.name.split(" ").map((n) => n[0]).join("")}
+                            {user.name.split(" ").map((n) => n[0]).join("")}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 pb-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <h1 className="text-2xl font-bold">{mockUser.name}</h1>
-                            {mockUser.verified && (
+                            <h1 className="text-2xl font-bold">{user.name}</h1>
+                            {user.verified && (
                                 <ShieldCheck className="w-5 h-5 text-blue-500" />
                             )}
                         </div>
-                        <p className="text-muted-foreground">@{mockUser.username}</p>
+                        <p className="text-muted-foreground">@{user.username}</p>
                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
-                            <span className="flex items-center gap-1">
-                                <MapPin className="w-4 h-4" />
-                                {mockUser.location}
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                Joined {formatDate(mockUser.memberSince)}
-                            </span>
+                            {user.location && (
+                                <span className="flex items-center gap-1">
+                                    <MapPin className="w-4 h-4" />
+                                    {user.location}
+                                </span>
+                            )}
+                            {user.memberSince && (
+                                <span className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    Joined {formatDate(user.memberSince)}
+                                </span>
+                            )}
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -241,26 +264,28 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Bio */}
-                {mockUser.bio && (
-                    <p className="mt-4 text-muted-foreground">{mockUser.bio}</p>
+                {user.bio && (
+                    <p className="mt-4 text-muted-foreground">{user.bio}</p>
                 )}
 
                 {/* Stats */}
-                <div className="flex items-center gap-6 mt-4 text-sm">
-                    <div className="flex items-center gap-1">
-                        <span className="font-semibold">{mockUser.stats.followers}</span>
-                        <span className="text-muted-foreground">followers</span>
+                {user.stats && (
+                    <div className="flex items-center gap-6 mt-4 text-sm">
+                        <div className="flex items-center gap-1">
+                            <span className="font-semibold">{user.stats.followers}</span>
+                            <span className="text-muted-foreground">followers</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="font-semibold">{user.stats.following}</span>
+                            <span className="text-muted-foreground">following</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                            <span className="font-semibold">{user.stats.reviewRating}</span>
+                            <span className="text-muted-foreground">({user.stats.reviewsGiven})</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <span className="font-semibold">{mockUser.stats.following}</span>
-                        <span className="text-muted-foreground">following</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                        <span className="font-semibold">{mockUser.stats.reviewRating}</span>
-                        <span className="text-muted-foreground">({mockUser.stats.reviewsGiven})</span>
-                    </div>
-                </div>
+                )}
             </div>
 
             {/* Tabs Content */}
@@ -284,22 +309,22 @@ export default function ProfilePage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="text-center p-4 bg-muted rounded-lg">
                                             <Route className="w-6 h-6 mx-auto text-primary mb-2" />
-                                            <p className="text-2xl font-bold">{mockUser.stats.rides}</p>
+                                            <p className="text-2xl font-bold">{user.stats?.rides || 0}</p>
                                             <p className="text-sm text-muted-foreground">Rides</p>
                                         </div>
                                         <div className="text-center p-4 bg-muted rounded-lg">
                                             <Bike className="w-6 h-6 mx-auto text-primary mb-2" />
-                                            <p className="text-2xl font-bold">{mockUser.stats.distance.toLocaleString()}</p>
+                                            <p className="text-2xl font-bold">{(user.stats?.distance || 0).toLocaleString()}</p>
                                             <p className="text-sm text-muted-foreground">Miles</p>
                                         </div>
                                         <div className="text-center p-4 bg-muted rounded-lg">
                                             <Users className="w-6 h-6 mx-auto text-primary mb-2" />
-                                            <p className="text-2xl font-bold">{mockUser.stats.clubs}</p>
+                                            <p className="text-2xl font-bold">{user.stats?.clubs || 0}</p>
                                             <p className="text-sm text-muted-foreground">Clubs</p>
                                         </div>
                                         <div className="text-center p-4 bg-muted rounded-lg">
                                             <Trophy className="w-6 h-6 mx-auto text-primary mb-2" />
-                                            <p className="text-2xl font-bold">{mockUser.badges.length}</p>
+                                            <p className="text-2xl font-bold">{user.badges?.length || 0}</p>
                                             <p className="text-sm text-muted-foreground">Badges</p>
                                         </div>
                                     </div>
@@ -313,7 +338,7 @@ export default function ProfilePage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-3">
-                                        {mockUser.badges.map((badge) => (
+                                        {(user.badges || []).map((badge) => (
                                             <div
                                                 key={badge.id}
                                                 className="flex items-center gap-3 p-3 bg-muted rounded-lg"
@@ -338,7 +363,7 @@ export default function ProfilePage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid gap-3 sm:grid-cols-2">
-                                        {mockClubs.map((club) => (
+                                        {(user.clubs || []).map((club) => (
                                             <Link key={club.id} href={`/app/clubs/${club.id}`}>
                                                 <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted transition-colors">
                                                     <Avatar>
@@ -364,7 +389,7 @@ export default function ProfilePage() {
 
                     <TabsContent value="bikes" className="mt-6">
                         <div className="grid gap-4 sm:grid-cols-2">
-                            {mockBikes.map((bike) => (
+                            {(user.bikes || []).map((bike) => (
                                 <Card key={bike.id}>
                                     <CardContent className="p-4">
                                         <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-4">
@@ -405,7 +430,7 @@ export default function ProfilePage() {
                             <CardContent>
                                 <ScrollArea className="h-[400px]">
                                     <div className="space-y-3">
-                                        {mockRecentRides.map((ride) => (
+                                        {(user.recentRides || []).map((ride) => (
                                             <Link key={ride.id} href={`/app/rides/${ride.id}`}>
                                                 <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                                                     <div className="flex items-center gap-4">
@@ -436,7 +461,7 @@ export default function ProfilePage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {mockGallery.map((item) => (
+                                    {(user.gallery || []).map((item) => (
                                         <div
                                             key={item.id}
                                             className="aspect-square bg-muted rounded-lg flex items-center justify-center"
@@ -455,7 +480,7 @@ export default function ProfilePage() {
             <Dialog open={isUnfollowDialogOpen} onOpenChange={setIsUnfollowDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Unfollow {mockUser.name}?</DialogTitle>
+                        <DialogTitle>Unfollow {user.name}?</DialogTitle>
                         <DialogDescription>
                             You will no longer see their updates in your feed.
                         </DialogDescription>

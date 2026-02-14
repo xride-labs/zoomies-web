@@ -1,3 +1,28 @@
+// API Response wrapper types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: {
+    code: string;
+    details?: unknown;
+  };
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  message: string;
+  data?: {
+    items: T[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
 // User roles matching Prisma schema
 export type UserRole =
   | "SUPER_ADMIN"
@@ -48,7 +73,7 @@ export interface User {
   reputationScore: number | null;
   affiliations: string | null;
   reminders: string | null;
-  role: UserRole;
+  roles: UserRole[];
   createdAt: Date;
   updatedAt: Date;
 }
