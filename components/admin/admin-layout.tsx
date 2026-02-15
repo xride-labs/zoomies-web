@@ -1,6 +1,7 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useAuth, hasAnyRole } from "@/lib/use-auth";
+import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
@@ -24,7 +25,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { signOut } from "next-auth/react";
 
 const adminNavigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -42,26 +42,26 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-    const { data: session, status } = useSession();
+    const { user, isPending } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
 
+    // Get user roles from the user object
+    const userRoles: string[] = user?.roles || [];
+
     useEffect(() => {
-        if (status === "loading") return;
-        if (!session) {
+        if (isPending) return;
+        if (!user) {
             router.push("/login");
             return;
         }
-        if (
-            !session.user.roles?.includes("ADMIN") &&
-            !session.user.roles?.includes("SUPER_ADMIN")
-        ) {
-            router.push("/app");
+        if (!hasAnyRole(user, "ADMIN", "SUPER_ADMIN")) {
+            router.push("/home");
             return;
         }
-    }, [session, status, router]);
+    }, [user, isPending, router]);
 
-    if (status === "loading") {
+    if (isPending) {
         return (
             <div className="min-h-screen bg-background flex">
                 <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-border bg-card">
@@ -87,11 +87,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         );
     }
 
-    if (!session || (!session.user.roles?.includes("ADMIN") && !session.user.roles?.includes("SUPER_ADMIN"))) {
+    if (!user || !hasAnyRole(user, "ADMIN", "SUPER_ADMIN")) {
         return null;
     }
 
-    const isSuperAdmin = session.user.roles?.includes("SUPER_ADMIN");
+    const isSuperAdmin = userRoles.includes("SUPER_ADMIN");
     const navigationItems = adminNavigation.filter(
         (item) => !item.superAdminOnly || isSuperAdmin,
     );
@@ -147,7 +147,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <Button
                         variant="ghost"
                         className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={() => signOut().then(() => router.push("/"))}
                     >
                         <LogOut className="w-4 h-4" />
                         Sign Out
@@ -161,11 +161,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <div className="flex items-center gap-3 p-2 rounded-lg">
                         <Avatar>
                             <AvatarFallback className="bg-red-600 text-white">
-                                {session.user.name?.charAt(0) || "A"}
+                                {user.name?.charAt(0) || "A"}
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{session.user.name}</p>
+                            <p className="font-medium text-sm truncate">{user.name}</p>
                             <p className="text-xs text-muted-foreground truncate">
                                 {isSuperAdmin ? "Super Administrator" : "Administrator"}
                             </p>

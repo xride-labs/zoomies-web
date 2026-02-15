@@ -102,7 +102,7 @@ export default function AdminClubsPage() {
         }
     }, [verifiedFilter, searchQuery]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     useEffect(() => {
         fetchClubs();
     }, [fetchClubs]);

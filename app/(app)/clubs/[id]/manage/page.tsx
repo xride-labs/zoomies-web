@@ -376,7 +376,7 @@ export default function ClubManagePage() {
                                     No pending requests
                                 </div>
                             ) : (
-                                <ScrollArea className="h-[400px]">
+                                <ScrollArea className="h-100">
                                     <div className="space-y-4">
                                         {pendingRequests.map((request) => (
                                             <div
@@ -402,7 +402,7 @@ export default function ClubManagePage() {
                                                     </div>
                                                     {request.message && (
                                                         <p className="mt-2 text-sm bg-muted p-3 rounded-lg">
-                                                            "{request.message}"
+                                                            &quot;{request.message}&quot;
                                                         </p>
                                                     )}
                                                     <div className="flex gap-2 mt-3">
@@ -439,7 +439,7 @@ export default function ClubManagePage() {
                             <CardHeader>
                                 <CardTitle>Club Information</CardTitle>
                                 <CardDescription>
-                                    Update your club's basic information
+                                    Update your club&apos;s basic information
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">

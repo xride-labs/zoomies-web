@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import {
+    Smartphone,
+    Map,
+    Shield,
+    Compass,
+    Download,
+    ArrowRight,
+} from "lucide-react";
 
 export function HeroSection() {
     const containerVariants = {
@@ -13,63 +18,73 @@ export function HeroSection() {
         visible: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.2,
+                staggerChildren: 0.15,
                 delayChildren: 0.3,
             },
         },
     };
 
     const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
+        hidden: { opacity: 0, y: 50 },
         visible: {
             opacity: 1,
             y: 0,
-            transition: { duration: 0.6, ease: "easeOut" },
+            transition: { duration: 0.7, ease: "easeOut" },
         },
     };
 
-    const phoneVariants = {
-        hidden: { opacity: 0, scale: 0.8, rotateY: -20 },
-        visible: {
-            opacity: 1,
-            scale: 1,
-            rotateY: 0,
-            transition: { duration: 0.8, ease: "easeOut" },
-        },
-    };
-
-    const cardVariants = {
-        hidden: { opacity: 0, x: 0 },
-        visible: {
-            opacity: 1,
-            x: 0,
-            transition: { duration: 0.6 },
-        },
-        float: {
+    // Floating animation for 3D assets
+    const floatVariants = {
+        float1: {
             y: [0, -20, 0],
-            transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+            rotate: [0, 5, 0],
+            transition: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+        },
+        float2: {
+            y: [0, -15, 0],
+            rotate: [0, -3, 0],
+            transition: { duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
+        },
+        float3: {
+            y: [0, -25, 0],
+            rotate: [0, 8, 0],
+            transition: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 },
+        },
+        float4: {
+            y: [0, -18, 0],
+            rotate: [0, -5, 0],
+            transition: { duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
+        },
+        float5: {
+            y: [0, -22, 0],
+            rotate: [0, 4, 0],
+            transition: { duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
         },
     };
 
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-            {/* Background gradient */}
-            <div className="absolute inset-0 bg-linear-to-br from-[#1a1a1a] via-[#222222] to-[#1a1a1a]" />
-
-            {/* Decorative elements */}
-            <motion.div
-                className="absolute top-20 left-10 w-72 h-72 bg-brand-red/10 rounded-full blur-3xl"
-                animate={{ x: [0, 20, -20, 0], y: [0, 30, -10, 0] }}
-                transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-                className="absolute bottom-20 right-10 w-96 h-96 bg-brand-teal/10 rounded-full blur-3xl"
-                animate={{ x: [0, -30, 10, 0], y: [0, -20, 20, 0] }}
-                transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-            />
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-canvas">
+            {/* Background gradient orbs */}
+            <div className="absolute inset-0 overflow-hidden">
+                <motion.div
+                    className="absolute top-1/4 -left-32 w-96 h-96 bg-linear-to-r from-brand-red-light/20 to-brand-red/10 rounded-full blur-3xl"
+                    animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                    className="absolute bottom-1/4 -right-32 w-125 h-125 bg-linear-to-l from-brand-teal/15 to-transparent rounded-full blur-3xl"
+                    animate={{ x: [0, -40, 0], y: [0, -20, 0] }}
+                    transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-neon-green/5 rounded-full blur-3xl"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                />
+            </div>
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div className="grid lg:grid-cols-2 gap-16 items-center">
                     {/* Left content */}
                     <motion.div
                         className="text-center lg:text-left"
@@ -77,162 +92,205 @@ export function HeroSection() {
                         initial="hidden"
                         animate="visible"
                     >
-                        <motion.div variants={itemVariants}>
-                            <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium bg-brand-red/10 text-brand-red-light border-0 inline-flex items-center gap-2">
-                                <Image src="/motorbike.png" alt="Motorbike" width={16} height={16} />
-                                Built for Real Bikers
-                            </Badge>
-                        </motion.div>
-
                         <motion.h1
                             variants={itemVariants}
-                            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
+                            className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-8 uppercase tracking-tight"
                         >
-                            Ride Together,{" "}
-                            <span className="text-brand-red-light">Build Your Tribe</span>
+                            Ride Together.{" "}
+                            <span className="bg-linear-to-r from-brand-red-light to-brand-red bg-clip-text text-transparent">
+                                Build Your Tribe.
+                            </span>
                         </motion.h1>
 
                         <motion.p
                             variants={itemVariants}
-                            className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0"
+                            className="text-lg sm:text-xl text-text-secondary mb-10 max-w-xl mx-auto lg:mx-0 font-medium leading-relaxed"
                         >
                             The social platform where motorcycle riders discover clubs through people,
                             join organized rides like clan wars, and build their riding legacy.
                         </motion.p>
 
-                        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
-                            <Button size="lg" className="text-lg px-8 py-6 rounded-full" asChild>
-                                <Link href="/signup">
-                                    <Zap className="w-5 h-5 mr-2" />
-                                    Start Riding
-                                </Link>
+                        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            {/* Primary CTA — Riders */}
+                            <Button
+                                size="lg"
+                                className="text-lg px-10 py-7 rounded-full bg-linear-to-r from-brand-red-light to-brand-red hover:from-[#d94444] hover:to-[#960000] text-white border-0 shadow-[0_20px_50px_rgba(200,55,55,0.4)] transition-all duration-300 hover:shadow-[0_25px_60px_rgba(200,55,55,0.5)] hover:scale-105 font-bold uppercase tracking-wide"
+                                asChild
+                            >
+                                <a href="#download">
+                                    <Download className="w-5 h-5 mr-2" />
+                                    Get the App
+                                </a>
                             </Button>
-                            <Button size="lg" variant="outline" className="text-lg px-8 py-6 rounded-full" asChild>
-                                <Link href="#how-it-works">Learn More</Link>
+                            {/* Secondary CTA — Partners */}
+                            <Button
+                                size="lg"
+                                className="text-lg px-10 py-7 rounded-full bg-transparent border-2 border-teal text-teal hover:bg-teal/10 hover:shadow-[0_0_30px_rgba(55,200,195,0.25)] transition-all duration-300 hover:scale-105 font-bold uppercase tracking-wide"
+                                asChild
+                            >
+                                <Link href="/login">
+                                    Partner Access
+                                    <ArrowRight className="w-5 h-5 ml-2" />
+                                </Link>
                             </Button>
                         </motion.div>
 
-                        {/* Stats */}
+                        {/* Stats row */}
                         <motion.div
                             variants={itemVariants}
-                            className="flex flex-wrap gap-8 justify-center lg:justify-start"
+                            className="flex flex-wrap gap-10 justify-center lg:justify-start mt-14"
                         >
-                            <motion.div
-                                className="text-center"
-                                whileHover={{ scale: 1.1 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                            >
-                                <div className="text-3xl font-bold text-foreground">10K+</div>
-                                <div className="text-sm text-muted-foreground">Active Riders</div>
-                            </motion.div>
-                            <motion.div
-                                className="text-center"
-                                whileHover={{ scale: 1.1 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                            >
-                                <div className="text-3xl font-bold text-foreground">500+</div>
-                                <div className="text-sm text-muted-foreground">Clubs</div>
-                            </motion.div>
-                            <motion.div
-                                className="text-center"
-                                whileHover={{ scale: 1.1 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                            >
-                                <div className="text-3xl font-bold text-foreground">2K+</div>
-                                <div className="text-sm text-muted-foreground">Rides Completed</div>
-                            </motion.div>
+                            {[
+                                { value: "10K+", label: "Active Riders" },
+                                { value: "500+", label: "Clubs" },
+                                { value: "2K+", label: "Rides" },
+                            ].map((stat, i) => (
+                                <div key={i} className="text-center">
+                                    <div className="text-3xl sm:text-4xl font-bold text-[#77ff00]">{stat.value}</div>
+                                    <div className="text-sm text-text-secondary uppercase tracking-wider mt-1">{stat.label}</div>
+                                </div>
+                            ))}
                         </motion.div>
                     </motion.div>
 
-                    {/* Right content - Phone mockups / Image placeholder */}
+                    {/* Right content - Floating 3D Asset Cloud */}
                     <motion.div
-                        className="relative flex justify-center lg:justify-end"
-                        variants={phoneVariants}
-                        initial="hidden"
-                        animate="visible"
+                        className="relative h-125 lg:h-150 flex items-center justify-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1, delay: 0.5 }}
                     >
-                        <div className="relative">
-                            {/* Main phone mockup */}
-                            <motion.div
-                                className="w-72 h-145 bg-secondary rounded-[3rem] p-3 shadow-2xl"
-                                animate={{ y: [0, -10, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                            >
-                                <div className="w-full h-full bg-[#1a1a1a] rounded-[2.5rem] overflow-hidden relative">
-                                    {/* Phone content placeholder */}
-                                    <div className="absolute inset-0 bg-linear-to-b from-brand-red/5 to-brand-red/20 flex flex-col items-center justify-center p-6">
-                                        <motion.div
-                                            className="w-20 h-20 bg-brand-red/20 rounded-full flex items-center justify-center mb-4"
-                                            animate={{ scale: [1, 1.1, 1] }}
-                                            transition={{ duration: 2, repeat: Infinity }}
-                                        >
-                                            <Users className="w-10 h-10 text-brand-red-light" />
-                                        </motion.div>
-                                        <div className="text-center">
-                                            <div className="font-semibold text-foreground mb-1">Desert Eagles MC</div>
-                                            <div className="text-sm text-muted-foreground mb-4">128 members • Phoenix, AZ</div>
-                                            <Badge className="bg-brand-green/10 text-brand-green border-0">
-                                                <MapPin className="w-3 h-3 mr-1" />
-                                                Ride in Progress
-                                            </Badge>
-                                        </div>
+                        {/* Helmet asset */}
+                        <motion.div
+                            className="absolute w-32 h-32 sm:w-40 sm:h-40 top-8 left-4 sm:left-8"
+                            animate="float1"
+                            variants={floatVariants}
+                        >
+                            <div className="w-full h-full bg-surface/80 backdrop-blur-md rounded-3xl shadow-atmospheric flex items-center justify-center border border-[#444444]/50">
+                                <Shield className="w-16 h-16 sm:w-20 sm:h-20 text-brand-red-light" />
+                            </div>
+                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#333333] text-white text-xs px-3 py-1 rounded-full font-medium">
+                                Helmet
+                            </div>
+                        </motion.div>
 
-                                        {/* Rider avatars */}
-                                        <div className="flex -space-x-3 mt-6">
-                                            {[...Array(5)].map((_, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    className="w-12 h-12 rounded-full bg-linear-to-br from-brand-red to-brand-red-light border-3 border-brand-grey flex items-center justify-center text-white font-semibold shadow-md"
-                                                    animate={{ y: [0, -5, 0] }}
-                                                    transition={{ duration: 2, delay: i * 0.1, repeat: Infinity }}
-                                                >
-                                                    {String.fromCharCode(65 + i)}
-                                                </motion.div>
+                        {/* Phone App Screen */}
+                        <motion.div
+                            className="absolute w-48 h-80 sm:w-56 sm:h-96 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"
+                            animate="float2"
+                            variants={floatVariants}
+                        >
+                            <div className="w-full h-full bg-[#333333]/90 backdrop-blur-md rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.6)] p-2 border border-[#444444]/50">
+                                <div className="w-full h-full bg-[#1a1a1a] rounded-4xl overflow-hidden relative">
+                                    {/* App UI mockup */}
+                                    <div className="absolute inset-0 p-4">
+                                        <div className="bg-linear-to-b from-brand-red-light/20 to-transparent rounded-2xl p-4 mb-4">
+                                            <div className="text-brand-red-light text-xs font-bold uppercase mb-1">Live Now</div>
+                                            <div className="text-white font-bold text-sm">Desert Eagles MC</div>
+                                            <div className="text-text-secondary text-xs">12 riders • Route 66</div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {[1, 2, 3].map((i) => (
+                                                <div key={i} className="flex items-center gap-3 bg-[#333333]/50 rounded-xl p-3">
+                                                    <div className="w-8 h-8 rounded-full bg-linear-to-r from-brand-red-light to-brand-red" />
+                                                    <div className="flex-1">
+                                                        <div className="h-2 bg-[#444444] rounded w-20 mb-1" />
+                                                        <div className="h-2 bg-[#444444]/50 rounded w-14" />
+                                                    </div>
+                                                    <div className="w-6 h-6 rounded-full bg-[#77ff00]/20 flex items-center justify-center">
+                                                        <div className="w-2 h-2 rounded-full bg-[#77ff00]" />
+                                                    </div>
+                                                </div>
                                             ))}
-                                            <div className="w-12 h-12 rounded-full bg-secondary border-3 border-brand-grey flex items-center justify-center text-white text-xs font-semibold shadow-md">
-                                                +23
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
+                        </motion.div>
 
-                            {/* Floating cards */}
-                            <motion.div
-                                className="absolute -left-16 top-20 bg-card rounded-2xl shadow-xl p-4 border border-border"
-                                variants={cardVariants}
-                                initial="hidden"
-                                animate={["visible", "float"]}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-brand-green/10 rounded-full flex items-center justify-center">
-                                        <MapPin className="w-5 h-5 text-brand-green" />
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-sm">Live Tracking</div>
-                                        <div className="text-xs text-muted-foreground">12 riders on route</div>
+                        {/* Wheel asset */}
+                        <motion.div
+                            className="absolute w-28 h-28 sm:w-36 sm:h-36 bottom-16 left-0 sm:left-4"
+                            animate="float3"
+                            variants={floatVariants}
+                        >
+                            <div className="w-full h-full bg-surface/80 backdrop-blur-md rounded-full shadow-atmospheric flex items-center justify-center border border-[#444444]/50">
+                                <motion.div
+                                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#37c8c3] flex items-center justify-center"
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                                >
+                                    <div className="w-6 h-6 rounded-full bg-[#37c8c3]" />
+                                </motion.div>
+                            </div>
+                        </motion.div>
+
+                        {/* Route Map asset */}
+                        <motion.div
+                            className="absolute w-36 h-28 sm:w-44 sm:h-36 top-4 right-0 sm:right-4"
+                            animate="float4"
+                            variants={floatVariants}
+                        >
+                            <div className="w-full h-full bg-surface/80 backdrop-blur-md rounded-3xl shadow-atmospheric flex items-center justify-center border border-[#444444]/50 p-4">
+                                <div className="relative w-full h-full">
+                                    <Map className="w-10 h-10 text-[#77ff00] absolute top-0 left-0" />
+                                    {/* Route line */}
+                                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 80">
+                                        <motion.path
+                                            d="M 10 60 Q 30 20 50 50 T 90 30"
+                                            fill="none"
+                                            stroke="#77ff00"
+                                            strokeWidth="3"
+                                            strokeLinecap="round"
+                                            initial={{ pathLength: 0 }}
+                                            animate={{ pathLength: 1 }}
+                                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                                        />
+                                    </svg>
+                                    {/* Dots on route */}
+                                    <div className="absolute bottom-1 right-1 flex -space-x-1">
+                                        {[...Array(3)].map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                className="w-3 h-3 rounded-full bg-brand-red-light border border-surface"
+                                                animate={{ scale: [1, 1.2, 1] }}
+                                                transition={{ duration: 1, delay: i * 0.2, repeat: Infinity }}
+                                            />
+                                        ))}
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
+                        </motion.div>
 
-                            <motion.div
-                                className="absolute -right-8 bottom-32 bg-card rounded-2xl shadow-xl p-4 border border-border"
-                                variants={cardVariants}
-                                initial="hidden"
-                                animate={["visible", "float"]}
-                                transition={{ delay: 0.2 }}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-brand-teal/10 rounded-full flex items-center justify-center">
-                                        <Zap className="w-5 h-5 text-brand-teal" />
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-sm">Weekend Ride</div>
-                                        <div className="text-xs text-muted-foreground">Starting in 2 days</div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
+                        {/* Compass asset */}
+                        <motion.div
+                            className="absolute w-24 h-24 sm:w-28 sm:h-28 bottom-24 right-8 sm:right-16"
+                            animate="float5"
+                            variants={floatVariants}
+                        >
+                            <div className="w-full h-full bg-surface/80 backdrop-blur-md rounded-3xl shadow-atmospheric flex items-center justify-center border border-teal/30 group hover:border-teal transition-colors">
+                                <motion.div
+                                    animate={{ rotate: [0, 360] }}
+                                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                                >
+                                    <Compass className="w-12 h-12 sm:w-14 sm:h-14 text-[#37c8c3]" />
+                                </motion.div>
+                            </div>
+                        </motion.div>
+
+                        {/* Smartphone icon */}
+                        <motion.div
+                            className="absolute w-20 h-20 sm:w-24 sm:h-24 bottom-4 right-1/3"
+                            animate={{
+                                y: [0, -12, 0],
+                                rotate: [0, -8, 0],
+                            }}
+                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+                        >
+                            <div className="w-full h-full bg-linear-to-br from-brand-red-light to-brand-red rounded-2xl shadow-[0_20px_50px_rgba(200,55,55,0.4)] flex items-center justify-center">
+                                <Smartphone className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                            </div>
+                        </motion.div>
                     </motion.div>
                 </div>
             </div>
@@ -242,11 +300,13 @@ export function HeroSection() {
                 className="absolute bottom-8 left-1/2 -translate-x-1/2"
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
             >
-                <div className="w-6 h-10 border-2 border-muted-foreground/30 rounded-full flex justify-center pt-2">
+                <div className="w-6 h-10 border-2 border-text-secondary/30 rounded-full flex justify-center pt-2">
                     <motion.div
-                        className="w-1.5 h-3 bg-muted-foreground/50 rounded-full"
-                        animate={{ opacity: [1, 0, 1] }}
+                        className="w-1.5 h-3 bg-text-secondary/50 rounded-full"
+                        animate={{ opacity: [1, 0, 1], y: [0, 4, 0] }}
                         transition={{ duration: 2, repeat: Infinity }}
                     />
                 </div>

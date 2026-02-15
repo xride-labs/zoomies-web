@@ -38,10 +38,10 @@ export function AppLayout({ children }: AppLayoutProps) {
             <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:w-72 lg:flex-col border-r border-border bg-card">
                 {/* Logo */}
                 <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
-                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-linear-to-br from-brand-red-light to-brand-red rounded-2xl flex items-center justify-center shadow-[0_0_15px_rgba(200,55,55,0.3)]">
                         <span className="text-white font-bold text-xl">⚡</span>
                     </div>
-                    <span className="text-xl font-bold text-foreground">Zoomies</span>
+                    <span className="text-xl font-bold text-foreground uppercase tracking-wide">Zoomies</span>
                 </div>
 
                 {/* Navigation */}
@@ -54,7 +54,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                                 key={item.name}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors",
+                                    "flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all duration-300",
                                     isActive
                                         ? "bg-primary text-primary-foreground"
                                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -83,7 +83,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <div className="p-4 border-t border-border">
                     <Link
                         href="/app/profile"
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 p-2 rounded-2xl hover:bg-muted transition-colors"
                     >
                         <Avatar>
                             <AvatarFallback className="bg-primary text-primary-foreground">
@@ -105,7 +105,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <div className="flex items-center justify-between h-full px-4 lg:px-6">
                         {/* Mobile Logo */}
                         <Link href="/app" className="flex items-center gap-2 lg:hidden">
-                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                            <div className="w-8 h-8 bg-linear-to-br from-brand-red-light to-brand-red rounded-xl flex items-center justify-center">
                                 <span className="text-white font-bold text-lg">⚡</span>
                             </div>
                             <span className="text-lg font-bold text-foreground">Zoomies</span>

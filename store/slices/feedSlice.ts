@@ -1,4 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  fetchFeed,
+  fetchMoreFeed,
+  createPostThunk,
+  deletePostThunk,
+  likePostThunk,
+  unlikePostThunk,
+  savePostThunk,
+  unsavePostThunk,
+} from "../thunks/feedThunks";
 
 export type PostType = "ride" | "content" | "listing" | "club-activity";
 
@@ -119,6 +129,94 @@ const feedSlice = createSlice({
       state.page = 1;
       state.hasMore = true;
     },
+  },
+  extraReducers: (builder) => {
+    // Fetch feed
+    builder
+      .addCase(fetchFeed.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchFeed.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.posts = action.payload.posts;
+        state.hasMore = action.payload.hasMore;
+        state.page = 1;
+      })
+      .addCase(fetchFeed.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Fetch more feed
+    builder
+      .addCase(fetchMoreFeed.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchMoreFeed.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.posts = [...state.posts, ...action.payload.posts];
+        state.hasMore = action.payload.hasMore;
+        state.page += 1;
+      })
+      .addCase(fetchMoreFeed.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Create post
+    builder
+      .addCase(createPostThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createPostThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.posts = [action.payload, ...state.posts];
+      })
+      .addCase(createPostThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Delete post
+    builder.addCase(deletePostThunk.fulfilled, (state, action) => {
+      state.posts = state.posts.filter((p) => p.id !== action.payload);
+    });
+
+    // Like post
+    builder.addCase(likePostThunk.fulfilled, (state, action) => {
+      const post = state.posts.find((p) => p.id === action.payload);
+      if (post) {
+        post.isLiked = true;
+        post.likesCount += 1;
+      }
+    });
+
+    // Unlike post
+    builder.addCase(unlikePostThunk.fulfilled, (state, action) => {
+      const post = state.posts.find((p) => p.id === action.payload);
+      if (post) {
+        post.isLiked = false;
+        post.likesCount -= 1;
+      }
+    });
+
+    // Save post
+    builder.addCase(savePostThunk.fulfilled, (state, action) => {
+      const post = state.posts.find((p) => p.id === action.payload);
+      if (post) {
+        post.isSaved = true;
+      }
+    });
+
+    // Unsave post
+    builder.addCase(unsavePostThunk.fulfilled, (state, action) => {
+      const post = state.posts.find((p) => p.id === action.payload);
+      if (post) {
+        post.isSaved = false;
+      }
+    });
   },
 });
 

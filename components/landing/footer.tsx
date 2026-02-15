@@ -1,126 +1,86 @@
-import Link from "next/link";
-import { Separator } from "@/components/ui/separator";
-import Image from "next/image";
+"use client";
 
-const footerLinks = {
-    product: [
-        { label: "Features", href: "#features" },
-        { label: "Marketplace", href: "#marketplace" },
-        { label: "Clubs", href: "/clubs" },
-        { label: "Rides", href: "/rides" },
-    ],
-    company: [
-        { label: "About", href: "/about" },
-        { label: "Blog", href: "/blog" },
-        { label: "Careers", href: "/careers" },
-        { label: "Contact", href: "/contact" },
-    ],
-    legal: [
-        { label: "Privacy", href: "/privacy" },
-        { label: "Terms", href: "/terms" },
-        { label: "Cookies", href: "/cookies" },
-    ],
-    social: [
-        { label: "Instagram", href: "https://instagram.com" },
-        { label: "Twitter", href: "https://twitter.com" },
-        { label: "YouTube", href: "https://youtube.com" },
-    ],
-};
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Instagram, Youtube } from "lucide-react";
+
+const socialLinks = [
+    { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+    {
+        icon: () => (
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+        ),
+        href: "https://twitter.com",
+        label: "X",
+    },
+    { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
+];
 
 export function Footer() {
     return (
-        <footer className="bg-secondary text-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
-                    {/* Brand */}
-                    <div className="col-span-2">
-                        <Link href="/" className="flex items-center gap-2 mb-4">
-                            <Image
-                                src="/motorbike.png"
-                                alt="Zoomies"
-                                width={40}
-                                height={40}
-                                className="w-10 h-10"
-                            />
-                            <span className="text-xl font-bold">Zoomies</span>
-                        </Link>
-                        <p className="text-white/60 max-w-xs mb-6">
-                            A social platform for bikers where you discover clubs through people
-                            and participate in organized rides like clan wars.
-                        </p>
-                        <div className="flex gap-4">
-                            {footerLinks.social.map((link) => (
-                                <a
-                                    key={link.label}
+        <footer className="relative bg-linear-to-b from-canvas to-black py-20 overflow-hidden">
+            {/* Fade-to-black gradient overlay */}
+            <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black pointer-events-none" />
+
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <motion.div
+                    className="flex flex-col items-center text-center"
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7 }}
+                >
+                    {/* Logo */}
+                    <Link href="/" className="flex items-center gap-3 mb-8">
+                        <Image
+                            src="/motorbike.png"
+                            alt="Zoomies"
+                            width={48}
+                            height={48}
+                            className="w-12 h-12"
+                        />
+                        <span className="text-3xl font-bold text-white uppercase tracking-wider">
+                            Zoomies
+                        </span>
+                    </Link>
+
+                    {/* Tagline */}
+                    <p className="text-text-secondary/60 text-base max-w-md mb-10 font-medium">
+                        The social platform for motorcycle riders. Discover clubs, join rides, build your legacy.
+                    </p>
+
+                    {/* Social Icons */}
+                    <div className="flex items-center gap-6 mb-12">
+                        {socialLinks.map((link, index) => {
+                            const Icon = link.icon;
+                            return (
+                                <motion.a
+                                    key={index}
                                     href={link.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-white/60 hover:text-white transition-colors"
+                                    className="w-12 h-12 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-text-secondary/60 hover:text-white hover:bg-teal/20 hover:border-teal/50 border border-[#444444]/50 transition-all duration-300"
+                                    whileHover={{ scale: 1.1, y: -3 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    aria-label={link.label}
                                 >
-                                    {link.label}
-                                </a>
-                            ))}
-                        </div>
+                                    <Icon />
+                                </motion.a>
+                            );
+                        })}
                     </div>
 
-                    {/* Product */}
-                    <div>
-                        <h4 className="font-semibold mb-4">Product</h4>
-                        <ul className="space-y-3">
-                            {footerLinks.product.map((link) => (
-                                <li key={link.label}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-white/60 hover:text-white transition-colors"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    {/* Divider line */}
+                    <div className="w-24 h-px bg-linear-to-r from-transparent via-[#444444] to-transparent mb-8" />
 
-                    {/* Company */}
-                    <div>
-                        <h4 className="font-semibold mb-4">Company</h4>
-                        <ul className="space-y-3">
-                            {footerLinks.company.map((link) => (
-                                <li key={link.label}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-white/60 hover:text-white transition-colors"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Legal */}
-                    <div>
-                        <h4 className="font-semibold mb-4">Legal</h4>
-                        <ul className="space-y-3">
-                            {footerLinks.legal.map((link) => (
-                                <li key={link.label}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-white/60 hover:text-white transition-colors"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
-                <Separator className="bg-white/10 mb-8" />
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-white/40 text-sm">
-                    <p>© 2026 Zoomies. All rights reserved.</p>
-                    <p>Made with ❤️ for the motorcycle community</p>
-                </div>
+                    {/* Copyright */}
+                    <p className="text-text-secondary/30 text-sm">
+                        © 2026 Zoomies. All rights reserved.
+                    </p>
+                </motion.div>
             </div>
         </footer>
     );

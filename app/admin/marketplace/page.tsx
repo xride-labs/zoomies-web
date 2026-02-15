@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,23 +84,29 @@ export default function AdminMarketplacePage() {
     const [selectedListing, setSelectedListing] = useState<AdminListing | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-    const fetchListings = useCallback(async () => {
-        try {
-            const params: Record<string, string> = {};
-            if (statusFilter !== "all") params.status = statusFilter;
-            if (searchQuery) params.search = searchQuery;
+    useEffect(() => {
+        const loadListings = async () => {
+            try {
+                const params: Record<string, string> = {};
+                if (statusFilter !== "all") params.status = statusFilter;
+                if (searchQuery) params.search = searchQuery;
 
-            const response = await adminAPI.getListings(params);
-            setListings(response.listings || []);
-        } catch (err) {
-            console.error("Failed to load listings", err);
-        }
+                const response = await adminAPI.getListings(params);
+                setListings(response.listings || []);
+            } catch (err) {
+                console.error("Failed to load listings", err);
+            }
+        };
+        loadListings();
     }, [statusFilter, searchQuery]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    useEffect(() => {
-        fetchListings();
-    }, [fetchListings]);
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+    };
+
+    const handleStatusChange = (value: string) => {
+        setStatusFilter(value);
+    };
 
     const filteredListings = listings.filter((listing) => {
         const matchesSearch =
@@ -200,6 +206,10 @@ export default function AdminMarketplacePage() {
                             <CardDescription>Monitor and moderate marketplace listings</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setStatusFilter(statusFilter)}>
+                                <Search className="w-4 h-4 mr-2" />
+                                Refresh
+                            </Button>
                             <Button variant="outline" size="sm">
                                 <Download className="w-4 h-4 mr-2" />
                                 Export
@@ -216,10 +226,10 @@ export default function AdminMarketplacePage() {
                                 placeholder="Search listings..."
                                 className="pl-9"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => handleSearchChange(e.target.value)}
                             />
                         </div>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <Select value={statusFilter} onValueChange={handleStatusChange}>
                             <SelectTrigger className="w-37.5">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>

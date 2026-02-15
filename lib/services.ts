@@ -1,4 +1,5 @@
 import { apiClient } from "./api";
+import { authClient } from "./auth-client";
 import { UserProfile, Bike } from "@/store/slices/userSlice";
 import { Club, ClubDetails } from "@/store/slices/clubsSlice";
 import { Ride, RideDetails } from "@/store/slices/ridesSlice";
@@ -10,16 +11,39 @@ import {
 } from "@/store/slices/marketplaceSlice";
 import { Post } from "@/store/slices/feedSlice";
 
-// ============ Auth API ============
+// ============ Auth API (using Better Auth client) ============
 export const authAPI = {
-  register: (data: { email: string; password: string; name: string }) =>
-    apiClient.post<{ user: UserProfile; token: string }>(
-      "/auth/register",
-      data,
-    ),
+  register: async (data: { email: string; password: string; name: string }) => {
+    const result = await authClient.signUp.email({
+      email: data.email,
+      password: data.password,
+      name: data.name,
+    });
+    if (result.error) {
+      throw new Error(result.error.message || "Registration failed");
+    }
+    return result.data;
+  },
 
-  login: (data: { email: string; password: string }) =>
-    apiClient.post<{ user: UserProfile; token: string }>("/auth/login", data),
+  login: async (data: { email: string; password: string }) => {
+    const result = await authClient.signIn.email({
+      email: data.email,
+      password: data.password,
+    });
+    if (result.error) {
+      throw new Error(result.error.message || "Login failed");
+    }
+    return result.data;
+  },
+
+  logout: async () => {
+    await authClient.signOut();
+  },
+
+  getSession: async () => {
+    const session = await authClient.getSession();
+    return session.data;
+  },
 
   forgotPassword: (email: string) =>
     apiClient.post<{ message: string }>("/auth/forgot-password", { email }),

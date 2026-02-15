@@ -34,56 +34,73 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Night Rider Radius - 24px rounded-3xl */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
+  /* Night Rider Brand Colors */
+  --color-canvas: #121212;
+  --color-surface: #333333;
+  --color-neon-green: #77ff00;
+  --color-teal: #37c8c3;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e5e5e5;
+  /* Gradients defined as CSS vars */
+  --gradient-primary: linear-gradient(135deg, #c83737 0%, #850000 100%);
   /* Custom brand colors */
   --color-brand-red: #850000;
   --color-brand-red-light: #c83737;
   --color-brand-green: #77ff00;
   --color-brand-grey: #333333;
   --color-brand-teal: #37c8c3;
+  /* Deep atmospheric shadow */
+  --shadow-atmospheric: 0 20px 50px rgba(0, 0, 0, 0.5);
+  --shadow-glow-teal: 0 0 30px rgba(55, 200, 195, 0.3);
+  --shadow-glow-red: 0 0 30px rgba(200, 55, 55, 0.3);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: #1a1a1a;
+  /* Night Rider - 24px base radius */
+  --radius: 1.5rem;
+  /* Canvas - Deep Black Main Background */
+  --background: #121212;
   --foreground: #ffffff;
-  --card: #222222;
+  /* Surface - Dark Grey Component Backgrounds */
+  --card: #333333;
   --card-foreground: #ffffff;
-  --popover: #222222;
+  --popover: #333333;
   --popover-foreground: #ffffff;
-  /* Zoomies Red - Primary Brand Color */
+  /* Primary Action - Red Gradient base */
   --primary: #c83737;
   --primary-foreground: #ffffff;
-  /* Dark grey for secondary */
+  /* Secondary - Surface color */
   --secondary: #333333;
   --secondary-foreground: #ffffff;
-  --muted: #2a2a2a;
-  --muted-foreground: #999999;
-  /* Teal accent */
+  --muted: #1e1e1e;
+  --muted-foreground: #e5e5e5;
+  /* Teal - Interactive/Hover */
   --accent: #37c8c3;
   --accent-foreground: #ffffff;
   --destructive: #850000;
-  --border: #3a3a3a;
-  --input: #3a3a3a;
+  --border: #444444;
+  --input: #444444;
   --ring: #c83737;
   --chart-1: #c83737;
   --chart-2: #37c8c3;
   --chart-3: #77ff00;
   --chart-4: #850000;
   --chart-5: #ffffff;
-  --sidebar: #1e1e1e;
+  --sidebar: #1a1a1a;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #c83737;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #37c8c3;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #3a3a3a;
+  --sidebar-border: #444444;
   --sidebar-ring: #c83737;
 }
 
@@ -97,14 +114,14 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Night Rider theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: #121212;
 }
 
 ::-webkit-scrollbar-thumb {

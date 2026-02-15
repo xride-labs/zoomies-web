@@ -1,26 +1,24 @@
 import {
   Navbar,
   HeroSection,
+  EcosystemSection,
   FeaturesSection,
-  HowItWorksSection,
+  InvestSection,
   MarketplaceSection,
-  AppStoreSection,
-  CommunitySection,
-  CTASection,
+  DownloadBanner,
   Footer,
 } from "@/components/landing";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-canvas">
       <Navbar />
       <HeroSection />
+      <EcosystemSection />
       <FeaturesSection />
-      <HowItWorksSection />
+      <InvestSection />
       <MarketplaceSection />
-      <AppStoreSection />
-      <CommunitySection />
-      <CTASection />
+      <DownloadBanner />
       <Footer />
     </main>
   );

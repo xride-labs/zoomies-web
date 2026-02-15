@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ const PROMETHEUS_URL =
 
 export default function AdminMonitoringPage() {
     const { data: session } = useSession();
-    const isSuperAdmin = session?.user?.roles?.includes("SUPER_ADMIN");
+    const userRoles: string[] = (session?.user as any)?.roles || [];
+    const isSuperAdmin = userRoles.includes("SUPER_ADMIN");
 
     if (!isSuperAdmin) {
         return (
