@@ -4,7 +4,7 @@ import {
   type AuthSession,
   type RegisterData,
   type LoginData,
-} from "@/lib/api/auth";
+} from "@/lib/server/auth";
 
 /**
  * Register a new user

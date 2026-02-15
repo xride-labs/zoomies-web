@@ -4,7 +4,7 @@ import {
   type UserProfile,
   type Bike,
   type UpdateProfileData,
-} from "@/lib/api/user";
+} from "@/lib/server/user";
 
 /**
  * Fetch current user's profile

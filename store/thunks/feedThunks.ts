@@ -4,7 +4,7 @@ import {
   type Post,
   type Comment,
   type CreatePostData,
-} from "@/lib/api/feed";
+} from "@/lib/server/feed";
 
 /**
  * Fetch feed posts

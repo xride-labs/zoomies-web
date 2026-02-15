@@ -4,7 +4,7 @@ import {
   type Club,
   type ClubDetails,
   type CreateClubData,
-} from "@/lib/api/clubs";
+} from "@/lib/server/clubs";
 
 /**
  * Fetch clubs the user is a member of

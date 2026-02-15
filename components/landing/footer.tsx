@@ -36,7 +36,7 @@ export function Footer() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-3 mb-8">
                         <Image
-                            src="/motorbike.png"
+                            src="/assets/zoomies_logo_icon.png"
                             alt="Zoomies"
                             width={48}
                             height={48}

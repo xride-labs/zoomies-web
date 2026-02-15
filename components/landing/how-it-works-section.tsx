@@ -153,8 +153,8 @@ export function HowItWorksSection() {
                                                     )}
                                                     {step.image === "clubs" && (
                                                         <Image
-                                                            src="/motorbike.png"
-                                                            alt="Motorbike"
+                                                            src="/assets/zoomies_logo_icon.png"
+                                                            alt="/assets/zoomies_logo_icon"
                                                             width={96}
                                                             height={96}
                                                         />

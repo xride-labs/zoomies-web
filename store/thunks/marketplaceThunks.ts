@@ -5,7 +5,7 @@ import {
   type ListingDetails,
   type CreateListingData,
   type ListingFilters,
-} from "@/lib/api/marketplace";
+} from "@/lib/server/marketplace";
 
 /**
  * Fetch marketplace listings

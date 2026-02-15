@@ -4,7 +4,7 @@ import {
   type Ride,
   type RideDetails,
   type CreateRideData,
-} from "@/lib/api/rides";
+} from "@/lib/server/rides";
 
 /**
  * Fetch upcoming rides

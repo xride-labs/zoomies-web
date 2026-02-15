@@ -132,7 +132,7 @@ export function MarketplaceSection() {
                                         }}
                                     >
                                         <Image
-                                            src="/motorbike.png"
+                                            src="/assets/zoomies_logo_icon.png"
                                             alt={listing.title}
                                             width={100}
                                             height={100}
