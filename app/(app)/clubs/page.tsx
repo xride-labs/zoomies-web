@@ -15,7 +15,7 @@ import {
     Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { clubsAPI } from "@/lib/services";
+import { useClubs } from "@/store/features/clubs";
 
 interface Club {
     id: string;
@@ -31,31 +31,14 @@ interface Club {
 
 export default function ClubsPage() {
     const [activeTab, setActiveTab] = useState<"my" | "discover">("my");
-    const [myClubs, setMyClubs] = useState<Club[]>([]);
-    const [discoveredClubs, setDiscoveredClubs] = useState<Club[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { discoveredClubs, myClubs, isLoading, fetchMyClubs, discoverClubs } = useClubs();
 
     useEffect(() => {
-        fetchClubs();
+        fetchMyClubs();
+        discoverClubs(1);
     }, []);
 
-    const fetchClubs = async () => {
-        try {
-            setLoading(true);
-            const [myRes, discoverRes] = await Promise.all([
-                clubsAPI.getMyClubs(),
-                clubsAPI.discoverClubs()
-            ]);
-            setMyClubs(myRes.clubs || []);
-            setDiscoveredClubs(discoverRes.clubs || []);
-        } catch (err) {
-            console.error("Failed to fetch clubs:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex justify-center py-24">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

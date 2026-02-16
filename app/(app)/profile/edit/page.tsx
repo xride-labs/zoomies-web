@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { userAPI } from "@/lib/services";
+import { userApi } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,7 @@ export default function EditProfilePage() {
         const fetchProfile = async () => {
             try {
                 setLoading(true);
-                const response = await userAPI.getProfile();
+                const response = await userApi.getProfile();
                 const userData = response.user;
                 setProfileData({
                     name: userData.name || "",
@@ -64,12 +64,11 @@ export default function EditProfilePage() {
         setIsSubmitting(true);
 
         try {
-            await userAPI.updateProfile({
+            await userApi.updateProfile({
                 name: profileData.name,
                 username: profileData.username,
                 bio: profileData.bio,
                 location: profileData.location,
-                email: profileData.email,
             });
             router.push("/app/profile/me");
         } catch (err) {

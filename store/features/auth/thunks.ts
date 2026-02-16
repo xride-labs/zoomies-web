@@ -6,9 +6,6 @@ import {
   type LoginData,
 } from "@/lib/server/auth";
 
-/**
- * Register a new user
- */
 export const registerUser = createAsyncThunk(
   "auth/register",
   async (data: RegisterData, { rejectWithValue }) => {
@@ -23,9 +20,6 @@ export const registerUser = createAsyncThunk(
   },
 );
 
-/**
- * Login with email/password
- */
 export const loginUser = createAsyncThunk(
   "auth/login",
   async (data: LoginData, { rejectWithValue }) => {
@@ -40,15 +34,12 @@ export const loginUser = createAsyncThunk(
   },
 );
 
-/**
- * Login with Google
- */
 export const loginWithGoogle = createAsyncThunk(
   "auth/loginGoogle",
   async (callbackURL: string = "/home", { rejectWithValue }) => {
     try {
       await authApi.loginWithGoogle(callbackURL);
-      return null; // Redirects, so no return value
+      return null;
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : "Google login failed",
@@ -57,9 +48,6 @@ export const loginWithGoogle = createAsyncThunk(
   },
 );
 
-/**
- * Logout
- */
 export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
@@ -74,9 +62,6 @@ export const logoutUser = createAsyncThunk(
   },
 );
 
-/**
- * Get current session
- */
 export const fetchSession = createAsyncThunk(
   "auth/fetchSession",
   async (_, { rejectWithValue }) => {
@@ -91,9 +76,6 @@ export const fetchSession = createAsyncThunk(
   },
 );
 
-/**
- * Request password reset
- */
 export const requestPasswordReset = createAsyncThunk(
   "auth/forgotPassword",
   async (email: string, { rejectWithValue }) => {
@@ -110,9 +92,6 @@ export const requestPasswordReset = createAsyncThunk(
   },
 );
 
-/**
- * Reset password with token
- */
 export const resetPasswordAction = createAsyncThunk(
   "auth/resetPassword",
   async (data: { token: string; password: string }, { rejectWithValue }) => {
@@ -127,14 +106,14 @@ export const resetPasswordAction = createAsyncThunk(
   },
 );
 
-/**
- * Verify email
- */
 export const verifyEmailAction = createAsyncThunk(
   "auth/verifyEmail",
-  async (token: string, { rejectWithValue }) => {
+  async (
+    { email, token }: { email: string; token: string },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await authApi.verifyEmail(token);
+      const response = await authApi.verifyEmail(email, token);
       return response;
     } catch (error) {
       return rejectWithValue(
@@ -144,9 +123,6 @@ export const verifyEmailAction = createAsyncThunk(
   },
 );
 
-/**
- * Send OTP to phone
- */
 export const sendOtpAction = createAsyncThunk(
   "auth/sendOtp",
   async (phone: string, { rejectWithValue }) => {
@@ -161,9 +137,6 @@ export const sendOtpAction = createAsyncThunk(
   },
 );
 
-/**
- * Verify OTP
- */
 export const verifyOtpAction = createAsyncThunk(
   "auth/verifyOtp",
   async (
@@ -181,5 +154,4 @@ export const verifyOtpAction = createAsyncThunk(
   },
 );
 
-// Re-export types
 export type { AuthSession, RegisterData, LoginData };

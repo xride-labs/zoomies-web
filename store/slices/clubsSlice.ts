@@ -8,7 +8,7 @@ import {
   deleteClubThunk,
   joinClubThunk,
   leaveClubThunk,
-} from "../thunks/clubsThunks";
+} from "../features/clubs/thunks";
 
 export interface Club {
   id: string;
@@ -19,6 +19,8 @@ export interface Club {
   location: string;
   membersCount: number;
   ridesCount: number;
+  role?: string;
+  unreadMessages?: number;
   isPrivate: boolean;
   isPublic?: boolean;
   tags: string[];

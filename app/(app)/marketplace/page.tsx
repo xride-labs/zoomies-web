@@ -16,7 +16,7 @@ import {
   Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { marketplaceAPI } from "@/lib/services";
+import { useMarketplace } from "@/store/features/marketplace";
 
 interface Listing {
   id: string;
@@ -50,28 +50,15 @@ const categories = [
 export default function MarketplacePage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { listings, isLoading, fetchListings } = useMarketplace();
 
   useEffect(() => {
-    fetchListings();
-  }, [activeCategory]);
-
-  const fetchListings = async () => {
-    try {
-      setLoading(true);
-      const params: Record<string, string> = {};
-      if (activeCategory !== "all") {
-        params.category = activeCategory;
-      }
-      const response = await marketplaceAPI.getListings(params);
-      setListings(response.listings || []);
-    } catch (err) {
-      console.error("Failed to fetch listings:", err);
-    } finally {
-      setLoading(false);
+    const params: Record<string, string> = {};
+    if (activeCategory !== "all") {
+      params.category = activeCategory;
     }
-  };
+    fetchListings(params);
+  }, [activeCategory]);
 
   const filteredListings = listings.filter((listing) => {
     const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -117,7 +104,7 @@ export default function MarketplacePage() {
       </p>
 
       {/* Listings Grid */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>

@@ -18,7 +18,7 @@ import {
     Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { feedAPI } from "@/lib/services";
+import { feedApi } from "@/lib/services";
 
 interface FeedPost {
     id: string;
@@ -92,7 +92,7 @@ export default function FeedPage() {
     const fetchFeed = async () => {
         try {
             setLoading(true);
-            const response = await feedAPI.getFeed();
+            const response = await feedApi.getFeed();
             setPosts(response.posts || []);
         } catch (err) {
             setError("Failed to load feed");

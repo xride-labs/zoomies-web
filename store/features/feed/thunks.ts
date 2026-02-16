@@ -6,9 +6,6 @@ import {
   type CreatePostData,
 } from "@/lib/server/feed";
 
-/**
- * Fetch feed posts
- */
 export const fetchFeed = createAsyncThunk(
   "feed/fetch",
   async (page: number = 1, { rejectWithValue }) => {
@@ -23,9 +20,6 @@ export const fetchFeed = createAsyncThunk(
   },
 );
 
-/**
- * Fetch more feed posts (pagination)
- */
 export const fetchMoreFeed = createAsyncThunk(
   "feed/fetchMore",
   async (page: number, { rejectWithValue }) => {
@@ -40,9 +34,6 @@ export const fetchMoreFeed = createAsyncThunk(
   },
 );
 
-/**
- * Create a post
- */
 export const createPostThunk = createAsyncThunk(
   "feed/createPost",
   async (data: CreatePostData, { rejectWithValue }) => {
@@ -57,9 +48,6 @@ export const createPostThunk = createAsyncThunk(
   },
 );
 
-/**
- * Delete a post
- */
 export const deletePostThunk = createAsyncThunk(
   "feed/deletePost",
   async (postId: string, { rejectWithValue }) => {
@@ -74,9 +62,6 @@ export const deletePostThunk = createAsyncThunk(
   },
 );
 
-/**
- * Like a post
- */
 export const likePostThunk = createAsyncThunk(
   "feed/like",
   async (postId: string, { rejectWithValue }) => {
@@ -91,9 +76,6 @@ export const likePostThunk = createAsyncThunk(
   },
 );
 
-/**
- * Unlike a post
- */
 export const unlikePostThunk = createAsyncThunk(
   "feed/unlike",
   async (postId: string, { rejectWithValue }) => {
@@ -108,9 +90,6 @@ export const unlikePostThunk = createAsyncThunk(
   },
 );
 
-/**
- * Save a post
- */
 export const savePostThunk = createAsyncThunk(
   "feed/save",
   async (postId: string, { rejectWithValue }) => {
@@ -125,9 +104,6 @@ export const savePostThunk = createAsyncThunk(
   },
 );
 
-/**
- * Unsave a post
- */
 export const unsavePostThunk = createAsyncThunk(
   "feed/unsave",
   async (postId: string, { rejectWithValue }) => {
@@ -142,9 +118,6 @@ export const unsavePostThunk = createAsyncThunk(
   },
 );
 
-/**
- * Fetch comments for a post
- */
 export const fetchComments = createAsyncThunk(
   "feed/fetchComments",
   async (
@@ -162,9 +135,6 @@ export const fetchComments = createAsyncThunk(
   },
 );
 
-/**
- * Add a comment to a post
- */
 export const addCommentThunk = createAsyncThunk(
   "feed/addComment",
   async (
@@ -182,9 +152,6 @@ export const addCommentThunk = createAsyncThunk(
   },
 );
 
-/**
- * Delete a comment
- */
 export const deleteCommentThunk = createAsyncThunk(
   "feed/deleteComment",
   async (
@@ -202,5 +169,4 @@ export const deleteCommentThunk = createAsyncThunk(
   },
 );
 
-// Re-export types
 export type { Post, Comment, CreatePostData };

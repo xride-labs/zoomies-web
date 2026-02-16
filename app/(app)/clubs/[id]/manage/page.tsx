@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { clubsAPI } from "@/lib/services";
+import { clubsApi } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -127,7 +127,7 @@ export default function ClubManagePage() {
                 setLoading(true);
                 const clubId = params.id as string;
 
-                const clubResponse = await clubsAPI.getClub(clubId);
+                const clubResponse = await clubsApi.getClub(clubId);
 
                 const clubData = clubResponse.club;
                 setClubSettings({

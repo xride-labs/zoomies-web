@@ -8,7 +8,7 @@ import {
   unlikePostThunk,
   savePostThunk,
   unsavePostThunk,
-} from "../thunks/feedThunks";
+} from "../features/feed/thunks";
 
 export type PostType = "ride" | "content" | "listing" | "club-activity";
 

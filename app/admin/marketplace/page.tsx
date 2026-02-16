@@ -50,20 +50,20 @@ import {
     Package,
     Star,
 } from "lucide-react";
-import { adminAPI } from "@/lib/services";
+import { adminApi } from "@/lib/services";
 
 interface AdminListing {
     id: string;
     title: string;
-    description?: string;
+    description?: string | null;
     price: number;
     currency?: string;
-    category?: string;
-    subcategory?: string;
-    condition?: string;
+    category?: string | null;
+    subcategory?: string | null;
+    condition?: string | null;
     status: string;
     images?: string[];
-    seller: { id: string; name: string; username: string; rating?: number };
+    seller: { id: string; name: string | null; image?: string | null };
     createdAt: string;
     views?: number;
     inquiries?: number;
@@ -91,8 +91,29 @@ export default function AdminMarketplacePage() {
                 if (statusFilter !== "all") params.status = statusFilter;
                 if (searchQuery) params.search = searchQuery;
 
-                const response = await adminAPI.getListings(params);
-                setListings(response.listings || []);
+                const response = await adminApi.getListings(params);
+                setListings(
+                    (response.items || []).map((listing) => ({
+                        id: listing.id,
+                        title: listing.title,
+                        description: listing.description,
+                        price: listing.price,
+                        currency: listing.currency,
+                        category: listing.category,
+                        subcategory: listing.subcategory,
+                        condition: listing.condition,
+                        status: listing.status,
+                        images: listing.images,
+                        seller: {
+                            id: listing.seller.id,
+                            name: listing.seller.name ?? "Unknown",
+                            image: listing.seller.image ?? null,
+                        },
+                        createdAt: listing.createdAt,
+                        views: 0,
+                        inquiries: 0,
+                    })),
+                );
             } catch (err) {
                 console.error("Failed to load listings", err);
             }
@@ -293,13 +314,7 @@ export default function AdminMarketplacePage() {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="text-sm">@{listing.seller?.username || "unknown"}</p>
-                                                    {(listing.seller?.rating ?? 0) > 0 && (
-                                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                                            {listing.seller?.rating}
-                                                        </p>
-                                                    )}
+                                                    <p className="text-sm">{listing.seller?.name || "Unknown"}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -449,17 +464,8 @@ export default function AdminMarketplacePage() {
                                         </Avatar>
                                         <div>
                                             <p className="font-medium text-sm">{selectedListing.seller?.name || "Unknown"}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                @{selectedListing.seller?.username || "unknown"}
-                                            </p>
                                         </div>
                                     </div>
-                                    {(selectedListing.seller?.rating ?? 0) > 0 && (
-                                        <div className="flex items-center gap-1">
-                                            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                                            <span className="font-medium">{selectedListing.seller?.rating}</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>

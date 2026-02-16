@@ -122,8 +122,12 @@ export async function resetPassword(data: {
 /**
  * Verify email with token
  */
-export async function verifyEmail(token: string): Promise<{ message: string }> {
-  return apiAuthenticated.post<{ message: string }>("/auth/verify-email", {
+export async function verifyEmail(
+  email: string,
+  token: string,
+): Promise<{ message: string }> {
+  return apiAuthenticated.post<{ message: string }>("/account/verify-email", {
+    email,
     token,
   });
 }

@@ -17,7 +17,7 @@ import {
     Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { ridesAPI } from "@/lib/services";
+import { useRides } from "@/store/features/rides";
 import { Ride } from "@/store/slices/ridesSlice";
 
 function formatDate(dateString: string) {
@@ -49,36 +49,14 @@ type TabType = "upcoming" | "my" | "past";
 
 export default function RidesPage() {
     const [activeTab, setActiveTab] = useState<TabType>("upcoming");
-    const [upcomingRides, setUpcomingRides] = useState<Ride[]>([]);
-    const [myRides, setMyRides] = useState<Ride[]>([]);
-    const [pastRides, setPastRides] = useState<Ride[]>([]);
+    const { upcomingRides, myRides, pastRides, isLoading, fetchUpcomingRides, fetchMyRides, fetchPastRides } = useRides();
     const [activeRide, setActiveRide] = useState<Ride | null>(null);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchRides();
+        fetchUpcomingRides(1);
+        fetchMyRides(1);
+        fetchPastRides(1);
     }, []);
-
-    const fetchRides = async () => {
-        try {
-            setLoading(true);
-            const [upcomingRes, myRes, pastRes] = await Promise.all([
-                ridesAPI.getUpcomingRides(),
-                ridesAPI.getMyRides(),
-                ridesAPI.getPastRides()
-            ]);
-            setUpcomingRides(upcomingRes.rides || []);
-            setMyRides(myRes.rides || []);
-            setPastRides(pastRes.rides || []);
-            // Check if any ride is currently active
-            const active = myRes.rides?.find((r: Ride) => r.status === "active");
-            setActiveRide(active || null);
-        } catch (err) {
-            console.error("Failed to fetch rides:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const currentRides = activeTab === "upcoming" ? upcomingRides : activeTab === "my" ? myRides : pastRides;
 
@@ -134,7 +112,7 @@ export default function RidesPage() {
                 </Button>
             </div>
 
-            {loading ? (
+            {isLoading ? (
                 <div className="flex justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>

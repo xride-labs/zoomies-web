@@ -7,9 +7,6 @@ import {
   type ListingFilters,
 } from "@/lib/server/marketplace";
 
-/**
- * Fetch marketplace listings
- */
 export const fetchListings = createAsyncThunk(
   "marketplace/fetchListings",
   async (filters: ListingFilters = {}, { rejectWithValue }) => {
@@ -24,9 +21,6 @@ export const fetchListings = createAsyncThunk(
   },
 );
 
-/**
- * Fetch more listings (pagination)
- */
 export const fetchMoreListings = createAsyncThunk(
   "marketplace/fetchMore",
   async (filters: ListingFilters, { rejectWithValue }) => {
@@ -43,9 +37,6 @@ export const fetchMoreListings = createAsyncThunk(
   },
 );
 
-/**
- * Fetch user's listings
- */
 export const fetchMyListings = createAsyncThunk(
   "marketplace/fetchMyListings",
   async (_, { rejectWithValue }) => {
@@ -62,9 +53,6 @@ export const fetchMyListings = createAsyncThunk(
   },
 );
 
-/**
- * Fetch saved listings
- */
 export const fetchSavedListings = createAsyncThunk(
   "marketplace/fetchSaved",
   async (_, { rejectWithValue }) => {
@@ -81,9 +69,6 @@ export const fetchSavedListings = createAsyncThunk(
   },
 );
 
-/**
- * Fetch listing details
- */
 export const fetchListingDetails = createAsyncThunk(
   "marketplace/fetchDetails",
   async (listingId: string, { rejectWithValue }) => {
@@ -98,9 +83,6 @@ export const fetchListingDetails = createAsyncThunk(
   },
 );
 
-/**
- * Create a listing
- */
 export const createListingThunk = createAsyncThunk(
   "marketplace/create",
   async (data: CreateListingData, { rejectWithValue }) => {
@@ -115,9 +97,6 @@ export const createListingThunk = createAsyncThunk(
   },
 );
 
-/**
- * Update a listing
- */
 export const updateListingThunk = createAsyncThunk(
   "marketplace/update",
   async (
@@ -138,9 +117,6 @@ export const updateListingThunk = createAsyncThunk(
   },
 );
 
-/**
- * Delete a listing
- */
 export const deleteListingThunk = createAsyncThunk(
   "marketplace/delete",
   async (listingId: string, { rejectWithValue }) => {
@@ -155,9 +131,6 @@ export const deleteListingThunk = createAsyncThunk(
   },
 );
 
-/**
- * Save a listing
- */
 export const saveListingThunk = createAsyncThunk(
   "marketplace/save",
   async (listingId: string, { rejectWithValue }) => {
@@ -172,9 +145,6 @@ export const saveListingThunk = createAsyncThunk(
   },
 );
 
-/**
- * Unsave a listing
- */
 export const unsaveListingThunk = createAsyncThunk(
   "marketplace/unsave",
   async (listingId: string, { rejectWithValue }) => {
@@ -189,9 +159,6 @@ export const unsaveListingThunk = createAsyncThunk(
   },
 );
 
-/**
- * Mark listing as sold
- */
 export const markAsSoldThunk = createAsyncThunk(
   "marketplace/markAsSold",
   async (listingId: string, { rejectWithValue }) => {
@@ -206,5 +173,4 @@ export const markAsSoldThunk = createAsyncThunk(
   },
 );
 
-// Re-export types
 export type { Listing, ListingDetails, CreateListingData, ListingFilters };

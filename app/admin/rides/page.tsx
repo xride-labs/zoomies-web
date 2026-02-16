@@ -52,22 +52,22 @@ import {
     Pause,
     Loader2,
 } from "lucide-react";
-import { adminAPI } from "@/lib/services";
+import { adminApi } from "@/lib/services";
 
 interface AdminRide {
     id: string;
     title: string;
-    description?: string;
+    description?: string | null;
     startLocation: string;
-    endLocation?: string;
-    distance?: number;
-    duration?: number;
-    scheduledAt: string;
+    endLocation?: string | null;
+    distance?: number | null;
+    duration?: number | null;
+    scheduledAt?: string | null;
     status: string;
-    experienceLevel?: string;
-    pace?: string;
+    experienceLevel?: string | null;
+    pace?: string | null;
     participantCount?: number;
-    creator: { id: string; name: string; username: string };
+    creator: { id: string; name: string | null; image?: string | null };
 }
 
 const statusColors: Record<string, string> = {
@@ -105,9 +105,28 @@ export default function AdminRidesPage() {
             if (statusFilter !== "all") params.status = statusFilter;
             if (searchQuery) params.search = searchQuery;
 
-            const response = await adminAPI.getRides(params);
-            const data = response.data?.data || response.data;
-            setRides(data.rides || data || []);
+            const response = await adminApi.getRides(params);
+            setRides(
+                (response.items || []).map((ride) => ({
+                    id: ride.id,
+                    title: ride.title,
+                    description: ride.description,
+                    startLocation: ride.startLocation,
+                    endLocation: ride.endLocation,
+                    distance: ride.distance,
+                    duration: ride.duration,
+                    scheduledAt: ride.scheduledAt,
+                    status: ride.status,
+                    experienceLevel: ride.experienceLevel,
+                    pace: ride.pace,
+                    participantCount: ride._count?.participants ?? 0,
+                    creator: {
+                        id: ride.creator.id,
+                        name: ride.creator.name ?? "Unknown",
+                        image: ride.creator.image ?? null,
+                    },
+                })),
+            );
         } catch (err) {
             setError("Failed to load rides");
             console.error(err);
@@ -250,16 +269,19 @@ export default function AdminRidesPage() {
                                                 <div className="flex items-center gap-2">
                                                     <Avatar className="h-7 w-7">
                                                         <AvatarFallback className="text-xs">
-                                                            {ride.creator.name.split(" ").map((n) => n[0]).join("")}
+                                                            {(ride.creator.name ?? "U")
+                                                                .split(" ")
+                                                                .map((n) => n[0])
+                                                                .join("")}
                                                         </AvatarFallback>
                                                     </Avatar>
-                                                    <span className="text-sm">@{ride.creator.username}</span>
+                                                    <span className="text-sm">{ride.creator.name || "Unknown"}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-1 text-sm">
                                                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                                                    {formatDate(ride.scheduledAt)}
+                                                    {ride.scheduledAt ? formatDate(ride.scheduledAt) : "N/A"}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -374,7 +396,11 @@ export default function AdminRidesPage() {
                                     <Calendar className="w-4 h-4 text-muted-foreground" />
                                     <div>
                                         <p className="text-muted-foreground">Scheduled</p>
-                                        <p className="font-medium">{formatDate(selectedRide.scheduledAt)}</p>
+                                        <p className="font-medium">
+                                            {selectedRide.scheduledAt
+                                                ? formatDate(selectedRide.scheduledAt)
+                                                : "N/A"}
+                                        </p>
                                     </div>
                                 </div>
                                 <div>
@@ -413,13 +439,16 @@ export default function AdminRidesPage() {
                                 <div className="flex items-center gap-2 mt-1">
                                     <Avatar className="h-8 w-8">
                                         <AvatarFallback className="text-xs">
-                                            {selectedRide.creator.name.split(" ").map((n) => n[0]).join("")}
+                                            {(selectedRide.creator.name ?? "U")
+                                                .split(" ")
+                                                .map((n) => n[0])
+                                                .join("")}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div>
                                         <p className="font-medium text-sm">{selectedRide.creator.name}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            @{selectedRide.creator.username}
+                                            {selectedRide.creator.name || "Unknown"}
                                         </p>
                                     </div>
                                 </div>

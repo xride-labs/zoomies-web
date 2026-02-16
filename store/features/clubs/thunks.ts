@@ -6,9 +6,6 @@ import {
   type CreateClubData,
 } from "@/lib/server/clubs";
 
-/**
- * Fetch clubs the user is a member of
- */
 export const fetchMyClubs = createAsyncThunk(
   "clubs/fetchMyClubs",
   async (_, { rejectWithValue }) => {
@@ -23,9 +20,6 @@ export const fetchMyClubs = createAsyncThunk(
   },
 );
 
-/**
- * Discover clubs
- */
 export const discoverClubsThunk = createAsyncThunk(
   "clubs/discover",
   async (page: number = 1, { rejectWithValue }) => {
@@ -40,9 +34,6 @@ export const discoverClubsThunk = createAsyncThunk(
   },
 );
 
-/**
- * Fetch club details
- */
 export const fetchClubDetails = createAsyncThunk(
   "clubs/fetchDetails",
   async (clubId: string, { rejectWithValue }) => {
@@ -57,9 +48,6 @@ export const fetchClubDetails = createAsyncThunk(
   },
 );
 
-/**
- * Create a new club
- */
 export const createClubThunk = createAsyncThunk(
   "clubs/create",
   async (data: CreateClubData, { rejectWithValue }) => {
@@ -74,9 +62,6 @@ export const createClubThunk = createAsyncThunk(
   },
 );
 
-/**
- * Update a club
- */
 export const updateClubThunk = createAsyncThunk(
   "clubs/update",
   async (
@@ -94,9 +79,6 @@ export const updateClubThunk = createAsyncThunk(
   },
 );
 
-/**
- * Delete a club
- */
 export const deleteClubThunk = createAsyncThunk(
   "clubs/delete",
   async (clubId: string, { rejectWithValue }) => {
@@ -111,9 +93,6 @@ export const deleteClubThunk = createAsyncThunk(
   },
 );
 
-/**
- * Request to join a club
- */
 export const joinClubThunk = createAsyncThunk(
   "clubs/join",
   async (clubId: string, { rejectWithValue }) => {
@@ -128,9 +107,6 @@ export const joinClubThunk = createAsyncThunk(
   },
 );
 
-/**
- * Leave a club
- */
 export const leaveClubThunk = createAsyncThunk(
   "clubs/leave",
   async (clubId: string, { rejectWithValue }) => {
@@ -145,5 +121,4 @@ export const leaveClubThunk = createAsyncThunk(
   },
 );
 
-// Re-export types
 export type { Club, ClubDetails, CreateClubData };

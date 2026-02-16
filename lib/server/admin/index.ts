@@ -21,22 +21,116 @@ export interface AdminStats {
   };
 }
 
-export interface AdminUser {
+export interface AdminUserRecord {
   id: string;
-  email: string;
-  name: string;
-  username: string;
-  avatar: string | null;
+  email: string | null;
+  name: string | null;
+  image: string | null;
+  phone: string | null;
   roles: string[];
+  ridesCompleted: number | null;
+  createdAt: string;
+  _count: {
+    createdRides: number;
+    createdClubs: number;
+  };
+}
+
+export interface AdminRideRecord {
+  id: string;
+  title: string;
+  description: string | null;
+  startLocation: string;
+  endLocation: string | null;
+  experienceLevel: string | null;
+  pace: string | null;
+  distance: number | null;
+  duration: number | null;
+  scheduledAt: string | null;
   status: string;
   createdAt: string;
-  lastLoginAt: string | null;
+  updatedAt: string;
+  creator: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+  _count: {
+    participants: number;
+  };
+}
+
+export interface AdminClubRecord {
+  id: string;
+  name: string;
+  description: string | null;
+  location: string | null;
+  establishedAt: string | null;
+  verified: boolean;
+  image: string | null;
+  coverImage: string | null;
+  clubType: string | null;
+  isPublic: boolean;
+  memberCount: number;
+  trophies: string[];
+  trophyCount: number;
+  gallery: string[];
+  reputation: number | null;
+  owner: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+  _count: {
+    members: number;
+  };
+}
+
+export interface AdminListingRecord {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  currency: string;
+  images: string[];
+  category: string | null;
+  subcategory: string | null;
+  specifications: string | null;
+  condition: string | null;
+  status: string;
+  seller: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminReportRecord {
+  id: string;
+  type: string;
+  title: string;
+  description?: string;
+  reportedItem: { id: string; name: string; type: string };
+  reporter: { id: string; name: string };
+  status: string;
+  priority: string;
+  createdAt: string;
 }
 
 export interface AdminPagination {
-  total: number;
   page: number;
-  pages: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedData<T> {
+  items: T[];
+  pagination: AdminPagination;
 }
 
 export interface UserFilters {
@@ -76,7 +170,7 @@ export interface ReportFilters {
  * Get admin dashboard statistics
  */
 export async function getStats(): Promise<AdminStats> {
-  return apiAuthenticated.get<AdminStats>("/admin/stats");
+  return apiAuthenticated.get<AdminStats>("/api/admin/stats");
 }
 
 /**
@@ -84,7 +178,7 @@ export async function getStats(): Promise<AdminStats> {
  */
 export async function getUsers(
   filters?: UserFilters,
-): Promise<{ users: AdminUser[]; pagination: AdminPagination }> {
+): Promise<PaginatedData<AdminUserRecord>> {
   const queryParams = new URLSearchParams();
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -93,17 +187,16 @@ export async function getUsers(
       }
     });
   }
-  return apiAuthenticated.get<{
-    users: AdminUser[];
-    pagination: AdminPagination;
-  }>(`/admin/users?${queryParams}`);
+  return apiAuthenticated.get<PaginatedData<AdminUserRecord>>(
+    `/admin/users?${queryParams}`,
+  );
 }
 
 /**
  * Get user details by ID
  */
-export async function getUserById(userId: string): Promise<AdminUser> {
-  return apiAuthenticated.get<AdminUser>(`/admin/users/${userId}`);
+export async function getUserById(userId: string): Promise<AdminUserRecord> {
+  return apiAuthenticated.get<AdminUserRecord>(`/admin/users/${userId}`);
 }
 
 /**
@@ -133,7 +226,7 @@ export async function updateUserStatus(
  */
 export async function getRides(
   filters?: RideFilters,
-): Promise<{ rides: unknown[]; pagination: AdminPagination }> {
+): Promise<PaginatedData<AdminRideRecord>> {
   const queryParams = new URLSearchParams();
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -142,10 +235,9 @@ export async function getRides(
       }
     });
   }
-  return apiAuthenticated.get<{
-    rides: unknown[];
-    pagination: AdminPagination;
-  }>(`/admin/rides?${queryParams}`);
+  return apiAuthenticated.get<PaginatedData<AdminRideRecord>>(
+    `/admin/rides?${queryParams}`,
+  );
 }
 
 /**
@@ -153,7 +245,7 @@ export async function getRides(
  */
 export async function getClubs(
   filters?: ClubFilters,
-): Promise<{ clubs: unknown[]; pagination: AdminPagination }> {
+): Promise<PaginatedData<AdminClubRecord>> {
   const queryParams = new URLSearchParams();
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -162,10 +254,9 @@ export async function getClubs(
       }
     });
   }
-  return apiAuthenticated.get<{
-    clubs: unknown[];
-    pagination: AdminPagination;
-  }>(`/admin/clubs?${queryParams}`);
+  return apiAuthenticated.get<PaginatedData<AdminClubRecord>>(
+    `/admin/clubs?${queryParams}`,
+  );
 }
 
 /**
@@ -173,7 +264,7 @@ export async function getClubs(
  */
 export async function getListings(
   filters?: ListingFilters,
-): Promise<{ listings: unknown[]; pagination: AdminPagination }> {
+): Promise<PaginatedData<AdminListingRecord>> {
   const queryParams = new URLSearchParams();
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -182,10 +273,9 @@ export async function getListings(
       }
     });
   }
-  return apiAuthenticated.get<{
-    listings: unknown[];
-    pagination: AdminPagination;
-  }>(`/admin/marketplace?${queryParams}`);
+  return apiAuthenticated.get<PaginatedData<AdminListingRecord>>(
+    `/admin/marketplace?${queryParams}`,
+  );
 }
 
 /**
@@ -193,7 +283,7 @@ export async function getListings(
  */
 export async function getReports(
   filters?: ReportFilters,
-): Promise<{ reports: unknown[]; pagination: AdminPagination }> {
+): Promise<PaginatedData<AdminReportRecord>> {
   const queryParams = new URLSearchParams();
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -202,10 +292,9 @@ export async function getReports(
       }
     });
   }
-  return apiAuthenticated.get<{
-    reports: unknown[];
-    pagination: AdminPagination;
-  }>(`/admin/reports?${queryParams}`);
+  return apiAuthenticated.get<PaginatedData<AdminReportRecord>>(
+    `/admin/reports?${queryParams}`,
+  );
 }
 
 /**

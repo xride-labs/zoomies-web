@@ -34,7 +34,7 @@ import {
     Clock,
     Loader2,
 } from "lucide-react";
-import { adminAPI } from "@/lib/services";
+import { adminApi } from "@/lib/services";
 
 interface AdminReport {
     id: string;
@@ -85,9 +85,8 @@ export default function AdminReportsPage() {
             const params: Record<string, string> = {};
             if (activeTab !== "all") params.status = activeTab;
 
-            const response = await adminAPI.getReports(params);
-            const data = response.data?.data || response.data;
-            setReports(data.reports || data || []);
+            const response = await adminApi.getReports(params);
+            setReports(response.items || []);
         } catch (err) {
             setError("Failed to load reports");
             console.error(err);

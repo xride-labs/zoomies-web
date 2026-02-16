@@ -35,7 +35,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { adminAPI } from "@/lib/services";
+import { adminApi } from "@/lib/services";
 
 interface DashboardStats {
     overview: {
@@ -102,14 +102,23 @@ export default function AdminDashboardPage() {
             setError(null);
 
             const [statsRes, usersRes, reportsRes] = await Promise.all([
-                adminAPI.getStats(),
-                adminAPI.getUsers({ limit: 5 }),
-                adminAPI.getReports({ status: "pending" }),
+                adminApi.getStats(),
+                adminApi.getUsers({ limit: 5 }),
+                adminApi.getReports({ status: "pending" }),
             ]);
 
             setDashboardStats(statsRes);
-            setRecentUsers(usersRes.users || []);
-            setPendingReports((reportsRes.reports || []).slice(0, 4));
+            setRecentUsers(
+                (usersRes.items || []).map((user) => ({
+                    id: user.id,
+                    name: user.name ?? "Unknown",
+                    email: user.email ?? "",
+                    roles: user.roles,
+                    joinedAt: user.createdAt,
+                    status: "active",
+                })),
+            );
+            setPendingReports((reportsRes.items || []).slice(0, 4));
         } catch (err) {
             setError("Failed to load dashboard data");
             console.error(err);

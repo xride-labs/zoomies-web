@@ -53,7 +53,7 @@ import {
     Loader2,
 } from "lucide-react";
 import { UserRole } from "@/types";
-import { adminAPI } from "@/lib/services";
+import { adminApi } from "@/lib/services";
 
 interface AdminUser {
     id: string;
@@ -80,7 +80,12 @@ export default function AdminUsersPage() {
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
+    const [pagination, setPagination] = useState({
+        total: 0,
+        page: 1,
+        totalPages: 1,
+        limit: 50,
+    });
 
     useEffect(() => {
         fetchUsers();
@@ -90,14 +95,31 @@ export default function AdminUsersPage() {
         try {
             setLoading(true);
             setError(null);
-            const params: Record<string, string | number> = { page: pagination.page, limit: 50 };
+            const params: Record<string, string | number> = {
+                page: pagination.page,
+                limit: pagination.limit,
+            };
             if (roleFilter !== "all") params.role = roleFilter;
             if (statusFilter !== "all") params.status = statusFilter;
             if (searchQuery) params.search = searchQuery;
 
-            const response = await adminAPI.getUsers(params);
-            setUsers(response.users || []);
-            if (response.pagination) setPagination(response.pagination);
+            const response = await adminApi.getUsers(params);
+            setUsers(
+                (response.items || []).map((user) => ({
+                    id: user.id,
+                    name: user.name ?? "Unknown",
+                    username: user.email ? user.email.split("@")[0] : "user",
+                    email: user.email ?? "",
+                    phone: user.phone ?? undefined,
+                    roles: user.roles as UserRole[],
+                    status: "active",
+                    ridesCompleted: user.ridesCompleted ?? 0,
+                    xpPoints: 0,
+                    joinedAt: user.createdAt,
+                    createdAt: user.createdAt,
+                })),
+            );
+            setPagination(response.pagination);
         } catch (err) {
             setError("Failed to load users");
             console.error(err);

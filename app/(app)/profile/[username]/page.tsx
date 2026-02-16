@@ -44,7 +44,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { userAPI } from "@/lib/services";
+import { userApi } from "@/lib/services";
 
 interface UserProfile {
     id: string;
@@ -102,8 +102,8 @@ export default function ProfilePage() {
         try {
             setLoading(true);
             const response = username === "me"
-                ? await userAPI.getProfile()
-                : await userAPI.getPublicProfile(username);
+                ? await userApi.getProfile()
+                : await userApi.getPublicProfile(username);
             // Map API response to local UserProfile type
             const userData = response.user;
             setUser({

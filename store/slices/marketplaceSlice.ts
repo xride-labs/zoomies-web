@@ -11,7 +11,7 @@ import {
   saveListingThunk,
   unsaveListingThunk,
   markAsSoldThunk,
-} from "../thunks/marketplaceThunks";
+} from "../features/marketplace/thunks";
 
 export type ListingCategory =
   | "parts"

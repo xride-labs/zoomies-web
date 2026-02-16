@@ -6,9 +6,6 @@ import {
   type CreateRideData,
 } from "@/lib/server/rides";
 
-/**
- * Fetch upcoming rides
- */
 export const fetchUpcomingRides = createAsyncThunk(
   "rides/fetchUpcoming",
   async (page: number = 1, { rejectWithValue }) => {
@@ -23,9 +20,6 @@ export const fetchUpcomingRides = createAsyncThunk(
   },
 );
 
-/**
- * Fetch user's rides
- */
 export const fetchMyRides = createAsyncThunk(
   "rides/fetchMy",
   async (page: number = 1, { rejectWithValue }) => {
@@ -40,9 +34,6 @@ export const fetchMyRides = createAsyncThunk(
   },
 );
 
-/**
- * Fetch past rides
- */
 export const fetchPastRides = createAsyncThunk(
   "rides/fetchPast",
   async (page: number = 1, { rejectWithValue }) => {
@@ -57,9 +48,6 @@ export const fetchPastRides = createAsyncThunk(
   },
 );
 
-/**
- * Fetch ride details
- */
 export const fetchRideDetails = createAsyncThunk(
   "rides/fetchDetails",
   async (rideId: string, { rejectWithValue }) => {
@@ -74,9 +62,6 @@ export const fetchRideDetails = createAsyncThunk(
   },
 );
 
-/**
- * Create a new ride
- */
 export const createRideThunk = createAsyncThunk(
   "rides/create",
   async (data: CreateRideData, { rejectWithValue }) => {
@@ -91,9 +76,6 @@ export const createRideThunk = createAsyncThunk(
   },
 );
 
-/**
- * Update a ride
- */
 export const updateRideThunk = createAsyncThunk(
   "rides/update",
   async (
@@ -111,9 +93,6 @@ export const updateRideThunk = createAsyncThunk(
   },
 );
 
-/**
- * Delete a ride
- */
 export const deleteRideThunk = createAsyncThunk(
   "rides/delete",
   async (rideId: string, { rejectWithValue }) => {
@@ -128,9 +107,6 @@ export const deleteRideThunk = createAsyncThunk(
   },
 );
 
-/**
- * Join a ride
- */
 export const joinRideThunk = createAsyncThunk(
   "rides/join",
   async (rideId: string, { rejectWithValue }) => {
@@ -145,9 +121,6 @@ export const joinRideThunk = createAsyncThunk(
   },
 );
 
-/**
- * Leave a ride
- */
 export const leaveRideThunk = createAsyncThunk(
   "rides/leave",
   async (rideId: string, { rejectWithValue }) => {
@@ -162,9 +135,6 @@ export const leaveRideThunk = createAsyncThunk(
   },
 );
 
-/**
- * Start a ride
- */
 export const startRideThunk = createAsyncThunk(
   "rides/start",
   async (rideId: string, { rejectWithValue }) => {
@@ -179,9 +149,6 @@ export const startRideThunk = createAsyncThunk(
   },
 );
 
-/**
- * End a ride
- */
 export const endRideThunk = createAsyncThunk(
   "rides/end",
   async (rideId: string, { rejectWithValue }) => {
@@ -196,5 +163,4 @@ export const endRideThunk = createAsyncThunk(
   },
 );
 
-// Re-export types
 export type { Ride, RideDetails, CreateRideData };

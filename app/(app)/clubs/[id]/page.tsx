@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { clubsAPI, ridesAPI } from "@/lib/services";
+import { clubsApi, ridesApi } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -124,8 +124,8 @@ export default function ClubDetailPage() {
                 const clubId = params.id as string;
 
                 const [clubResponse, ridesResponse] = await Promise.all([
-                    clubsAPI.getClub(clubId),
-                    ridesAPI.getClubRides(clubId),
+                    clubsApi.getClub(clubId),
+                    ridesApi.getClubRides(clubId),
                 ]);
 
                 const clubData = clubResponse.club;

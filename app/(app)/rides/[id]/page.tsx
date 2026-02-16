@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ridesAPI } from "@/lib/services";
+import { ridesApi } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,7 @@ export default function RideDetailPage() {
             try {
                 setLoading(true);
                 const rideId = params.id as string;
-                const response = await ridesAPI.getRide(rideId);
+                const response = await ridesApi.getRide(rideId);
                 setRide(response.ride);
             } catch (err) {
                 setError("Failed to load ride details");

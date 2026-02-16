@@ -6,9 +6,6 @@ import {
   type UpdateProfileData,
 } from "@/lib/server/user";
 
-/**
- * Fetch current user's profile
- */
 export const fetchProfile = createAsyncThunk(
   "user/fetchProfile",
   async (_, { rejectWithValue }) => {
@@ -23,9 +20,6 @@ export const fetchProfile = createAsyncThunk(
   },
 );
 
-/**
- * Fetch current user with roles (from auth endpoint)
- */
 export const fetchMe = createAsyncThunk(
   "user/fetchMe",
   async (_, { rejectWithValue }) => {
@@ -40,9 +34,6 @@ export const fetchMe = createAsyncThunk(
   },
 );
 
-/**
- * Update current user's profile
- */
 export const updateUserProfile = createAsyncThunk(
   "user/updateProfile",
   async (data: UpdateProfileData, { rejectWithValue }) => {
@@ -57,9 +48,6 @@ export const updateUserProfile = createAsyncThunk(
   },
 );
 
-/**
- * Add a bike to user's garage
- */
 export const addUserBike = createAsyncThunk(
   "user/addBike",
   async (data: Omit<Bike, "id">, { rejectWithValue }) => {
@@ -74,9 +62,6 @@ export const addUserBike = createAsyncThunk(
   },
 );
 
-/**
- * Update a bike
- */
 export const updateUserBike = createAsyncThunk(
   "user/updateBike",
   async (
@@ -94,9 +79,6 @@ export const updateUserBike = createAsyncThunk(
   },
 );
 
-/**
- * Delete a bike
- */
 export const deleteUserBike = createAsyncThunk(
   "user/deleteBike",
   async (bikeId: string, { rejectWithValue }) => {
@@ -111,9 +93,6 @@ export const deleteUserBike = createAsyncThunk(
   },
 );
 
-/**
- * Follow a user
- */
 export const followUserAction = createAsyncThunk(
   "user/follow",
   async (userId: string, { rejectWithValue }) => {
@@ -128,9 +107,6 @@ export const followUserAction = createAsyncThunk(
   },
 );
 
-/**
- * Unfollow a user
- */
 export const unfollowUserAction = createAsyncThunk(
   "user/unfollow",
   async (userId: string, { rejectWithValue }) => {
@@ -145,5 +121,4 @@ export const unfollowUserAction = createAsyncThunk(
   },
 );
 
-// Re-export types for convenience
 export type { UserProfile, Bike, UpdateProfileData };

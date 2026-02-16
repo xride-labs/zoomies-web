@@ -6,7 +6,7 @@ import {
   addUserBike,
   updateUserBike,
   deleteUserBike,
-} from "../thunks/userThunks";
+} from "../features/user/thunks";
 
 export interface UserProfile {
   id: string;

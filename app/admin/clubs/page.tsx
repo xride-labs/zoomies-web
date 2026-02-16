@@ -54,20 +54,20 @@ import {
     Trophy,
     Loader2,
 } from "lucide-react";
-import { adminAPI } from "@/lib/services";
+import { adminApi } from "@/lib/services";
 
 interface AdminClub {
     id: string;
     name: string;
-    description?: string;
-    location?: string;
+    description?: string | null;
+    location?: string | null;
     memberCount?: number;
     ridesCount?: number;
     verified: boolean;
     isPublic?: boolean;
-    owner?: { id: string; name: string; username: string };
-    reputation?: number;
-    establishedAt?: string;
+    owner?: { id: string; name: string | null; image?: string | null };
+    reputation?: number | null;
+    establishedAt?: string | null;
     status?: string;
     createdAt?: string;
 }
@@ -92,8 +92,28 @@ export default function AdminClubsPage() {
             if (verifiedFilter === "unverified") params.verified = false;
             if (searchQuery) params.search = searchQuery;
 
-            const response = await adminAPI.getClubs(params);
-            setClubs(response.clubs || []);
+            const response = await adminApi.getClubs(params);
+            setClubs(
+                (response.items || []).map((club) => ({
+                    id: club.id,
+                    name: club.name,
+                    description: club.description,
+                    location: club.location,
+                    memberCount: club.memberCount ?? club._count?.members ?? 0,
+                    ridesCount: 0,
+                    verified: club.verified,
+                    isPublic: club.isPublic,
+                    owner: {
+                        id: club.owner.id,
+                        name: club.owner.name ?? "Unknown",
+                        image: club.owner.image ?? null,
+                    },
+                    reputation: club.reputation,
+                    establishedAt: club.establishedAt,
+                    status: club.verified ? "active" : "pending",
+                    createdAt: club.createdAt,
+                })),
+            );
         } catch (err) {
             setError("Failed to load clubs");
             console.error(err);
@@ -102,14 +122,14 @@ export default function AdminClubsPage() {
         }
     }, [verifiedFilter, searchQuery]);
 
-     
+
     useEffect(() => {
         fetchClubs();
     }, [fetchClubs]);
 
     const handleVerifyClub = async (clubId: string) => {
         try {
-            await adminAPI.verifyClub(clubId);
+            await adminApi.verifyClub(clubId);
             fetchClubs();
             setIsVerifyDialogOpen(false);
         } catch (err) {
@@ -299,7 +319,7 @@ export default function AdminClubsPage() {
                                             <div>
                                                 <p className="text-sm">{club.owner?.name || 'N/A'}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    @{club.owner?.username || 'unknown'}
+                                                    {club.owner?.name || "Unknown"}
                                                 </p>
                                             </div>
                                         </TableCell>
@@ -461,13 +481,16 @@ export default function AdminClubsPage() {
                                     <div className="flex items-center gap-2 mt-1">
                                         <Avatar className="h-8 w-8">
                                             <AvatarFallback className="text-xs">
-                                                {selectedClub.owner.name.split(" ").map((n) => n[0]).join("")}
+                                                {(selectedClub.owner?.name ?? "U")
+                                                    .split(" ")
+                                                    .map((n) => n[0])
+                                                    .join("")}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
                                             <p className="font-medium text-sm">{selectedClub.owner.name}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                @{selectedClub.owner.username}
+                                                {selectedClub.owner.name || "Unknown"}
                                             </p>
                                         </div>
                                     </div>

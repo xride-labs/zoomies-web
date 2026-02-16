@@ -11,7 +11,7 @@ import {
   leaveRideThunk,
   startRideThunk,
   endRideThunk,
-} from "../thunks/ridesThunks";
+} from "../features/rides/thunks";
 
 export type RideStatus =
   | "scheduled"

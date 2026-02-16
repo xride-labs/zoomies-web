@@ -17,7 +17,7 @@ export interface UpdateProfileData {
  * Get current user's profile
  */
 export async function getProfile(): Promise<{ user: UserProfile }> {
-  return apiAuthenticated.get<{ user: UserProfile }>("/users/me");
+  return apiAuthenticated.get<{ user: UserProfile }>("/account/me");
 }
 
 /**
@@ -27,7 +27,7 @@ export async function getMe(): Promise<{
   user: UserProfile & { roles: string[] };
 }> {
   return apiAuthenticated.get<{ user: UserProfile & { roles: string[] } }>(
-    "/auth/me",
+    "/account/me",
   );
 }
 
@@ -37,7 +37,7 @@ export async function getMe(): Promise<{
 export async function updateProfile(
   data: UpdateProfileData,
 ): Promise<{ user: UserProfile }> {
-  return apiAuthenticated.patch<{ user: UserProfile }>("/users/me", data);
+  return apiAuthenticated.patch<{ user: UserProfile }>("/account/me", data);
 }
 
 /**

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { marketplaceAPI } from "@/lib/services";
+import { marketplaceApi } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,7 @@ export default function ListingDetailPage() {
             try {
                 setLoading(true);
                 const listingId = params.id as string;
-                const response = await marketplaceAPI.getListing(listingId);
+                const response = await marketplaceApi.getListing(listingId);
                 setListing(response.listing);
             } catch (err) {
                 setError("Failed to load listing details");
