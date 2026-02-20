@@ -44,7 +44,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { userApi } from "@/lib/services";
+import { userApi, mediaApi } from "@/lib/services";
+import { fileToDataUrl } from "@/lib/media-utils";
+import { Input } from "@/components/ui/input";
 
 interface UserProfile {
     id: string;
@@ -91,6 +93,10 @@ export default function ProfilePage() {
     const [isFollowing, setIsFollowing] = useState(false);
     const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
+    const [galleryItems, setGalleryItems] = useState<Array<{ id: string; url: string | null }>>([]);
+    const [isGalleryDialogOpen, setIsGalleryDialogOpen] = useState(false);
+    const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+    const [isGalleryUploading, setIsGalleryUploading] = useState(false);
 
     const isOwnProfile = username === "me";
 
@@ -114,6 +120,7 @@ export default function ProfilePage() {
                 location: userData.location,
                 avatar: userData.avatar,
             });
+            setGalleryItems(userData.gallery || []);
         } catch (err) {
             console.error("Failed to fetch profile:", err);
         } finally {
@@ -139,6 +146,29 @@ export default function ProfilePage() {
     const handleUnfollow = () => {
         setIsFollowing(false);
         setIsUnfollowDialogOpen(false);
+    };
+
+    const handleGalleryUpload = async () => {
+        if (galleryFiles.length === 0) return;
+        try {
+            setIsGalleryUploading(true);
+            const uploads = [] as Array<{ id: string; url: string | null }>;
+            for (const file of galleryFiles) {
+                const dataUrl = await fileToDataUrl(file);
+                const response = await mediaApi.uploadProfileGallery(dataUrl);
+                uploads.push({
+                    id: response.media?.publicId?.toString() || `${Date.now()}-${file.name}`,
+                    url: response.imageUrl || response.media?.secureUrl || dataUrl,
+                });
+            }
+            setGalleryItems((prev) => [...uploads, ...prev]);
+            setGalleryFiles([]);
+            setIsGalleryDialogOpen(false);
+        } catch (err) {
+            console.error("Failed to upload gallery images:", err);
+        } finally {
+            setIsGalleryUploading(false);
+        }
     };
 
     if (loading) {
@@ -457,16 +487,31 @@ export default function ProfilePage() {
                     <TabsContent value="gallery" className="mt-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Gallery</CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle>Gallery</CardTitle>
+                                    {isOwnProfile && (
+                                        <Button variant="outline" size="sm" onClick={() => setIsGalleryDialogOpen(true)}>
+                                            Add Photos
+                                        </Button>
+                                    )}
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {(user.gallery || []).map((item) => (
+                                    {galleryItems.map((item) => (
                                         <div
                                             key={item.id}
                                             className="aspect-square bg-muted rounded-lg flex items-center justify-center"
                                         >
-                                            <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                                            {item.url ? (
+                                                <img
+                                                    src={item.url}
+                                                    alt="Gallery item"
+                                                    className="h-full w-full rounded-lg object-cover"
+                                                />
+                                            ) : (
+                                                <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -491,6 +536,36 @@ export default function ProfilePage() {
                         </Button>
                         <Button variant="destructive" onClick={handleUnfollow}>
                             Unfollow
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isGalleryDialogOpen} onOpenChange={setIsGalleryDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Upload Gallery Photos</DialogTitle>
+                        <DialogDescription>
+                            Add photos to your profile gallery.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => setGalleryFiles(Array.from(e.target.files || []))}
+                    />
+                    {galleryFiles.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                            {galleryFiles.length} file(s) selected
+                        </p>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsGalleryDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleGalleryUpload} disabled={isGalleryUploading || galleryFiles.length === 0}>
+                            {isGalleryUploading ? "Uploading..." : "Upload"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

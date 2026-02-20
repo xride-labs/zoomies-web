@@ -43,6 +43,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { mediaApi, userApi } from "@/lib/services";
+import { fileToDataUrl } from "@/lib/media-utils";
+import { Input } from "@/components/ui/input";
 
 interface ClubOwner {
     id: string;
@@ -116,6 +119,11 @@ export default function ClubDetailPage() {
     const [club, setClub] = useState<Club | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+    const [isGalleryDialogOpen, setIsGalleryDialogOpen] = useState(false);
+    const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+    const [isGalleryUploading, setIsGalleryUploading] = useState(false);
 
     useEffect(() => {
         const fetchClubData = async () => {
@@ -134,6 +142,7 @@ export default function ClubDetailPage() {
                     ...clubData,
                     rides: ridesResponse.rides || [],
                 });
+                setGalleryItems(clubData.gallery || []);
             } catch (err) {
                 setError("Failed to load club details");
                 console.error(err);
@@ -146,6 +155,19 @@ export default function ClubDetailPage() {
             fetchClubData();
         }
     }, [params.id]);
+
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await userApi.getProfile();
+                setCurrentUserId(response.user?.id || null);
+            } catch (err) {
+                console.error("Failed to fetch current user:", err);
+            }
+        };
+
+        fetchCurrentUser();
+    }, []);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-US", {
@@ -162,6 +184,29 @@ export default function ClubDetailPage() {
 
     const handleLeaveClub = () => {
         setIsMember(false);
+    };
+
+    const handleGalleryUpload = async () => {
+        if (!club || galleryFiles.length === 0) return;
+        try {
+            setIsGalleryUploading(true);
+            const uploads = [] as GalleryItem[];
+            for (const file of galleryFiles) {
+                const dataUrl = await fileToDataUrl(file);
+                const response = await mediaApi.uploadClubGallery(club.id, dataUrl);
+                uploads.push({
+                    id: response.media?.publicId?.toString() || `${Date.now()}-${file.name}`,
+                    url: response.imageUrl || response.media?.secureUrl || dataUrl,
+                });
+            }
+            setGalleryItems((prev) => [...uploads, ...prev]);
+            setGalleryFiles([]);
+            setIsGalleryDialogOpen(false);
+        } catch (err) {
+            console.error("Failed to upload club gallery:", err);
+        } finally {
+            setIsGalleryUploading(false);
+        }
     };
 
     if (loading) {
@@ -183,7 +228,8 @@ export default function ClubDetailPage() {
 
     const members = club.members || [];
     const rides = club.rides || [];
-    const gallery = club.gallery || [];
+    const gallery = galleryItems;
+    const isOwner = currentUserId && club.owner?.id === currentUserId;
 
     return (
         <div className="min-h-screen">
@@ -329,83 +375,53 @@ export default function ClubDetailPage() {
                     <TabsContent value="about" className="mt-6">
                         <div className="grid gap-6 md:grid-cols-2">
                             <Card>
-                                <CardHeader>
-                                    <CardTitle>About</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground">{club.description}</p>
-                                    <Separator className="my-4" />
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <Shield className="w-4 h-4 text-muted-foreground" />
-                                            <span className="text-sm">{club.clubType}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Trophy className="w-4 h-4 text-muted-foreground" />
-                                            <span className="text-sm">{club.trophyCount} trophies earned</span>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Leadership</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        {members
-                                            .filter((m) => ["FOUNDER", "ADMIN", "OFFICER"].includes(m.role))
-                                            .map((member) => (
-                                                <Link
-                                                    key={member.id}
-                                                    href={`/app/profile/${member.username}`}
-                                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
-                                                >
-                                                    <Avatar>
-                                                        <AvatarFallback>
-                                                            {member.name.split(" ").map((n) => n[0]).join("")}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-sm">{member.name}</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            @{member.username}
-                                                        </p>
-                                                    </div>
-                                                    <Badge className={roleColors[member.role as keyof typeof roleColors]}>
-                                                        {member.role === "FOUNDER" && <Crown className="w-3 h-3 mr-1" />}
-                                                        {member.role}
-                                                    </Badge>
-                                                </Link>
-                                            ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="members" className="mt-6">
-                        <Card>
-                            <CardHeader>
                                 <div className="flex items-center justify-between">
-                                    <CardTitle>Members ({members.length})</CardTitle>
-                                    {isMember && (
-                                        <Button variant="outline" size="sm">
-                                            <UserPlus className="w-4 h-4 mr-2" />
-                                            Invite
+                                    <CardTitle>Gallery</CardTitle>
+                                    {isOwner && (
+                                        <Button variant="outline" size="sm" onClick={() => setIsGalleryDialogOpen(true)}>
+                                            Add Photos
                                         </Button>
                                     )}
                                 </div>
+                                <CardTitle>About</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <ScrollArea className="h-[400px]">
-                                    <div className="space-y-2">
-                                        {members.map((member) => (
+                                <p className="text-muted-foreground">{club.description}</p>
+                                <Separator className="my-4" />
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="w-4 h-4 text-muted-foreground" />
+                                        {item.url ? (
+                                            <img
+                                                src={item.url}
+                                                alt="Club gallery"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Trophy className="w-4 h-4 text-muted-foreground" />
+                                        <span className="text-sm">{club.trophyCount} trophies earned</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Leadership</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {members
+                                        .filter((m) => ["FOUNDER", "ADMIN", "OFFICER"].includes(m.role))
+                                        .map((member) => (
                                             <Link
                                                 key={member.id}
                                                 href={`/app/profile/${member.username}`}
-                                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
                                             >
                                                 <Avatar>
                                                     <AvatarFallback>
@@ -413,83 +429,128 @@ export default function ClubDetailPage() {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex-1">
-                                                    <p className="font-medium">{member.name}</p>
+                                                    <p className="font-medium text-sm">{member.name}</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        @{member.username} • {member.ridesCount} rides
+                                                        @{member.username}
                                                     </p>
                                                 </div>
                                                 <Badge className={roleColors[member.role as keyof typeof roleColors]}>
+                                                    {member.role === "FOUNDER" && <Crown className="w-3 h-3 mr-1" />}
                                                     {member.role}
                                                 </Badge>
                                             </Link>
                                         ))}
-                                    </div>
-                                </ScrollArea>
+                                </div>
                             </CardContent>
                         </Card>
-                    </TabsContent>
+                    </div>
+                </TabsContent>
 
-                    <TabsContent value="rides" className="mt-6">
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <CardTitle>Club Rides</CardTitle>
-                                    {isMember && (
-                                        <Button size="sm">
-                                            Create Ride
-                                        </Button>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {rides.map((ride) => (
+                <TabsContent value="members" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Members ({members.length})</CardTitle>
+                                {isMember && (
+                                    <Button variant="outline" size="sm">
+                                        <UserPlus className="w-4 h-4 mr-2" />
+                                        Invite
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-[400px]">
+                                <div className="space-y-2">
+                                    {members.map((member) => (
                                         <Link
-                                            key={ride.id}
-                                            href={`/app/rides/${ride.id}`}
-                                            className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                                            key={member.id}
+                                            href={`/app/profile/${member.username}`}
+                                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                                         >
-                                            <div>
-                                                <p className="font-medium">{ride.title}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {formatDate(ride.scheduledAt)} • {ride.participantCount} riders
+                                            <Avatar>
+                                                <AvatarFallback>
+                                                    {member.name.split(" ").map((n) => n[0]).join("")}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1">
+                                                <p className="font-medium">{member.name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    @{member.username} • {member.ridesCount} rides
                                                 </p>
                                             </div>
-                                            <Badge
-                                                variant={ride.status === "PLANNED" ? "default" : "secondary"}
-                                            >
-                                                {ride.status}
+                                            <Badge className={roleColors[member.role as keyof typeof roleColors]}>
+                                                {member.role}
                                             </Badge>
                                         </Link>
                                     ))}
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
-                    <TabsContent value="gallery" className="mt-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Gallery</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {gallery.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="aspect-square bg-muted rounded-lg flex items-center justify-center"
-                                        >
-                                            <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                <TabsContent value="rides" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Club Rides</CardTitle>
+                                {isMember && (
+                                    <Button size="sm">
+                                        Create Ride
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {rides.map((ride) => (
+                                    <Link
+                                        key={ride.id}
+                                        href={`/app/rides/${ride.id}`}
+                                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                                    >
+                                        <div>
+                                            <p className="font-medium">{ride.title}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {formatDate(ride.scheduledAt)} • {ride.participantCount} riders
+                                            </p>
                                         </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-            </div>
+                                        <Badge
+                                            variant={ride.status === "PLANNED" ? "default" : "secondary"}
+                                        >
+                                            {ride.status}
+                                        </Badge>
+                                    </Link>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
-            {/* Join Dialog */}
+                <TabsContent value="gallery" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Gallery</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {gallery.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="aspect-square bg-muted rounded-lg flex items-center justify-center"
+                                    >
+                                        <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
+
+            {/* Join Dialog */ }
             <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -510,6 +571,36 @@ export default function ClubDetailPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+
+            <Dialog open={isGalleryDialogOpen} onOpenChange={setIsGalleryDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Upload Club Photos</DialogTitle>
+                        <DialogDescription>
+                            Add photos to the club gallery.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => setGalleryFiles(Array.from(e.target.files || []))}
+                    />
+                    {galleryFiles.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                            {galleryFiles.length} file(s) selected
+                        </p>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsGalleryDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleGalleryUpload} disabled={isGalleryUploading || galleryFiles.length === 0}>
+                            {isGalleryUploading ? "Uploading..." : "Upload"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div >
     );
 }

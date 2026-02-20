@@ -33,7 +33,7 @@ const adminNavigation = [
     { name: "Rides", href: "/admin/rides", icon: MapPin },
     { name: "Marketplace", href: "/admin/marketplace", icon: ShoppingBag },
     { name: "Reports", href: "/admin/reports", icon: Flag },
-    { name: "Monitoring", href: "/admin/monitoring", icon: Activity, superAdminOnly: true },
+    { name: "Monitoring", href: "/admin/monitoring", icon: Activity },
     { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
@@ -48,6 +48,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
     // Get user roles from the user object
     const userRoles: string[] = user?.roles || [];
+    const isSuperAdmin = userRoles.includes("ADMIN");
 
     useEffect(() => {
         if (isPending) return;
@@ -55,7 +56,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             router.push("/login");
             return;
         }
-        if (!hasAnyRole(user, "ADMIN", "SUPER_ADMIN")) {
+        if (!hasAnyRole(user, "ADMIN")) {
             router.push("/home");
             return;
         }
@@ -87,14 +88,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         );
     }
 
-    if (!user || !hasAnyRole(user, "ADMIN", "SUPER_ADMIN")) {
+    if (!user || !hasAnyRole(user, "ADMIN")) {
         return null;
     }
 
-    const isSuperAdmin = userRoles.includes("SUPER_ADMIN");
-    const navigationItems = adminNavigation.filter(
-        (item) => !item.superAdminOnly || isSuperAdmin,
-    );
+    const navigationItems = adminNavigation;
 
     return (
         <div className="min-h-screen bg-background">
@@ -139,10 +137,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <Button
                         variant="outline"
                         className="w-full justify-start gap-2"
-                        onClick={() => router.push("/app")}
+                        onClick={() => router.push("/home")}
                     >
                         <ChevronLeft className="w-4 h-4" />
-                        Back to App
+                        Back to Manager
                     </Button>
                     <Button
                         variant="ghost"
@@ -154,9 +152,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     </Button>
                 </div>
 
-                <Badge variant="destructive" className="ml-2 text-[10px]">
-                    {isSuperAdmin ? "Super Admin" : "Admin"}
-                </Badge>
+                {/* User Profile */}
                 <div className="p-4 border-t border-border">
                     <div className="flex items-center gap-3 p-2 rounded-lg">
                         <Avatar>

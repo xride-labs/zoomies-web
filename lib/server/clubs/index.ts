@@ -8,8 +8,8 @@ export interface CreateClubData {
   name: string;
   description: string;
   location: string;
-  isPrivate: boolean;
-  tags?: string[];
+  clubType?: string;
+  isPublic: boolean;
 }
 
 export interface ClubMembership {

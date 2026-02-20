@@ -144,6 +144,7 @@ export default function ClubManagePage() {
                 // Extract members from club details, transform to local Member type
                 const clubMembers = (clubData.members || []).map((m: { id?: string; userId?: string; role: string; joinedAt?: string; user?: { id: string; name: string; image: string | null } }) => ({
                     id: m.id || m.userId || '',
+                    userId: m.userId || m.user?.id,
                     name: m.user?.name || 'Unknown',
                     role: m.role,
                     joinedAt: m.joinedAt || new Date().toISOString(),
@@ -175,32 +176,68 @@ export default function ClubManagePage() {
     };
 
     const handleApproveRequest = (requestId: string) => {
-        // API call would go here
-        console.log("Approving request:", requestId);
+        if (!clubSettings) return;
+        clubsApi.approveRequest(clubSettings.id, requestId).catch((err) => {
+            console.error("Failed to approve request:", err);
+        });
     };
 
     const handleRejectRequest = (requestId: string) => {
-        // API call would go here
-        console.log("Rejecting request:", requestId);
+        if (!clubSettings) return;
+        clubsApi.rejectRequest(clubSettings.id, requestId).catch((err) => {
+            console.error("Failed to reject request:", err);
+        });
     };
 
     const handleRoleChange = (memberId: string, newRole: string) => {
-        // API call would go here
-        console.log("Changing role:", memberId, newRole);
+        if (!clubSettings) return;
+        const member = members.find((m) => m.id === memberId);
+        const userId = member?.userId || memberId;
+        clubsApi.updateMemberRole(clubSettings.id, userId, newRole).catch((err) => {
+            console.error("Failed to update member role:", err);
+        });
+        setMembers((prev) =>
+            prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m)),
+        );
     };
 
     const handleRemoveMember = () => {
-        // API call would go here
-        console.log("Removing member:", selectedMember?.id);
+        if (!clubSettings || !selectedMember) return;
+        const userId = selectedMember.userId || selectedMember.id;
+        clubsApi.removeMember(clubSettings.id, userId).catch((err) => {
+            console.error("Failed to remove member:", err);
+        });
+        setMembers((prev) => prev.filter((m) => m.id !== selectedMember.id));
         setIsRemoveDialogOpen(false);
         setSelectedMember(null);
     };
 
     const handleDeleteClub = () => {
-        if (clubSettings && deleteConfirmText === clubSettings.name) {
-            // API call would go here
-            console.log("Deleting club");
-            router.push("/app/clubs");
+        if (!clubSettings || deleteConfirmText !== clubSettings.name) return;
+        clubsApi
+            .deleteClub(clubSettings.id)
+            .then(() => router.push("/app/clubs"))
+            .catch((err) => console.error("Failed to delete club:", err));
+    };
+
+    const handleSaveSettings = async () => {
+        if (!clubSettings) return;
+        try {
+            const { club } = await clubsApi.updateClub(clubSettings.id, {
+                name: clubSettings.name,
+                description: clubSettings.description,
+                location: clubSettings.location,
+                isPublic: clubSettings.isPublic,
+            });
+            setClubSettings({
+                ...clubSettings,
+                name: club.name,
+                description: club.description || clubSettings.description,
+                location: club.location || clubSettings.location,
+                isPublic: club.isPublic ?? clubSettings.isPublic,
+            });
+        } catch (err) {
+            console.error("Failed to update club settings:", err);
         }
     };
 
@@ -474,7 +511,7 @@ export default function ClubManagePage() {
                                         }
                                     />
                                 </div>
-                                <Button>Save Changes</Button>
+                                <Button onClick={handleSaveSettings}>Save Changes</Button>
                             </CardContent>
                         </Card>
 

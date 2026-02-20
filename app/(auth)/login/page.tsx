@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2, Shield, Store } from "lucide-react";
 import { motion } from "framer-motion";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 type LoginTab = "admin" | "manager";
 
 export default function LoginPage() {
@@ -20,6 +22,21 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const fetchUserRoles = async (): Promise<string[]> => {
+        try {
+            const response = await fetch(`${API_URL}/account/me`, {
+                credentials: "include",
+            });
+            if (response.ok) {
+                const data = await response.json();
+                return data.data?.user?.roles || [];
+            }
+        } catch (err) {
+            console.error("Failed to fetch user roles:", err);
+        }
+        return [];
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,8 +51,28 @@ export default function LoginPage() {
 
             if (result.error) {
                 setError(result.error.message || "Invalid email or password");
+                return;
+            }
+
+            // Fetch user roles and verify access
+            const roles = await fetchUserRoles();
+
+            if (activeTab === "admin") {
+                if (!roles.includes("ADMIN")) {
+                    setError("Access denied. Admin role required.");
+                    return;
+                }
+                router.push("/admin");
             } else {
-                router.push(activeTab === "admin" ? "/admin" : "/home");
+                // Manager tab - check for CLUB_OWNER, SELLER, or ADMIN
+                const hasAccess = roles.some(role =>
+                    ["CLUB_OWNER", "SELLER", "ADMIN"].includes(role)
+                );
+                if (!hasAccess) {
+                    setError("Access denied. Club owner or seller role required.");
+                    return;
+                }
+                router.push("/home");
             }
         } catch {
             setError("Something went wrong. Please try again.");
@@ -212,8 +249,8 @@ export default function LoginPage() {
                             <Button
                                 type="submit"
                                 className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm ${activeTab === "admin"
-                                        ? "bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]"
-                                        : "bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]"
+                                    ? "bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]"
+                                    : "bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]"
                                     } text-white transition-shadow`}
                                 disabled={isLoading}
                             >

@@ -10,19 +10,58 @@ import {
 
 export interface UserProfile {
   id: string;
-  email: string;
-  name: string;
-  username: string;
-  avatar: string | null;
-  bio: string;
-  location: string;
-  bikes: Bike[];
-  clubs: ClubBadge[];
-  ridesCount: number;
-  followersCount: number;
-  followingCount: number;
-  isVerified: boolean;
-  createdAt: string;
+  email?: string;
+  name?: string;
+  username?: string;
+  avatar?: string | null;
+  coverImage?: string | null;
+  bio?: string;
+  location?: string;
+  bloodType?: string | null;
+  bikes?: Bike[];
+  clubs?: ClubBadge[];
+  ridesCompleted?: number;
+  ridesCount?: number;
+  followersCount?: number;
+  followingCount?: number;
+  isVerified?: boolean;
+  roles?: string[];
+  experience?: {
+    xpPoints: number;
+    level: number;
+    levelTitle: string;
+    nextLevelXp: number;
+    progressPercent: number;
+    reputationScore: number;
+    activityLevel: string;
+  };
+  social?: {
+    followers: number;
+    following: number;
+    friends: number;
+  };
+  safety?: {
+    emergencyContacts: {
+      count: number;
+      items: Array<{
+        id: string;
+        name: string;
+        phone: string;
+        relationship?: string | null;
+        isPrimary: boolean;
+      }>;
+    };
+    helmetVerified: boolean;
+    lastSafetyCheck?: string | null;
+  };
+  preferences?: {
+    rideReminders: boolean;
+    serviceReminderKm: number;
+    darkMode: boolean;
+    units: string;
+    openToInvite: boolean;
+  };
+  createdAt?: string;
 }
 
 export interface Bike {
@@ -30,15 +69,21 @@ export interface Bike {
   make: string;
   model: string;
   year: number;
-  nickname?: string;
-  image?: string;
+  type?: string;
+  engineCc?: number;
+  color?: string | null;
+  odo?: number;
+  ownerSince?: string | null;
+  modifications?: Record<string, unknown> | null;
+  isPrimary?: boolean;
+  image?: string | null;
 }
 
 export interface ClubBadge {
   id: string;
   name: string;
   avatar: string | null;
-  role: "member" | "officer" | "admin" | "founder";
+  role: string;
 }
 
 interface UserState {

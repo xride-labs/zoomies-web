@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ridesApi } from "@/lib/services";
+import { mediaApi, ridesApi, userApi } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -17,6 +19,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     ChevronLeft,
@@ -44,6 +47,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { fileToDataUrl } from "@/lib/media-utils";
 
 interface Organizer {
     id: string;
@@ -102,6 +106,7 @@ interface Ride {
     weather?: Weather;
     participants?: Participant[];
     waypoints?: Waypoint[];
+    images?: string[];
 }
 
 const statusColors = {
@@ -125,6 +130,22 @@ export default function RideDetailPage() {
     const [ride, setRide] = useState<Ride | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [galleryItems, setGalleryItems] = useState<string[]>([]);
+    const [isGalleryDialogOpen, setIsGalleryDialogOpen] = useState(false);
+    const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+    const [isGalleryUploading, setIsGalleryUploading] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [editData, setEditData] = useState({
+        title: "",
+        description: "",
+        startLocation: "",
+        endLocation: "",
+        scheduledAt: "",
+        distance: "",
+        duration: "",
+    });
 
     useEffect(() => {
         const fetchRide = async () => {
@@ -133,6 +154,7 @@ export default function RideDetailPage() {
                 const rideId = params.id as string;
                 const response = await ridesApi.getRide(rideId);
                 setRide(response.ride);
+                setGalleryItems(response.ride.images || []);
             } catch (err) {
                 setError("Failed to load ride details");
                 console.error(err);
@@ -145,6 +167,39 @@ export default function RideDetailPage() {
             fetchRide();
         }
     }, [params.id]);
+
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await userApi.getProfile();
+                setCurrentUserId(response.user?.id || null);
+            } catch (err) {
+                console.error("Failed to fetch current user:", err);
+            }
+        };
+
+        fetchCurrentUser();
+    }, []);
+
+    useEffect(() => {
+        if (!ride) return;
+        const scheduledAt = ride.scheduledAt
+            ? new Date(ride.scheduledAt).toISOString().slice(0, 16)
+            : "";
+        setEditData({
+            title: ride.title || "",
+            description: ride.description || "",
+            startLocation: typeof ride.startLocation === "string"
+                ? ride.startLocation
+                : ride.startLocation?.name || "",
+            endLocation: typeof ride.endLocation === "string"
+                ? ride.endLocation
+                : ride.endLocation?.name || "",
+            scheduledAt,
+            distance: ride.distance ? String(ride.distance) : "",
+            duration: ride.estimatedDuration ? String(ride.estimatedDuration) : "",
+        });
+    }, [ride]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-US", {
@@ -190,6 +245,7 @@ export default function RideDetailPage() {
     const confirmedCount = participants.filter((p) => p.status === "CONFIRMED").length;
     const maxParticipants = ride.maxParticipants || 1;
     const participantPercentage = (confirmedCount / maxParticipants) * 100;
+    const isOrganizer = currentUserId && ride.organizer?.id === currentUserId;
 
     const handleJoinRide = () => {
         setIsJoined(true);
@@ -198,6 +254,58 @@ export default function RideDetailPage() {
     const handleLeaveRide = () => {
         setIsJoined(false);
         setIsLeaveDialogOpen(false);
+    };
+
+    const handleGalleryUpload = async () => {
+        if (!ride || galleryFiles.length === 0) return;
+        try {
+            setIsGalleryUploading(true);
+            const uploadedUrls: string[] = [];
+            for (const file of galleryFiles) {
+                const dataUrl = await fileToDataUrl(file);
+                const response = await mediaApi.uploadRideMedia(ride.id, dataUrl, "image");
+                uploadedUrls.push(response.imageUrl || response.media?.secureUrl || dataUrl);
+            }
+            setGalleryItems((prev) => [...uploadedUrls, ...prev]);
+            setGalleryFiles([]);
+            setIsGalleryDialogOpen(false);
+        } catch (err) {
+            console.error("Failed to upload ride media:", err);
+        } finally {
+            setIsGalleryUploading(false);
+        }
+    };
+
+    const handleUpdateRide = async () => {
+        if (!ride) return;
+        try {
+            const payload = {
+                title: editData.title,
+                description: editData.description || undefined,
+                startLocation: editData.startLocation,
+                endLocation: editData.endLocation || undefined,
+                distance: editData.distance ? Number(editData.distance) : undefined,
+                duration: editData.duration ? Number(editData.duration) : undefined,
+                scheduledAt: editData.scheduledAt
+                    ? new Date(editData.scheduledAt).toISOString()
+                    : undefined,
+            };
+            const { ride: updatedRide } = await ridesApi.updateRide(ride.id, payload);
+            setRide((prev) => (prev ? { ...prev, ...updatedRide } : prev));
+            setIsEditDialogOpen(false);
+        } catch (err) {
+            console.error("Failed to update ride:", err);
+        }
+    };
+
+    const handleDeleteRide = async () => {
+        if (!ride) return;
+        try {
+            await ridesApi.deleteRide(ride.id);
+            router.push("/app/rides");
+        } catch (err) {
+            console.error("Failed to delete ride:", err);
+        }
     };
 
     return (
@@ -227,6 +335,19 @@ export default function RideDetailPage() {
                                     <Calendar className="w-4 h-4 mr-2" />
                                     Add to Calendar
                                 </DropdownMenuItem>
+                                {isOrganizer && (
+                                    <>
+                                        <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                                            Edit Ride
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            className="text-red-600"
+                                            onClick={() => setIsDeleteDialogOpen(true)}
+                                        >
+                                            Delete Ride
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                                 {isJoined && (
                                     <DropdownMenuItem
                                         className="text-red-600"
@@ -360,6 +481,33 @@ export default function RideDetailPage() {
                                 </div>
                             ))}
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Ride Gallery */}
+                <Card>
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">Ride Gallery</CardTitle>
+                            {isOrganizer && (
+                                <Button variant="outline" size="sm" onClick={() => setIsGalleryDialogOpen(true)}>
+                                    Add Photos
+                                </Button>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {galleryItems.length === 0 ? (
+                            <div className="text-sm text-muted-foreground">No photos yet.</div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                                {galleryItems.map((url, index) => (
+                                    <div key={`${url}-${index}`} className="aspect-square overflow-hidden rounded-lg bg-muted">
+                                        <img src={url} alt="Ride media" className="h-full w-full object-cover" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -497,6 +645,140 @@ export default function RideDetailPage() {
                         </Button>
                         <Button variant="destructive" onClick={handleLeaveRide}>
                             Leave Ride
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Ride</DialogTitle>
+                        <DialogDescription>
+                            Update ride details and schedule.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-title">Title</Label>
+                            <Input
+                                id="edit-title"
+                                value={editData.title}
+                                onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-description">Description</Label>
+                            <Textarea
+                                id="edit-description"
+                                value={editData.description}
+                                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                                rows={3}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-start">Start</Label>
+                                <Input
+                                    id="edit-start"
+                                    value={editData.startLocation}
+                                    onChange={(e) => setEditData({ ...editData, startLocation: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-end">End</Label>
+                                <Input
+                                    id="edit-end"
+                                    value={editData.endLocation}
+                                    onChange={(e) => setEditData({ ...editData, endLocation: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-date">Scheduled At</Label>
+                                <Input
+                                    id="edit-date"
+                                    type="datetime-local"
+                                    value={editData.scheduledAt}
+                                    onChange={(e) => setEditData({ ...editData, scheduledAt: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-distance">Distance (mi)</Label>
+                                <Input
+                                    id="edit-distance"
+                                    type="number"
+                                    value={editData.distance}
+                                    onChange={(e) => setEditData({ ...editData, distance: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-duration">Duration (minutes)</Label>
+                            <Input
+                                id="edit-duration"
+                                type="number"
+                                value={editData.duration}
+                                onChange={(e) => setEditData({ ...editData, duration: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleUpdateRide}>
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Ride</DialogTitle>
+                        <DialogDescription>
+                            This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDeleteRide}>
+                            Delete Ride
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isGalleryDialogOpen} onOpenChange={setIsGalleryDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Upload Ride Photos</DialogTitle>
+                        <DialogDescription>
+                            Add images to your ride gallery.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => setGalleryFiles(Array.from(e.target.files || []))}
+                    />
+                    {galleryFiles.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                            {galleryFiles.length} file(s) selected
+                        </p>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsGalleryDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleGalleryUpload} disabled={isGalleryUploading || galleryFiles.length === 0}>
+                            {isGalleryUploading ? "Uploading..." : "Upload"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

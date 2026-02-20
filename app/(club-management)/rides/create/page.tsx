@@ -16,8 +16,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, MapPin, Plus, X } from "lucide-react";
+import { ridesApi, mediaApi } from "@/lib/services";
+import { fileToDataUrl } from "@/lib/media-utils";
 
 const difficulties = ["Beginner", "Intermediate", "Advanced", "Expert"];
+
+const paceOptions = ["Leisurely", "Moderate", "Fast"];
 
 const terrainTypes = [
     "Paved Roads",
@@ -38,6 +42,7 @@ export default function CreateRidePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [waypoints, setWaypoints] = useState<string[]>([]);
     const [newWaypoint, setNewWaypoint] = useState("");
+    const [rideMediaFiles, setRideMediaFiles] = useState<File[]>([]);
     const [rideData, setRideData] = useState({
         title: "",
         description: "",
@@ -49,6 +54,7 @@ export default function CreateRidePage() {
         estimatedDistance: "",
         difficulty: "",
         terrain: "",
+        pace: "",
         maxParticipants: "10",
         clubId: "",
         isPrivate: false,
@@ -70,13 +76,44 @@ export default function CreateRidePage() {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // API call would go here
-        console.log("Creating ride:", { ...rideData, waypoints });
+        try {
+            const scheduledAt = rideData.date && rideData.time
+                ? new Date(`${rideData.date}T${rideData.time}`).toISOString()
+                : undefined;
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+            const durationMinutes = rideData.estimatedDuration
+                ? Math.round(Number(rideData.estimatedDuration) * 60)
+                : undefined;
 
-        router.push("/app/rides");
+            const distance = rideData.estimatedDistance
+                ? Number(rideData.estimatedDistance)
+                : undefined;
+
+            const { ride } = await ridesApi.createRide({
+                title: rideData.title,
+                description: rideData.description || undefined,
+                startLocation: rideData.startLocation,
+                endLocation: rideData.endLocation || undefined,
+                experienceLevel: rideData.difficulty || undefined,
+                pace: rideData.pace || undefined,
+                distance,
+                duration: durationMinutes,
+                scheduledAt,
+                keepPermanently: false,
+            });
+
+            if (rideMediaFiles.length > 0) {
+                for (const file of rideMediaFiles) {
+                    const dataUrl = await fileToDataUrl(file);
+                    await mediaApi.uploadRideMedia(ride.id, dataUrl, "image");
+                }
+            }
+
+            router.push(`/app/rides/${ride.id}`);
+        } catch (error) {
+            console.error("Failed to create ride:", error);
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -366,19 +403,66 @@ export default function CreateRidePage() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="maxParticipants">Max Participants</Label>
-                            <Input
-                                id="maxParticipants"
-                                type="number"
-                                min="2"
-                                max="100"
-                                value={rideData.maxParticipants}
-                                onChange={(e) =>
-                                    setRideData({ ...rideData, maxParticipants: e.target.value })
-                                }
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="pace">Pace</Label>
+                                <Select
+                                    value={rideData.pace}
+                                    onValueChange={(value) =>
+                                        setRideData({ ...rideData, pace: value })
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select pace" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {paceOptions.map((pace) => (
+                                            <SelectItem key={pace} value={pace}>
+                                                {pace}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="maxParticipants">Max Participants</Label>
+                                <Input
+                                    id="maxParticipants"
+                                    type="number"
+                                    min="2"
+                                    max="100"
+                                    value={rideData.maxParticipants}
+                                    onChange={(e) =>
+                                        setRideData({ ...rideData, maxParticipants: e.target.value })
+                                    }
+                                />
+                            </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Ride Media */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Ride Photos</CardTitle>
+                        <CardDescription>
+                            Add photos to your ride gallery
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) =>
+                                setRideMediaFiles(Array.from(e.target.files || []))
+                            }
+                        />
+                        {rideMediaFiles.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                {rideMediaFiles.length} file(s) selected
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
 

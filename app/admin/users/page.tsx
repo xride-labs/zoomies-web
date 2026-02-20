@@ -211,12 +211,10 @@ export default function AdminUsersPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Roles</SelectItem>
-                                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                                 <SelectItem value="ADMIN">Admin</SelectItem>
                                 <SelectItem value="CLUB_OWNER">Club Owner</SelectItem>
                                 <SelectItem value="RIDER">Rider</SelectItem>
                                 <SelectItem value="SELLER">Seller</SelectItem>
-                                <SelectItem value="USER">User</SelectItem>
                             </SelectContent>
                         </Select>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -471,12 +469,10 @@ export default function AdminUsersPage() {
                                 <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="USER">User</SelectItem>
                                 <SelectItem value="RIDER">Rider</SelectItem>
                                 <SelectItem value="SELLER">Seller</SelectItem>
                                 <SelectItem value="CLUB_OWNER">Club Owner</SelectItem>
                                 <SelectItem value="ADMIN">Admin</SelectItem>
-                                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

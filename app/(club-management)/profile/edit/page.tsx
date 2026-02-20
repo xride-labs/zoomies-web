@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronLeft, Camera, Loader2 } from "lucide-react";
+import { mediaApi } from "@/lib/services";
+import { fileToDataUrl } from "@/lib/media-utils";
 
 interface ProfileData {
     name: string;
@@ -25,6 +27,10 @@ export default function EditProfilePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [coverUrl, setCoverUrl] = useState<string | null>(null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [profileData, setProfileData] = useState<ProfileData>({
         name: "",
         username: "",
@@ -48,6 +54,8 @@ export default function EditProfilePage() {
                     email: userData.email || "",
                     phone: (userData as { phone?: string }).phone || "",
                 });
+                setAvatarUrl(userData.avatar || null);
+                setCoverUrl(userData.coverImage || null);
             } catch (err) {
                 setError("Failed to load profile");
                 console.error(err);
@@ -74,6 +82,34 @@ export default function EditProfilePage() {
         } catch (err) {
             console.error("Failed to update profile:", err);
             setIsSubmitting(false);
+        }
+    };
+
+    const handleAvatarUpload = async (file: File | null) => {
+        if (!file) return;
+        try {
+            setIsUploadingAvatar(true);
+            const dataUrl = await fileToDataUrl(file);
+            const response = await mediaApi.uploadProfileImage(dataUrl);
+            setAvatarUrl(response.imageUrl || response.media?.secureUrl || dataUrl);
+        } catch (err) {
+            console.error("Failed to upload avatar:", err);
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
+
+    const handleCoverUpload = async (file: File | null) => {
+        if (!file) return;
+        try {
+            setIsUploadingCover(true);
+            const dataUrl = await fileToDataUrl(file);
+            const response = await mediaApi.uploadProfileCover(dataUrl);
+            setCoverUrl(response.imageUrl || response.media?.secureUrl || dataUrl);
+        } catch (err) {
+            console.error("Failed to upload cover:", err);
+        } finally {
+            setIsUploadingCover(false);
         }
     };
 
@@ -119,6 +155,9 @@ export default function EditProfilePage() {
                         <div className="flex items-center gap-6">
                             <div className="relative">
                                 <Avatar className="w-24 h-24">
+                                    {avatarUrl ? (
+                                        <AvatarImage src={avatarUrl} alt="Profile avatar" />
+                                    ) : null}
                                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                                         {profileData.name.split(" ").map((n) => n[0]).join("")}
                                     </AvatarFallback>
@@ -133,14 +172,60 @@ export default function EditProfilePage() {
                                 </Button>
                             </div>
                             <div className="flex-1">
-                                <Button type="button" variant="outline" size="sm">
-                                    Upload Image
-                                </Button>
+                                <label className="inline-flex">
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) =>
+                                            handleAvatarUpload(e.target.files?.[0] || null)
+                                        }
+                                        disabled={isUploadingAvatar}
+                                    />
+                                    <Button type="button" variant="outline" size="sm" disabled={isUploadingAvatar}>
+                                        {isUploadingAvatar ? "Uploading..." : "Upload Image"}
+                                    </Button>
+                                </label>
                                 <p className="text-xs text-muted-foreground mt-2">
                                     Recommended: Square image, at least 256x256px
                                 </p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Cover Image */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Cover Image</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="h-28 w-full overflow-hidden rounded-lg border bg-muted">
+                            {coverUrl ? (
+                                <img
+                                    src={coverUrl}
+                                    alt="Cover preview"
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : null}
+                        </div>
+                        <label className="inline-flex">
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) =>
+                                    handleCoverUpload(e.target.files?.[0] || null)
+                                }
+                                disabled={isUploadingCover}
+                            />
+                            <Button type="button" variant="outline" size="sm" disabled={isUploadingCover}>
+                                {isUploadingCover ? "Uploading..." : "Upload Cover"}
+                            </Button>
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                            Recommended: 1200x400px wide image
+                        </p>
                     </CardContent>
                 </Card>
 

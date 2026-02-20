@@ -48,7 +48,7 @@ export function useAuth(): AuthState {
       }
 
       try {
-        const response = await fetch(`${API_URL}/api/account/me`, {
+        const response = await fetch(`${API_URL}/account/me`, {
           credentials: "include",
         });
 

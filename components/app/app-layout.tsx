@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
@@ -11,18 +11,24 @@ import {
     User,
     Plus,
     Bell,
-    Search
+    Search,
+    LogOut,
+    Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth, hasAnyRole } from "@/lib/use-auth";
+import { signOut } from "@/lib/auth-client";
+import { useEffect } from "react";
 
 const navigation = [
-    { name: "Feed", href: "/app", icon: Home },
-    { name: "Clubs", href: "/app/clubs", icon: Users },
-    { name: "Rides", href: "/app/rides", icon: MapPin },
-    { name: "Market", href: "/app/marketplace", icon: ShoppingBag },
-    { name: "Profile", href: "/app/profile", icon: User },
+    { name: "Feed", href: "/home", icon: Home },
+    { name: "Clubs", href: "/clubs", icon: Users },
+    { name: "Rides", href: "/rides", icon: MapPin },
+    { name: "Market", href: "/marketplace", icon: ShoppingBag },
+    { name: "Profile", href: "/profile", icon: User },
 ];
 
 interface AppLayoutProps {
@@ -31,6 +37,55 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { user, isPending } = useAuth();
+
+    // Check if user has access to club management portal
+    const hasManagerAccess = hasAnyRole(user, "CLUB_OWNER", "SELLER", "ADMIN");
+    const isAdmin = hasAnyRole(user, "ADMIN");
+
+    useEffect(() => {
+        if (isPending) return;
+        if (!user) {
+            router.push("/login");
+            return;
+        }
+        // If user doesn't have CLUB_OWNER, SELLER, or ADMIN role, redirect to login
+        if (!hasManagerAccess) {
+            router.push("/login");
+            return;
+        }
+    }, [user, isPending, router, hasManagerAccess]);
+
+    if (isPending) {
+        return (
+            <div className="min-h-screen bg-background flex">
+                <aside className="hidden lg:flex lg:w-72 lg:flex-col border-r border-border bg-card">
+                    <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
+                        <Skeleton className="w-10 h-10 rounded-xl" />
+                        <Skeleton className="h-6 w-24" />
+                    </div>
+                    <div className="flex-1 p-4 space-y-2">
+                        {[...Array(5)].map((_, i) => (
+                            <Skeleton key={i} className="h-12 w-full rounded-2xl" />
+                        ))}
+                    </div>
+                </aside>
+                <main className="flex-1 p-6">
+                    <Skeleton className="h-10 w-48 mb-6" />
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {[...Array(6)].map((_, i) => (
+                            <Skeleton key={i} className="h-40 rounded-xl" />
+                        ))}
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (!user || !hasManagerAccess) {
+        return null;
+    }
 
     return (
         <div className="min-h-screen bg-background">
@@ -77,22 +132,40 @@ export function AppLayout({ children }: AppLayoutProps) {
                         <ShoppingBag className="w-4 h-4" />
                         New Listing
                     </Button>
+                    {isAdmin && (
+                        <Button
+                            className="w-full justify-start gap-2"
+                            variant="outline"
+                            onClick={() => router.push("/admin")}
+                        >
+                            <Shield className="w-4 h-4" />
+                            Admin Portal
+                        </Button>
+                    )}
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+                        onClick={() => signOut().then(() => router.push("/"))}
+                    >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                    </Button>
                 </div>
 
                 {/* User Profile */}
                 <div className="p-4 border-t border-border">
                     <Link
-                        href="/app/profile"
+                        href="/profile"
                         className="flex items-center gap-3 p-2 rounded-2xl hover:bg-muted transition-colors"
                     >
                         <Avatar>
                             <AvatarFallback className="bg-primary text-primary-foreground">
-                                TR
+                                {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">Test Rider</p>
-                            <p className="text-xs text-muted-foreground truncate">@testrider</p>
+                            <p className="font-medium text-sm truncate">{user.name || "User"}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                         </div>
                     </Link>
                 </div>
@@ -104,7 +177,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <header className="sticky top-0 z-40 h-16 bg-background/80 backdrop-blur-md border-b border-border">
                     <div className="flex items-center justify-between h-full px-4 lg:px-6">
                         {/* Mobile Logo */}
-                        <Link href="/app" className="flex items-center gap-2 lg:hidden">
+                        <Link href="/home" className="flex items-center gap-2 lg:hidden">
                             <div className="w-8 h-8 bg-linear-to-br from-brand-red-light to-brand-red rounded-xl flex items-center justify-center">
                                 <span className="text-white font-bold text-lg">⚡</span>
                             </div>
@@ -115,7 +188,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         <div className="hidden lg:block">
                             <h1 className="text-xl font-semibold">
                                 {navigation.find((n) =>
-                                    pathname === n.href || (n.href !== "/app" && pathname.startsWith(n.href))
+                                    pathname === n.href || (n.href !== "/home" && pathname.startsWith(n.href))
                                 )?.name || "Zoomies"}
                             </h1>
                         </div>
@@ -151,7 +224,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <div className="flex items-center justify-around h-16">
                     {navigation.map((item) => {
                         const isActive = pathname === item.href ||
-                            (item.href !== "/app" && pathname.startsWith(item.href));
+                            (item.href !== "/home" && pathname.startsWith(item.href));
                         return (
                             <Link
                                 key={item.name}

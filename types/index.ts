@@ -24,13 +24,7 @@ export interface PaginatedResponse<T> {
 }
 
 // User roles matching Prisma schema
-export type UserRole =
-  | "SUPER_ADMIN"
-  | "ADMIN"
-  | "CLUB_OWNER"
-  | "USER"
-  | "RIDER"
-  | "SELLER";
+export type UserRole = "ADMIN" | "CLUB_OWNER" | "RIDER" | "SELLER";
 
 export type ClubMemberRole = "MEMBER" | "OFFICER" | "ADMIN" | "FOUNDER";
 
@@ -53,27 +47,68 @@ export interface User {
   username: string | null;
   name: string | null;
   email: string | null;
+  dob?: Date | null;
   bloodType: string | null;
-  emailVerified: Date | null;
-  image: string | null;
+  emailVerified: boolean | null;
+  avatar: string | null;
+  coverImage?: string | null;
   phone: string | null;
-  phoneVerified: Date | null;
+  phoneVerified: boolean | null;
   bio: string | null;
   location: string | null;
-  ridesCompleted: number | null;
-  bikeType: string | null;
-  bikeOwned: string | null;
-  bikeOwnerSince: Date | null;
-  bikeOdometer: number | null;
-  bikeModifications: string | null;
-  bikeOwnerAge: number | null;
-  xpPoints: number | null;
-  experienceLevel: string | null;
-  levelOfActivity: string | null;
-  reputationScore: number | null;
-  affiliations: string | null;
-  reminders: string | null;
-  roles: UserRole[];
+  ridesCompleted?: number | null;
+  xpPoints?: number | null;
+  level?: number | null;
+  levelTitle?: string | null;
+  reputationScore?: number | null;
+  activityLevel?: string | null;
+  roles?: UserRole[];
+  role?: UserRole[];
+  experience?: {
+    xpPoints: number;
+    level: number;
+    levelTitle: string;
+    nextLevelXp: number;
+    progressPercent: number;
+    reputationScore: number;
+    activityLevel: string;
+  } | null;
+  bikes?: Bike[];
+  clubs?: Array<{
+    id: string;
+    name: string;
+    role: ClubMemberRole;
+    joinedAt: Date;
+    memberCount: number;
+    logo: string | null;
+  }>;
+  rideStats?: {
+    totalDistanceKm: number;
+    longestRideKm: number;
+    nightRides: number;
+    weekendRides: number;
+  } | null;
+  badges?: Array<{
+    id: string;
+    title: string;
+    auraPoints: number;
+    icon: string | null;
+    earnedAt: Date;
+  }>;
+  social?: {
+    followers: number;
+    following: number;
+    friends: number;
+  };
+  safety?: {
+    emergencyContacts: {
+      count: number;
+      items: EmergencyContact[];
+    };
+    helmetVerified: boolean;
+    lastSafetyCheck: Date | null;
+  };
+  preferences?: UserPreferences | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,8 +119,37 @@ export interface Bike {
   make: string;
   model: string;
   year: number;
-  nickname?: string;
-  image?: string;
+  type?: string;
+  engineCc?: number;
+  color?: string | null;
+  odo?: number;
+  ownerSince?: Date | null;
+  modifications?: Record<string, unknown> | null;
+  isPrimary?: boolean;
+  image?: string | null;
+}
+
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  phone: string;
+  relationship?: string | null;
+  isPrimary: boolean;
+}
+
+export interface UserPreferences {
+  rideReminders: boolean;
+  serviceReminderKm: number;
+  darkMode: boolean;
+  units: string;
+  openToInvite: boolean;
+  pushNotifications?: boolean;
+  emailNotifications?: boolean;
+  smsNotifications?: boolean;
+  profileVisibility?: string;
+  showLocation?: boolean;
+  showBikes?: boolean;
+  showStats?: boolean;
 }
 
 // Club interfaces

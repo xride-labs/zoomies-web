@@ -12,22 +12,16 @@ export type { Ride, RideDetails, RideParticipant, RideStatus, RideType };
 
 export interface CreateRideData {
   title: string;
-  description: string;
-  startLocation: {
-    name: string;
-    lat: number;
-    lng: number;
-  };
-  endLocation?: {
-    name: string;
-    lat: number;
-    lng: number;
-  };
-  scheduledAt: string;
-  estimatedDuration: number;
-  type: RideType;
-  maxParticipants?: number;
-  clubId?: string;
+  description?: string;
+  startLocation: string;
+  endLocation?: string;
+  experienceLevel?: string;
+  xpRequired?: number;
+  pace?: string;
+  distance?: number;
+  duration?: number;
+  scheduledAt?: string;
+  keepPermanently?: boolean;
 }
 
 // ============ Rides API ============

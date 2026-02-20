@@ -16,6 +16,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, ImagePlus } from "lucide-react";
+import { clubsApi, mediaApi } from "@/lib/services";
+import { fileToDataUrl } from "@/lib/media-utils";
 
 const clubTypes = [
     "Riding Club",
@@ -33,6 +35,10 @@ const clubTypes = [
 export default function CreateClubPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [coverPreview, setCoverPreview] = useState<string | null>(null);
     const [clubData, setClubData] = useState({
         name: "",
         description: "",
@@ -42,18 +48,54 @@ export default function CreateClubPage() {
         requireApproval: true,
     });
 
+    const handleLogoChange = async (file: File | null) => {
+        setLogoFile(file);
+        if (file) {
+            const preview = await fileToDataUrl(file);
+            setLogoPreview(preview);
+        } else {
+            setLogoPreview(null);
+        }
+    };
+
+    const handleCoverChange = async (file: File | null) => {
+        setCoverFile(file);
+        if (file) {
+            const preview = await fileToDataUrl(file);
+            setCoverPreview(preview);
+        } else {
+            setCoverPreview(null);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // API call would go here
-        console.log("Creating club:", clubData);
+        try {
+            const { club } = await clubsApi.createClub({
+                name: clubData.name,
+                description: clubData.description,
+                location: clubData.location,
+                clubType: clubData.clubType || undefined,
+                isPublic: clubData.isPublic,
+            });
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+            if (logoFile) {
+                const logoDataUrl = await fileToDataUrl(logoFile);
+                await mediaApi.uploadClubImage(club.id, logoDataUrl, "logo");
+            }
 
-        // Redirect to the new club page
-        router.push("/app/clubs");
+            if (coverFile) {
+                const coverDataUrl = await fileToDataUrl(coverFile);
+                await mediaApi.uploadClubImage(club.id, coverDataUrl, "cover");
+            }
+
+            router.push(`/app/clubs/${club.id}`);
+        } catch (error) {
+            console.error("Failed to create club:", error);
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -72,27 +114,70 @@ export default function CreateClubPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Club Image */}
+                {/* Club Images */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Club Image</CardTitle>
+                        <CardTitle>Club Images</CardTitle>
                         <CardDescription>
-                            Add a logo or image for your club
+                            Add a logo and optional cover image
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex items-center gap-6">
-                            <div className="w-24 h-24 border-2 border-dashed rounded-xl flex items-center justify-center bg-muted/50 cursor-pointer hover:bg-muted transition-colors">
-                                <ImagePlus className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                            <div className="flex-1">
-                                <Button type="button" variant="outline" size="sm">
-                                    Upload Image
-                                </Button>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    Recommended: Square image, at least 256x256px
-                                </p>
-                            </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-dashed border-border bg-muted/40 p-4 transition-colors hover:bg-muted">
+                                <div className="h-20 w-20 overflow-hidden rounded-lg bg-muted flex items-center justify-center">
+                                    {logoPreview ? (
+                                        <img
+                                            src={logoPreview}
+                                            alt="Club logo preview"
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium">Club Logo</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Square image, at least 256x256px
+                                    </p>
+                                </div>
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) =>
+                                        handleLogoChange(e.target.files?.[0] || null)
+                                    }
+                                />
+                            </label>
+                            <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-dashed border-border bg-muted/40 p-4 transition-colors hover:bg-muted">
+                                <div className="h-20 w-20 overflow-hidden rounded-lg bg-muted flex items-center justify-center">
+                                    {coverPreview ? (
+                                        <img
+                                            src={coverPreview}
+                                            alt="Club cover preview"
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium">Club Cover</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Wide image, at least 1200x400px
+                                    </p>
+                                </div>
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) =>
+                                        handleCoverChange(e.target.files?.[0] || null)
+                                    }
+                                />
+                            </label>
                         </div>
                     </CardContent>
                 </Card>

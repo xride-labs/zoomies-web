@@ -170,7 +170,7 @@ export interface ReportFilters {
  * Get admin dashboard statistics
  */
 export async function getStats(): Promise<AdminStats> {
-  return apiAuthenticated.get<AdminStats>("/api/admin/stats");
+  return apiAuthenticated.get<AdminStats>("/admin/stats");
 }
 
 /**

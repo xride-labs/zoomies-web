@@ -42,3 +42,7 @@ export { adminApi } from "./admin";
 // Re-export feed API
 export * from "./feed";
 export { feedApi } from "./feed";
+
+// Re-export media API
+export * from "./media";
+export { mediaApi } from "./media";
