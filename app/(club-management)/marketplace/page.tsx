@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   MapPin,
   Star,
@@ -13,57 +13,57 @@ import {
   Filter,
   Plus,
   Image as ImageIcon,
-  Loader2
-} from "lucide-react";
-import Link from "next/link";
-import { useMarketplace } from "@/store/features/marketplace";
+  Loader2,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useMarketplace } from '@/store/features/marketplace'
 
 interface Listing {
-  id: string;
-  title: string;
-  price: number;
-  condition: string;
-  location: string;
-  category: string;
-  images: string[];
+  id: string
+  title: string
+  price: number
+  condition: string
+  location: string
+  category: string
+  images: string[]
   seller: {
-    id: string;
-    name: string;
-    username: string;
-    avatar: string | null;
-    rating: number;
-    reviewsCount: number;
-    clubs: Array<{ id: string; name: string }>;
-  };
-  createdAt: string;
+    id: string
+    name: string
+    username: string
+    avatar: string | null
+    rating: number
+    reviewsCount: number
+    clubs: Array<{ id: string; name: string }>
+  }
+  createdAt: string
 }
 
 const categories = [
-  { id: "all", label: "All" },
-  { id: "parts", label: "Parts" },
-  { id: "gear", label: "Gear" },
-  { id: "accessories", label: "Accessories" },
-  { id: "apparel", label: "Apparel" },
-  { id: "bikes", label: "Bikes" },
-];
+  { id: 'all', label: 'All' },
+  { id: 'parts', label: 'Parts' },
+  { id: 'gear', label: 'Gear' },
+  { id: 'accessories', label: 'Accessories' },
+  { id: 'apparel', label: 'Apparel' },
+  { id: 'bikes', label: 'Bikes' },
+]
 
 export default function MarketplacePage() {
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const { listings, isLoading, fetchListings } = useMarketplace();
+  const [activeCategory, setActiveCategory] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const { listings, isLoading, fetchListings } = useMarketplace()
 
   useEffect(() => {
-    const params: Record<string, string> = {};
-    if (activeCategory !== "all") {
-      params.category = activeCategory;
+    const params: Record<string, string> = {}
+    if (activeCategory !== 'all') {
+      params.category = activeCategory
     }
-    fetchListings(params);
-  }, [activeCategory]);
+    fetchListings(params)
+  }, [activeCategory])
 
   const filteredListings = listings.filter((listing) => {
-    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesSearch
+  })
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -88,7 +88,7 @@ export default function MarketplacePage() {
         {categories.map((category) => (
           <Button
             key={category.id}
-            variant={activeCategory === category.id ? "default" : "outline"}
+            variant={activeCategory === category.id ? 'default' : 'outline'}
             onClick={() => setActiveCategory(category.id)}
             className="rounded-full whitespace-nowrap shrink-0"
             size="sm"
@@ -138,7 +138,10 @@ export default function MarketplacePage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="w-5 h-5">
                       <AvatarFallback className="bg-linear-to-br from-primary to-amber-500 text-white text-[8px]">
-                        {listing.seller.name.split(" ").map(n => n[0]).join("")}
+                        {listing.seller.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
                       </AvatarFallback>
                     </Avatar>
                     <span className="text-xs text-muted-foreground truncate">
@@ -192,5 +195,5 @@ export default function MarketplacePage() {
         </Button>
       </Link>
     </div>
-  );
+  )
 }

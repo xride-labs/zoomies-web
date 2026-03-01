@@ -1,5 +1,5 @@
-export * from "./hooks";
-export * from "./thunks";
+export * from './hooks'
+export * from './thunks'
 export {
   selectUser as selectAuthUser,
   selectUserProfile as selectAuthUserProfile,
@@ -8,4 +8,4 @@ export {
   selectIsAuthenticated as selectAuthIsAuthenticated,
   selectUserBikes as selectAuthUserBikes,
   selectUserClubs as selectAuthUserClubs,
-} from "./selectors";
+} from './selectors'

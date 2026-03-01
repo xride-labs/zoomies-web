@@ -1,8 +1,8 @@
-export { Navbar } from "./navbar";
-export { HeroSection } from "./hero-section";
-export { EcosystemSection } from "./ecosystem-section";
-export { FeaturesSection } from "./features-section";
-export { InvestSection } from "./invest-section";
-export { MarketplaceSection } from "./marketplace-section";
-export { DownloadBanner } from "./download-banner";
-export { Footer } from "./footer";
+export { Navbar } from './navbar'
+export { HeroSection } from './hero-section'
+export { EcosystemSection } from './ecosystem-section'
+export { FeaturesSection } from './features-section'
+export { InvestSection } from './invest-section'
+export { MarketplaceSection } from './marketplace-section'
+export { DownloadBanner } from './download-banner'
+export { Footer } from './footer'

@@ -1,124 +1,124 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
   clubsApi,
   type Club,
   type ClubDetails,
   type CreateClubData,
-} from "@/lib/server/clubs";
+} from '@/lib/server/clubs'
 
 export const fetchMyClubs = createAsyncThunk(
-  "clubs/fetchMyClubs",
+  'clubs/fetchMyClubs',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await clubsApi.getMyClubs();
-      return response.clubs;
+      const response = await clubsApi.getMyClubs()
+      return response.clubs
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to fetch clubs",
-      );
+        error instanceof Error ? error.message : 'Failed to fetch clubs',
+      )
     }
   },
-);
+)
 
 export const discoverClubsThunk = createAsyncThunk(
-  "clubs/discover",
+  'clubs/discover',
   async (page: number = 1, { rejectWithValue }) => {
     try {
-      const response = await clubsApi.discoverClubs(page);
-      return response;
+      const response = await clubsApi.discoverClubs(page)
+      return response
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to discover clubs",
-      );
+        error instanceof Error ? error.message : 'Failed to discover clubs',
+      )
     }
   },
-);
+)
 
 export const fetchClubDetails = createAsyncThunk(
-  "clubs/fetchDetails",
+  'clubs/fetchDetails',
   async (clubId: string, { rejectWithValue }) => {
     try {
-      const response = await clubsApi.getClub(clubId);
-      return response.club;
+      const response = await clubsApi.getClub(clubId)
+      return response.club
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to fetch club details",
-      );
+        error instanceof Error ? error.message : 'Failed to fetch club details',
+      )
     }
   },
-);
+)
 
 export const createClubThunk = createAsyncThunk(
-  "clubs/create",
+  'clubs/create',
   async (data: CreateClubData, { rejectWithValue }) => {
     try {
-      const response = await clubsApi.createClub(data);
-      return response.club;
+      const response = await clubsApi.createClub(data)
+      return response.club
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to create club",
-      );
+        error instanceof Error ? error.message : 'Failed to create club',
+      )
     }
   },
-);
+)
 
 export const updateClubThunk = createAsyncThunk(
-  "clubs/update",
+  'clubs/update',
   async (
     { clubId, data }: { clubId: string; data: Partial<CreateClubData> },
     { rejectWithValue },
   ) => {
     try {
-      const response = await clubsApi.updateClub(clubId, data);
-      return response.club;
+      const response = await clubsApi.updateClub(clubId, data)
+      return response.club
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to update club",
-      );
+        error instanceof Error ? error.message : 'Failed to update club',
+      )
     }
   },
-);
+)
 
 export const deleteClubThunk = createAsyncThunk(
-  "clubs/delete",
+  'clubs/delete',
   async (clubId: string, { rejectWithValue }) => {
     try {
-      await clubsApi.deleteClub(clubId);
-      return clubId;
+      await clubsApi.deleteClub(clubId)
+      return clubId
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to delete club",
-      );
+        error instanceof Error ? error.message : 'Failed to delete club',
+      )
     }
   },
-);
+)
 
 export const joinClubThunk = createAsyncThunk(
-  "clubs/join",
+  'clubs/join',
   async (clubId: string, { rejectWithValue }) => {
     try {
-      await clubsApi.requestToJoin(clubId);
-      return clubId;
+      await clubsApi.requestToJoin(clubId)
+      return clubId
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to join club",
-      );
+        error instanceof Error ? error.message : 'Failed to join club',
+      )
     }
   },
-);
+)
 
 export const leaveClubThunk = createAsyncThunk(
-  "clubs/leave",
+  'clubs/leave',
   async (clubId: string, { rejectWithValue }) => {
     try {
-      await clubsApi.leaveClub(clubId);
-      return clubId;
+      await clubsApi.leaveClub(clubId)
+      return clubId
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to leave club",
-      );
+        error instanceof Error ? error.message : 'Failed to leave club',
+      )
     }
   },
-);
+)
 
-export type { Club, ClubDetails, CreateClubData };
+export type { Club, ClubDetails, CreateClubData }

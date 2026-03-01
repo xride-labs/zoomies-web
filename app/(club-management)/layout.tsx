@@ -1,14 +1,14 @@
-import { Providers } from "@/components/providers";
-import { AppLayout } from "@/components/app/app-layout";
+import { Providers } from '@/components/providers'
+import { AppLayout } from '@/components/app/app-layout'
 
 export default function ClubManagementLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode
 }) {
-    return (
-        <Providers>
-            <AppLayout>{children}</AppLayout>
-        </Providers>
-    );
+  return (
+    <Providers>
+      <AppLayout>{children}</AppLayout>
+    </Providers>
+  )
 }

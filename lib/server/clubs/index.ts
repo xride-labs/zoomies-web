@@ -1,22 +1,22 @@
-import { apiAuthenticated } from "../base";
-import type { Club, ClubDetails, ClubMember } from "@/store/slices/clubsSlice";
+import { apiAuthenticated } from '../base'
+import type { Club, ClubDetails, ClubMember } from '@/store/slices/clubsSlice'
 
 // Re-export types from slice for convenience
-export type { Club, ClubDetails, ClubMember };
+export type { Club, ClubDetails, ClubMember }
 
 export interface CreateClubData {
-  name: string;
-  description: string;
-  location: string;
-  clubType?: string;
-  isPublic: boolean;
+  name: string
+  description: string
+  location: string
+  clubType?: string
+  isPublic: boolean
 }
 
 export interface ClubMembership {
-  userId: string;
-  clubId: string;
-  role: string;
-  joinedAt: string;
+  userId: string
+  clubId: string
+  role: string
+  joinedAt: string
 }
 
 // ============ Clubs API ============
@@ -25,7 +25,7 @@ export interface ClubMembership {
  * Get clubs the current user is a member of
  */
 export async function getMyClubs(): Promise<{ clubs: Club[] }> {
-  return apiAuthenticated.get<{ clubs: Club[] }>("/clubs/my");
+  return apiAuthenticated.get<{ clubs: Club[] }>('/clubs/my')
 }
 
 /**
@@ -36,23 +36,21 @@ export async function discoverClubs(
 ): Promise<{ clubs: Club[]; hasMore: boolean }> {
   return apiAuthenticated.get<{ clubs: Club[]; hasMore: boolean }>(
     `/clubs/discover?page=${page}`,
-  );
+  )
 }
 
 /**
  * Get club details by ID
  */
 export async function getClub(clubId: string): Promise<{ club: ClubDetails }> {
-  return apiAuthenticated.get<{ club: ClubDetails }>(`/clubs/${clubId}`);
+  return apiAuthenticated.get<{ club: ClubDetails }>(`/clubs/${clubId}`)
 }
 
 /**
  * Create a new club
  */
-export async function createClub(
-  data: CreateClubData,
-): Promise<{ club: Club }> {
-  return apiAuthenticated.post<{ club: Club }>("/clubs", data);
+export async function createClub(data: CreateClubData): Promise<{ club: Club }> {
+  return apiAuthenticated.post<{ club: Club }>('/clubs', data)
 }
 
 /**
@@ -62,14 +60,14 @@ export async function updateClub(
   clubId: string,
   data: Partial<CreateClubData>,
 ): Promise<{ club: Club }> {
-  return apiAuthenticated.patch<{ club: Club }>(`/clubs/${clubId}`, data);
+  return apiAuthenticated.patch<{ club: Club }>(`/clubs/${clubId}`, data)
 }
 
 /**
  * Delete a club
  */
 export async function deleteClub(clubId: string): Promise<void> {
-  return apiAuthenticated.delete<void>(`/clubs/${clubId}`);
+  return apiAuthenticated.delete<void>(`/clubs/${clubId}`)
 }
 
 /**
@@ -78,23 +76,21 @@ export async function deleteClub(clubId: string): Promise<void> {
 export async function requestToJoin(
   clubId: string,
 ): Promise<{ membership: ClubMembership }> {
-  return apiAuthenticated.post<{ membership: ClubMembership }>(
-    `/clubs/${clubId}/join`,
-  );
+  return apiAuthenticated.post<{ membership: ClubMembership }>(`/clubs/${clubId}/join`)
 }
 
 /**
  * Cancel join request
  */
 export async function cancelJoinRequest(clubId: string): Promise<void> {
-  return apiAuthenticated.delete<void>(`/clubs/${clubId}/join`);
+  return apiAuthenticated.delete<void>(`/clubs/${clubId}/join`)
 }
 
 /**
  * Leave a club
  */
 export async function leaveClub(clubId: string): Promise<void> {
-  return apiAuthenticated.delete<void>(`/clubs/${clubId}/leave`);
+  return apiAuthenticated.delete<void>(`/clubs/${clubId}/leave`)
 }
 
 /**
@@ -106,7 +102,7 @@ export async function getMembers(
 ): Promise<{ members: ClubMember[]; hasMore: boolean }> {
   return apiAuthenticated.get<{ members: ClubMember[]; hasMore: boolean }>(
     `/clubs/${clubId}/members?page=${page}`,
-  );
+  )
 }
 
 /**
@@ -120,17 +116,14 @@ export async function updateMemberRole(
   return apiAuthenticated.patch<{ membership: ClubMembership }>(
     `/clubs/${clubId}/members/${userId}`,
     { role },
-  );
+  )
 }
 
 /**
  * Remove a member from club
  */
-export async function removeMember(
-  clubId: string,
-  userId: string,
-): Promise<void> {
-  return apiAuthenticated.delete<void>(`/clubs/${clubId}/members/${userId}`);
+export async function removeMember(clubId: string, userId: string): Promise<void> {
+  return apiAuthenticated.delete<void>(`/clubs/${clubId}/members/${userId}`)
 }
 
 /**
@@ -139,33 +132,21 @@ export async function removeMember(
 export async function getPendingRequests(
   clubId: string,
 ): Promise<{ requests: ClubMember[] }> {
-  return apiAuthenticated.get<{ requests: ClubMember[] }>(
-    `/clubs/${clubId}/requests`,
-  );
+  return apiAuthenticated.get<{ requests: ClubMember[] }>(`/clubs/${clubId}/requests`)
 }
 
 /**
  * Approve join request
  */
-export async function approveRequest(
-  clubId: string,
-  userId: string,
-): Promise<void> {
-  return apiAuthenticated.post<void>(
-    `/clubs/${clubId}/requests/${userId}/approve`,
-  );
+export async function approveRequest(clubId: string, userId: string): Promise<void> {
+  return apiAuthenticated.post<void>(`/clubs/${clubId}/requests/${userId}/approve`)
 }
 
 /**
  * Reject join request
  */
-export async function rejectRequest(
-  clubId: string,
-  userId: string,
-): Promise<void> {
-  return apiAuthenticated.post<void>(
-    `/clubs/${clubId}/requests/${userId}/reject`,
-  );
+export async function rejectRequest(clubId: string, userId: string): Promise<void> {
+  return apiAuthenticated.post<void>(`/clubs/${clubId}/requests/${userId}/reject`)
 }
 
 // Export all as clubsApi object
@@ -185,4 +166,4 @@ export const clubsApi = {
   getPendingRequests,
   approveRequest,
   rejectRequest,
-};
+}

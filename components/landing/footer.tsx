@@ -1,87 +1,88 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { Instagram, Youtube } from "lucide-react";
+import Link from 'next/link'
+import Image from 'next/image'
+import { motion } from 'framer-motion'
+import { Instagram, Youtube } from 'lucide-react'
 
 const socialLinks = [
-    { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-    {
-        icon: () => (
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-        ),
-        href: "https://twitter.com",
-        label: "X",
-    },
-    { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
-];
+  { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
+  {
+    icon: () => (
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    ),
+    href: 'https://twitter.com',
+    label: 'X',
+  },
+  { icon: Youtube, href: 'https://youtube.com', label: 'YouTube' },
+]
 
 export function Footer() {
-    return (
-        <footer className="relative bg-linear-to-b from-canvas to-black py-20 overflow-hidden">
-            {/* Fade-to-black gradient overlay */}
-            <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black pointer-events-none" />
+  return (
+    <footer className="relative bg-linear-to-b from-canvas to-black py-20 overflow-hidden">
+      {/* Fade-to-black gradient overlay */}
+      <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black pointer-events-none" />
 
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <motion.div
-                    className="flex flex-col items-center text-center"
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7 }}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          className="flex flex-col items-center text-center"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 mb-8">
+            <Image
+              src="/assets/zoomies_logo_icon.png"
+              alt="Zoomies"
+              width={48}
+              height={48}
+              className="w-12 h-12"
+            />
+            <span className="text-3xl font-bold text-white uppercase tracking-wider">
+              Zoomies
+            </span>
+          </Link>
+
+          {/* Tagline */}
+          <p className="text-text-secondary/60 text-base max-w-md mb-10 font-medium">
+            The social platform for motorcycle riders. Discover clubs, join rides, build
+            your legacy.
+          </p>
+
+          {/* Social Icons */}
+          <div className="flex items-center gap-6 mb-12">
+            {socialLinks.map((link, index) => {
+              const Icon = link.icon
+              return (
+                <motion.a
+                  key={index}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-text-secondary/60 hover:text-white hover:bg-teal/20 hover:border-teal/50 border border-[#444444]/50 transition-all duration-300"
+                  whileHover={{ scale: 1.1, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label={link.label}
                 >
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center gap-3 mb-8">
-                        <Image
-                            src="/assets/zoomies_logo_icon.png"
-                            alt="Zoomies"
-                            width={48}
-                            height={48}
-                            className="w-12 h-12"
-                        />
-                        <span className="text-3xl font-bold text-white uppercase tracking-wider">
-                            Zoomies
-                        </span>
-                    </Link>
+                  <Icon />
+                </motion.a>
+              )
+            })}
+          </div>
 
-                    {/* Tagline */}
-                    <p className="text-text-secondary/60 text-base max-w-md mb-10 font-medium">
-                        The social platform for motorcycle riders. Discover clubs, join rides, build your legacy.
-                    </p>
+          {/* Divider line */}
+          <div className="w-24 h-px bg-linear-to-r from-transparent via-[#444444] to-transparent mb-8" />
 
-                    {/* Social Icons */}
-                    <div className="flex items-center gap-6 mb-12">
-                        {socialLinks.map((link, index) => {
-                            const Icon = link.icon;
-                            return (
-                                <motion.a
-                                    key={index}
-                                    href={link.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-12 h-12 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-text-secondary/60 hover:text-white hover:bg-teal/20 hover:border-teal/50 border border-[#444444]/50 transition-all duration-300"
-                                    whileHover={{ scale: 1.1, y: -3 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    aria-label={link.label}
-                                >
-                                    <Icon />
-                                </motion.a>
-                            );
-                        })}
-                    </div>
-
-                    {/* Divider line */}
-                    <div className="w-24 h-px bg-linear-to-r from-transparent via-[#444444] to-transparent mb-8" />
-
-                    {/* Copyright */}
-                    <p className="text-text-secondary/30 text-sm">
-                        © 2026 Zoomies. All rights reserved.
-                    </p>
-                </motion.div>
-            </div>
-        </footer>
-    );
+          {/* Copyright */}
+          <p className="text-text-secondary/30 text-sm">
+            © 2026 Zoomies. All rights reserved.
+          </p>
+        </motion.div>
+      </div>
+    </footer>
+  )
 }

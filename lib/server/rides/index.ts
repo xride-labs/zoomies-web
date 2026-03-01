@@ -1,27 +1,27 @@
-import { apiAuthenticated } from "../base";
+import { apiAuthenticated } from '../base'
 import type {
   Ride,
   RideDetails,
   RideParticipant,
   RideStatus,
   RideType,
-} from "@/store/slices/ridesSlice";
+} from '@/store/slices/ridesSlice'
 
 // Re-export types from slice
-export type { Ride, RideDetails, RideParticipant, RideStatus, RideType };
+export type { Ride, RideDetails, RideParticipant, RideStatus, RideType }
 
 export interface CreateRideData {
-  title: string;
-  description?: string;
-  startLocation: string;
-  endLocation?: string;
-  experienceLevel?: string;
-  xpRequired?: number;
-  pace?: string;
-  distance?: number;
-  duration?: number;
-  scheduledAt?: string;
-  keepPermanently?: boolean;
+  title: string
+  description?: string
+  startLocation: string
+  endLocation?: string
+  experienceLevel?: string
+  xpRequired?: number
+  pace?: string
+  distance?: number
+  duration?: number
+  scheduledAt?: string
+  keepPermanently?: boolean
 }
 
 // ============ Rides API ============
@@ -34,18 +34,16 @@ export async function getUpcomingRides(
 ): Promise<{ rides: Ride[]; hasMore: boolean }> {
   return apiAuthenticated.get<{ rides: Ride[]; hasMore: boolean }>(
     `/rides/upcoming?page=${page}`,
-  );
+  )
 }
 
 /**
  * Get rides the user is participating in
  */
-export async function getMyRides(
-  page = 1,
-): Promise<{ rides: Ride[]; hasMore: boolean }> {
+export async function getMyRides(page = 1): Promise<{ rides: Ride[]; hasMore: boolean }> {
   return apiAuthenticated.get<{ rides: Ride[]; hasMore: boolean }>(
     `/rides/my?page=${page}`,
-  );
+  )
 }
 
 /**
@@ -56,23 +54,21 @@ export async function getPastRides(
 ): Promise<{ rides: Ride[]; hasMore: boolean }> {
   return apiAuthenticated.get<{ rides: Ride[]; hasMore: boolean }>(
     `/rides/past?page=${page}`,
-  );
+  )
 }
 
 /**
  * Get ride details by ID
  */
 export async function getRide(rideId: string): Promise<{ ride: RideDetails }> {
-  return apiAuthenticated.get<{ ride: RideDetails }>(`/rides/${rideId}`);
+  return apiAuthenticated.get<{ ride: RideDetails }>(`/rides/${rideId}`)
 }
 
 /**
  * Create a new ride
  */
-export async function createRide(
-  data: CreateRideData,
-): Promise<{ ride: Ride }> {
-  return apiAuthenticated.post<{ ride: Ride }>("/rides", data);
+export async function createRide(data: CreateRideData): Promise<{ ride: Ride }> {
+  return apiAuthenticated.post<{ ride: Ride }>('/rides', data)
 }
 
 /**
@@ -82,14 +78,14 @@ export async function updateRide(
   rideId: string,
   data: Partial<CreateRideData>,
 ): Promise<{ ride: Ride }> {
-  return apiAuthenticated.patch<{ ride: Ride }>(`/rides/${rideId}`, data);
+  return apiAuthenticated.patch<{ ride: Ride }>(`/rides/${rideId}`, data)
 }
 
 /**
  * Delete a ride
  */
 export async function deleteRide(rideId: string): Promise<void> {
-  return apiAuthenticated.delete<void>(`/rides/${rideId}`);
+  return apiAuthenticated.delete<void>(`/rides/${rideId}`)
 }
 
 /**
@@ -100,30 +96,28 @@ export async function joinRide(
 ): Promise<{ participant: { id: string; status: string } }> {
   return apiAuthenticated.post<{ participant: { id: string; status: string } }>(
     `/rides/${rideId}/join`,
-  );
+  )
 }
 
 /**
  * Leave a ride
  */
 export async function leaveRide(rideId: string): Promise<void> {
-  return apiAuthenticated.delete<void>(`/rides/${rideId}/leave`);
+  return apiAuthenticated.delete<void>(`/rides/${rideId}/leave`)
 }
 
 /**
  * Start a ride (organizer only)
  */
-export async function startRide(
-  rideId: string,
-): Promise<{ ride: RideDetails }> {
-  return apiAuthenticated.post<{ ride: RideDetails }>(`/rides/${rideId}/start`);
+export async function startRide(rideId: string): Promise<{ ride: RideDetails }> {
+  return apiAuthenticated.post<{ ride: RideDetails }>(`/rides/${rideId}/start`)
 }
 
 /**
  * End a ride (organizer only)
  */
 export async function endRide(rideId: string): Promise<{ ride: RideDetails }> {
-  return apiAuthenticated.post<{ ride: RideDetails }>(`/rides/${rideId}/end`);
+  return apiAuthenticated.post<{ ride: RideDetails }>(`/rides/${rideId}/end`)
 }
 
 /**
@@ -133,7 +127,7 @@ export async function updateLocation(
   rideId: string,
   location: { lat: number; lng: number },
 ): Promise<void> {
-  return apiAuthenticated.post<void>(`/rides/${rideId}/location`, location);
+  return apiAuthenticated.post<void>(`/rides/${rideId}/location`, location)
 }
 
 /**
@@ -141,9 +135,9 @@ export async function updateLocation(
  */
 export async function updateStatus(
   rideId: string,
-  status: "ok" | "need-help" | "emergency",
+  status: 'ok' | 'need-help' | 'emergency',
 ): Promise<void> {
-  return apiAuthenticated.post<void>(`/rides/${rideId}/status`, { status });
+  return apiAuthenticated.post<void>(`/rides/${rideId}/status`, { status })
 }
 
 /**
@@ -155,7 +149,7 @@ export async function getClubRides(
 ): Promise<{ rides: Ride[]; hasMore: boolean }> {
   return apiAuthenticated.get<{ rides: Ride[]; hasMore: boolean }>(
     `/clubs/${clubId}/rides?page=${page}`,
-  );
+  )
 }
 
 // Export all as ridesApi object
@@ -174,4 +168,4 @@ export const ridesApi = {
   updateLocation,
   updateStatus,
   getClubRides,
-};
+}

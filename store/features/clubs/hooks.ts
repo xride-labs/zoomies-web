@@ -1,11 +1,11 @@
-import { useAppDispatch, useAppSelector } from "../shared/hooks";
+import { useAppDispatch, useAppSelector } from '../shared/hooks'
 import {
   selectMyClubs,
   selectDiscoveredClubs,
   selectCurrentClub,
   selectClubsLoading,
   selectClubsError,
-} from "./selectors";
+} from './selectors'
 import {
   fetchMyClubs,
   discoverClubsThunk,
@@ -15,15 +15,15 @@ import {
   deleteClubThunk,
   joinClubThunk,
   leaveClubThunk,
-} from "./thunks";
+} from './thunks'
 
 export const useClubs = () => {
-  const dispatch = useAppDispatch();
-  const myClubs = useAppSelector(selectMyClubs);
-  const discoveredClubs = useAppSelector(selectDiscoveredClubs);
-  const currentClub = useAppSelector(selectCurrentClub);
-  const isLoading = useAppSelector(selectClubsLoading);
-  const error = useAppSelector(selectClubsError);
+  const dispatch = useAppDispatch()
+  const myClubs = useAppSelector(selectMyClubs)
+  const discoveredClubs = useAppSelector(selectDiscoveredClubs)
+  const currentClub = useAppSelector(selectCurrentClub)
+  const isLoading = useAppSelector(selectClubsLoading)
+  const error = useAppSelector(selectClubsError)
 
   return {
     myClubs,
@@ -40,5 +40,5 @@ export const useClubs = () => {
     deleteClub: (clubId: string) => dispatch(deleteClubThunk(clubId)),
     joinClub: (clubId: string) => dispatch(joinClubThunk(clubId)),
     leaveClub: (clubId: string) => dispatch(leaveClubThunk(clubId)),
-  };
-};
+  }
+}

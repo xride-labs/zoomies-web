@@ -1,9 +1,9 @@
-import { configureStore } from "@reduxjs/toolkit";
-import userReducer from "./slices/userSlice";
-import clubsReducer from "./slices/clubsSlice";
-import ridesReducer from "./slices/ridesSlice";
-import marketplaceReducer from "./slices/marketplaceSlice";
-import feedReducer from "./slices/feedSlice";
+import { configureStore } from '@reduxjs/toolkit'
+import userReducer from './slices/userSlice'
+import clubsReducer from './slices/clubsSlice'
+import ridesReducer from './slices/ridesSlice'
+import marketplaceReducer from './slices/marketplaceSlice'
+import feedReducer from './slices/feedSlice'
 
 export const store = configureStore({
   reducer: {
@@ -17,14 +17,14 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types
-        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
     }),
-  devTools: process.env.NODE_ENV !== "production",
-});
+  devTools: process.env.NODE_ENV !== 'production',
+})
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch
 
 // Export feature hooks, selectors, and thunks
-export * from "./features";
+export * from './features'

@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import {
   fetchProfile,
   fetchMe,
@@ -6,91 +6,91 @@ import {
   addUserBike,
   updateUserBike,
   deleteUserBike,
-} from "../features/user/thunks";
+} from '../features/user/thunks'
 
 export interface UserProfile {
-  id: string;
-  email?: string;
-  name?: string;
-  username?: string;
-  avatar?: string | null;
-  coverImage?: string | null;
-  bio?: string;
-  location?: string;
-  bloodType?: string | null;
-  bikes?: Bike[];
-  clubs?: ClubBadge[];
-  ridesCompleted?: number;
-  ridesCount?: number;
-  followersCount?: number;
-  followingCount?: number;
-  isVerified?: boolean;
-  roles?: string[];
+  id: string
+  email?: string
+  name?: string
+  username?: string
+  avatar?: string | null
+  coverImage?: string | null
+  bio?: string
+  location?: string
+  bloodType?: string | null
+  bikes?: Bike[]
+  clubs?: ClubBadge[]
+  ridesCompleted?: number
+  ridesCount?: number
+  followersCount?: number
+  followingCount?: number
+  isVerified?: boolean
+  roles?: string[]
   experience?: {
-    xpPoints: number;
-    level: number;
-    levelTitle: string;
-    nextLevelXp: number;
-    progressPercent: number;
-    reputationScore: number;
-    activityLevel: string;
-  };
+    xpPoints: number
+    level: number
+    levelTitle: string
+    nextLevelXp: number
+    progressPercent: number
+    reputationScore: number
+    activityLevel: string
+  }
   social?: {
-    followers: number;
-    following: number;
-    friends: number;
-  };
+    followers: number
+    following: number
+    friends: number
+  }
   safety?: {
     emergencyContacts: {
-      count: number;
+      count: number
       items: Array<{
-        id: string;
-        name: string;
-        phone: string;
-        relationship?: string | null;
-        isPrimary: boolean;
-      }>;
-    };
-    helmetVerified: boolean;
-    lastSafetyCheck?: string | null;
-  };
+        id: string
+        name: string
+        phone: string
+        relationship?: string | null
+        isPrimary: boolean
+      }>
+    }
+    helmetVerified: boolean
+    lastSafetyCheck?: string | null
+  }
   preferences?: {
-    rideReminders: boolean;
-    serviceReminderKm: number;
-    darkMode: boolean;
-    units: string;
-    openToInvite: boolean;
-  };
-  createdAt?: string;
+    rideReminders: boolean
+    serviceReminderKm: number
+    darkMode: boolean
+    units: string
+    openToInvite: boolean
+  }
+  createdAt?: string
 }
 
 export interface Bike {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  type?: string;
-  engineCc?: number;
-  color?: string | null;
-  odo?: number;
-  ownerSince?: string | null;
-  modifications?: Record<string, unknown> | null;
-  isPrimary?: boolean;
-  image?: string | null;
+  id: string
+  make: string
+  model: string
+  year: number
+  type?: string
+  engineCc?: number
+  color?: string | null
+  odo?: number
+  ownerSince?: string | null
+  modifications?: Record<string, unknown> | null
+  isPrimary?: boolean
+  image?: string | null
 }
 
 export interface ClubBadge {
-  id: string;
-  name: string;
-  avatar: string | null;
-  role: string;
+  id: string
+  name: string
+  avatar: string | null
+  role: string
 }
 
 interface UserState {
-  profile: UserProfile | null;
-  isLoading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
+  profile: UserProfile | null
+  isLoading: boolean
+  error: string | null
+  isAuthenticated: boolean
 }
 
 const initialState: UserState = {
@@ -98,50 +98,47 @@ const initialState: UserState = {
   isLoading: false,
   error: null,
   isAuthenticated: false,
-};
+}
 
 const userSlice = createSlice({
-  name: "user",
+  name: 'user',
   initialState,
   reducers: {
     setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
+      state.isLoading = action.payload
     },
     setProfile: (state, action: PayloadAction<UserProfile>) => {
-      state.profile = action.payload;
-      state.isAuthenticated = true;
-      state.error = null;
+      state.profile = action.payload
+      state.isAuthenticated = true
+      state.error = null
     },
-    updateProfileLocal: (
-      state,
-      action: PayloadAction<Partial<UserProfile>>,
-    ) => {
+    updateProfileLocal: (state, action: PayloadAction<Partial<UserProfile>>) => {
       if (state.profile) {
-        state.profile = { ...state.profile, ...action.payload };
+        state.profile = { ...state.profile, ...action.payload }
       }
     },
     setError: (state, action: PayloadAction<string>) => {
-      state.error = action.payload;
-      state.isLoading = false;
+      state.error = action.payload
+      state.isLoading = false
     },
     clearError: (state) => {
-      state.error = null;
+      state.error = null
     },
     logout: (state) => {
-      state.profile = null;
-      state.isAuthenticated = false;
-      state.error = null;
+      state.profile = null
+      state.isAuthenticated = false
+      state.error = null
     },
     addBikeLocal: (state, action: PayloadAction<Bike>) => {
       if (state.profile) {
-        state.profile.bikes.push(action.payload);
+        state.profile.bikes.push(action.payload)
       }
     },
     removeBikeLocal: (state, action: PayloadAction<string>) => {
       if (state.profile) {
         state.profile.bikes = state.profile.bikes.filter(
           (bike) => bike.id !== action.payload,
-        );
+        )
       }
     },
   },
@@ -149,93 +146,89 @@ const userSlice = createSlice({
     // Fetch profile
     builder
       .addCase(fetchProfile.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+        state.isLoading = true
+        state.error = null
       })
       .addCase(fetchProfile.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.profile = action.payload;
-        state.isAuthenticated = true;
+        state.isLoading = false
+        state.profile = action.payload
+        state.isAuthenticated = true
       })
       .addCase(fetchProfile.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+        state.isLoading = false
+        state.error = action.payload as string
+      })
 
     // Fetch me (auth user)
     builder
       .addCase(fetchMe.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+        state.isLoading = true
+        state.error = null
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.isLoading = false
         if (action.payload) {
-          state.profile = action.payload as UserProfile;
-          state.isAuthenticated = true;
+          state.profile = action.payload as UserProfile
+          state.isAuthenticated = true
         }
       })
       .addCase(fetchMe.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+        state.isLoading = false
+        state.error = action.payload as string
+      })
 
     // Update profile
     builder
       .addCase(updateUserProfile.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+        state.isLoading = true
+        state.error = null
       })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.isLoading = false
         if (state.profile && action.payload) {
-          state.profile = { ...state.profile, ...action.payload };
+          state.profile = { ...state.profile, ...action.payload }
         }
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+        state.isLoading = false
+        state.error = action.payload as string
+      })
 
     // Add bike
     builder
       .addCase(addUserBike.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+        state.isLoading = true
+        state.error = null
       })
       .addCase(addUserBike.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.isLoading = false
         if (state.profile && action.payload) {
-          state.profile.bikes.push(action.payload);
+          state.profile.bikes.push(action.payload)
         }
       })
       .addCase(addUserBike.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+        state.isLoading = false
+        state.error = action.payload as string
+      })
 
     // Update bike
     builder.addCase(updateUserBike.fulfilled, (state, action) => {
       if (state.profile && action.payload) {
-        const index = state.profile.bikes.findIndex(
-          (b) => b.id === action.payload.id,
-        );
+        const index = state.profile.bikes.findIndex((b) => b.id === action.payload.id)
         if (index !== -1) {
-          state.profile.bikes[index] = action.payload;
+          state.profile.bikes[index] = action.payload
         }
       }
-    });
+    })
 
     // Delete bike
     builder.addCase(deleteUserBike.fulfilled, (state, action) => {
       if (state.profile) {
-        state.profile.bikes = state.profile.bikes.filter(
-          (b) => b.id !== action.payload,
-        );
+        state.profile.bikes = state.profile.bikes.filter((b) => b.id !== action.payload)
       }
-    });
+    })
   },
-});
+})
 
 export const {
   setLoading,
@@ -246,6 +239,6 @@ export const {
   logout,
   addBikeLocal,
   removeBikeLocal,
-} = userSlice.actions;
+} = userSlice.actions
 
-export default userSlice.reducer;
+export default userSlice.reducer

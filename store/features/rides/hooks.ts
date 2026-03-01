@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppSelector } from "../shared/hooks";
+import { useAppDispatch, useAppSelector } from '../shared/hooks'
 import {
   selectUpcomingRides,
   selectMyRides,
@@ -7,7 +7,7 @@ import {
   selectActiveRide,
   selectRidesLoading,
   selectRidesError,
-} from "./selectors";
+} from './selectors'
 import {
   fetchUpcomingRides,
   fetchMyRides,
@@ -20,17 +20,17 @@ import {
   leaveRideThunk,
   startRideThunk,
   endRideThunk,
-} from "./thunks";
+} from './thunks'
 
 export const useRides = () => {
-  const dispatch = useAppDispatch();
-  const upcomingRides = useAppSelector(selectUpcomingRides);
-  const myRides = useAppSelector(selectMyRides);
-  const pastRides = useAppSelector(selectPastRides);
-  const currentRide = useAppSelector(selectCurrentRide);
-  const activeRide = useAppSelector(selectActiveRide);
-  const isLoading = useAppSelector(selectRidesLoading);
-  const error = useAppSelector(selectRidesError);
+  const dispatch = useAppDispatch()
+  const upcomingRides = useAppSelector(selectUpcomingRides)
+  const myRides = useAppSelector(selectMyRides)
+  const pastRides = useAppSelector(selectPastRides)
+  const currentRide = useAppSelector(selectCurrentRide)
+  const activeRide = useAppSelector(selectActiveRide)
+  const isLoading = useAppSelector(selectRidesLoading)
+  const error = useAppSelector(selectRidesError)
 
   return {
     upcomingRides,
@@ -40,8 +40,7 @@ export const useRides = () => {
     activeRide,
     isLoading,
     error,
-    fetchUpcomingRides: (page?: number) =>
-      dispatch(fetchUpcomingRides(page || 1)),
+    fetchUpcomingRides: (page?: number) => dispatch(fetchUpcomingRides(page || 1)),
     fetchMyRides: (page?: number) => dispatch(fetchMyRides(page || 1)),
     fetchPastRides: (page?: number) => dispatch(fetchPastRides(page || 1)),
     fetchRideDetails: (rideId: string) => dispatch(fetchRideDetails(rideId)),
@@ -53,5 +52,5 @@ export const useRides = () => {
     leaveRide: (rideId: string) => dispatch(leaveRideThunk(rideId)),
     startRide: (rideId: string) => dispatch(startRideThunk(rideId)),
     endRide: (rideId: string) => dispatch(endRideThunk(rideId)),
-  };
-};
+  }
+}

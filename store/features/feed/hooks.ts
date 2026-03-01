@@ -1,10 +1,10 @@
-import { useAppDispatch, useAppSelector } from "../shared/hooks";
+import { useAppDispatch, useAppSelector } from '../shared/hooks'
 import {
   selectPosts,
   selectFeedLoading,
   selectFeedError,
   selectFeedHasMore,
-} from "./selectors";
+} from './selectors'
 import {
   fetchFeed,
   fetchMoreFeed,
@@ -14,14 +14,14 @@ import {
   unlikePostThunk,
   savePostThunk,
   unsavePostThunk,
-} from "./thunks";
+} from './thunks'
 
 export const useFeed = () => {
-  const dispatch = useAppDispatch();
-  const posts = useAppSelector(selectPosts);
-  const isLoading = useAppSelector(selectFeedLoading);
-  const error = useAppSelector(selectFeedError);
-  const hasMore = useAppSelector(selectFeedHasMore);
+  const dispatch = useAppDispatch()
+  const posts = useAppSelector(selectPosts)
+  const isLoading = useAppSelector(selectFeedLoading)
+  const error = useAppSelector(selectFeedError)
+  const hasMore = useAppSelector(selectFeedHasMore)
 
   return {
     posts,
@@ -36,5 +36,5 @@ export const useFeed = () => {
     unlikePost: (postId: string) => dispatch(unlikePostThunk(postId)),
     savePost: (postId: string) => dispatch(savePostThunk(postId)),
     unsavePost: (postId: string) => dispatch(unsavePostThunk(postId)),
-  };
-};
+  }
+}
