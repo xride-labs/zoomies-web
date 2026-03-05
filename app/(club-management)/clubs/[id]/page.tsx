@@ -52,7 +52,10 @@ import {
 import { mediaApi, userApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 interface ClubOwner {
   id: string
@@ -131,6 +134,9 @@ export default function ClubDetailPage() {
   const [isGalleryDialogOpen, setIsGalleryDialogOpen] = useState(false)
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [isGalleryUploading, setIsGalleryUploading] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [editData, setEditData] = useState({ name: '', description: '', location: '' })
 
   useEffect(() => {
     const fetchClubData = async () => {
@@ -145,11 +151,17 @@ export default function ClubDetailPage() {
 
         const clubData = clubResponse.club
 
-        setClub({
+        const fullClub = {
           ...clubData,
           rides: ridesResponse.rides || [],
+        }
+        setClub(fullClub)
+        setGalleryItems((clubData as any).gallery || [])
+        setEditData({
+          name: clubData.name || '',
+          description: clubData.description || '',
+          location: clubData.location || '',
         })
-        setGalleryItems(clubData.gallery || [])
       } catch (err) {
         setError('Failed to load club details')
         console.error(err)
@@ -184,13 +196,61 @@ export default function ClubDetailPage() {
     })
   }
 
-  const handleJoinRequest = () => {
-    setIsPending(true)
-    setIsJoinDialogOpen(false)
+  const handleJoinRequest = async () => {
+    if (!club) return
+    try {
+      await clubsApi.requestToJoin(club.id)
+      setIsPending(true)
+      setIsJoinDialogOpen(false)
+      toast.success(
+        club.isPublic ? 'Welcome to the crew!' : 'Request sent!',
+        { description: club.isPublic ? `You're now a member of ${club.name}` : 'The club admins will review your request.' }
+      )
+    } catch (err) {
+      console.error('Failed to join club:', err)
+      toast.error('Failed to join club', { description: err instanceof Error ? err.message : 'Something went wrong. Try again.' })
+    }
   }
 
-  const handleLeaveClub = () => {
-    setIsMember(false)
+  const handleLeaveClub = async () => {
+    if (!club) return
+    try {
+      await clubsApi.leaveClub(club.id)
+      setIsMember(false)
+      toast.info('You left the club', { description: `You are no longer a member of ${club.name}.` })
+    } catch (err) {
+      console.error('Failed to leave club:', err)
+      toast.error('Failed to leave club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    }
+  }
+
+  const handleUpdateClub = async () => {
+    if (!club) return
+    try {
+      const { club: updatedClub } = await clubsApi.updateClub(club.id, {
+        name: editData.name,
+        description: editData.description || undefined,
+        location: editData.location || undefined,
+      })
+      setClub((prev) => (prev ? { ...prev, ...updatedClub } : prev))
+      setIsEditDialogOpen(false)
+      toast.success('Club updated!', { description: 'Your changes have been saved.' })
+    } catch (err) {
+      console.error('Failed to update club:', err)
+      toast.error('Failed to update club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    }
+  }
+
+  const handleDeleteClub = async () => {
+    if (!club) return
+    try {
+      await clubsApi.deleteClub(club.id)
+      toast.success('Club deleted', { description: `${club.name} has been permanently removed.` })
+      router.push('/app/clubs')
+    } catch (err) {
+      console.error('Failed to delete club:', err)
+      toast.error('Failed to delete club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    }
   }
 
   const handleGalleryUpload = async () => {
@@ -209,8 +269,10 @@ export default function ClubDetailPage() {
       setGalleryItems((prev) => [...uploads, ...prev])
       setGalleryFiles([])
       setIsGalleryDialogOpen(false)
+      toast.success('Photos uploaded!', { description: `${uploads.length} photo(s) added to the gallery.` })
     } catch (err) {
       console.error('Failed to upload club gallery:', err)
+      toast.error('Upload failed', { description: 'Could not upload photos. Please try again.' })
     } finally {
       setIsGalleryUploading(false)
     }
@@ -269,8 +331,21 @@ export default function ClubDetailPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {isOwner && (
+                <>
+                  <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                    Edit Club
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    Delete Club
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem>Report Club</DropdownMenuItem>
-              {isMember && (
+              {isMember && !isOwner && (
                 <DropdownMenuItem className="text-red-600" onClick={handleLeaveClub}>
                   Leave Club
                 </DropdownMenuItem>
@@ -405,15 +480,7 @@ export default function ClubDetailPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-muted-foreground" />
-                      {item.url ? (
-                        <Image
-                          src={item.url}
-                          alt="Club gallery"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
-                      )}
+                      <span className="text-sm">{club.isPublic ? 'Public club — anyone can join' : 'Private club — invite or approval required'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-muted-foreground" />
@@ -481,7 +548,7 @@ export default function ClubDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-100">
                   <div className="space-y-2">
                     {members.map((member) => (
                       <Link
@@ -560,9 +627,17 @@ export default function ClubDetailPage() {
                   {gallery.map((item) => (
                     <div
                       key={item.id}
-                      className="aspect-square bg-muted rounded-lg flex items-center justify-center"
+                      className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden"
                     >
-                      <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                      {item.url ? (
+                        <img
+                          src={item.url}
+                          alt="Club gallery"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -621,6 +696,64 @@ export default function ClubDetailPage() {
             >
               {isGalleryUploading ? 'Uploading...' : 'Upload'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Club Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Club</DialogTitle>
+            <DialogDescription>Update your club details.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editData.description}
+                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-location">Location</Label>
+              <Input
+                id="edit-location"
+                value={editData.location}
+                onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateClub}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Club Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Club</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. All members will be removed and club data will
+              be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteClub}>Delete Club</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

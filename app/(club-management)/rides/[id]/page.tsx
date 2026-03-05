@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 import { fileToDataUrl } from '@/lib/media-utils'
+import { toast } from 'sonner'
 
 interface Organizer {
   id: string
@@ -154,7 +155,7 @@ export default function RideDetailPage() {
         const rideId = params.id as string
         const response = await ridesApi.getRide(rideId)
         setRide(response.ride)
-        setGalleryItems(response.ride.images || [])
+        setGalleryItems((response.ride as any).images || [])
       } catch (err) {
         setError('Failed to load ride details')
         console.error(err)
@@ -249,13 +250,29 @@ export default function RideDetailPage() {
   const participantPercentage = (confirmedCount / maxParticipants) * 100
   const isOrganizer = currentUserId && ride.organizer?.id === currentUserId
 
-  const handleJoinRide = () => {
-    setIsJoined(true)
+  const handleJoinRide = async () => {
+    if (!ride) return
+    try {
+      await ridesApi.joinRide(ride.id)
+      setIsJoined(true)
+      toast.success('You\'re in! 🏍️', { description: `You joined "${ride.title}". See you on the road!` })
+    } catch (err) {
+      console.error('Failed to join ride:', err)
+      toast.error('Failed to join ride', { description: err instanceof Error ? err.message : 'Something went wrong. Try again.' })
+    }
   }
 
-  const handleLeaveRide = () => {
-    setIsJoined(false)
-    setIsLeaveDialogOpen(false)
+  const handleLeaveRide = async () => {
+    if (!ride) return
+    try {
+      await ridesApi.leaveRide(ride.id)
+      setIsJoined(false)
+      setIsLeaveDialogOpen(false)
+      toast.info('You left the ride', { description: `You are no longer part of "${ride.title}".` })
+    } catch (err) {
+      console.error('Failed to leave ride:', err)
+      toast.error('Failed to leave ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    }
   }
 
   const handleGalleryUpload = async () => {
@@ -271,8 +288,10 @@ export default function RideDetailPage() {
       setGalleryItems((prev) => [...uploadedUrls, ...prev])
       setGalleryFiles([])
       setIsGalleryDialogOpen(false)
+      toast.success('Photos uploaded!', { description: `${uploadedUrls.length} photo(s) added to the gallery.` })
     } catch (err) {
       console.error('Failed to upload ride media:', err)
+      toast.error('Upload failed', { description: 'Could not upload photos. Please try again.' })
     } finally {
       setIsGalleryUploading(false)
     }
@@ -295,8 +314,10 @@ export default function RideDetailPage() {
       const { ride: updatedRide } = await ridesApi.updateRide(ride.id, payload)
       setRide((prev) => (prev ? { ...prev, ...updatedRide } : prev))
       setIsEditDialogOpen(false)
+      toast.success('Ride updated!', { description: 'Your changes have been saved.' })
     } catch (err) {
       console.error('Failed to update ride:', err)
+      toast.error('Failed to update ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
     }
   }
 
@@ -304,9 +325,11 @@ export default function RideDetailPage() {
     if (!ride) return
     try {
       await ridesApi.deleteRide(ride.id)
+      toast.success('Ride deleted', { description: 'The ride has been permanently removed.' })
       router.push('/app/rides')
     } catch (err) {
       console.error('Failed to delete ride:', err)
+      toast.error('Failed to delete ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
     }
   }
 
@@ -478,15 +501,14 @@ export default function RideDetailPage() {
               {waypoints.map((waypoint, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div
-                    className={`w-3 h-3 rounded-full ${
-                      waypoint.type === 'start'
-                        ? 'bg-green-500'
-                        : waypoint.type === 'end'
-                          ? 'bg-red-500'
-                          : waypoint.type === 'stop'
-                            ? 'bg-amber-500'
-                            : 'bg-primary'
-                    }`}
+                    className={`w-3 h-3 rounded-full ${waypoint.type === 'start'
+                      ? 'bg-green-500'
+                      : waypoint.type === 'end'
+                        ? 'bg-red-500'
+                        : waypoint.type === 'stop'
+                          ? 'bg-amber-500'
+                          : 'bg-primary'
+                      }`}
                   />
                   <div className="flex-1">
                     <p className="text-sm font-medium">{waypoint.name}</p>
@@ -579,7 +601,7 @@ export default function RideDetailPage() {
           </CardHeader>
           <CardContent>
             <Progress value={participantPercentage} className="mb-4" />
-            <ScrollArea className="h-[200px]">
+            <ScrollArea className="h-50">
               <div className="space-y-3">
                 {participants.map((participant) => (
                   <Link
@@ -604,7 +626,7 @@ export default function RideDetailPage() {
                       </div>
                       {
                         participantStatusIcons[
-                          participant.status as keyof typeof participantStatusIcons
+                        participant.status as keyof typeof participantStatusIcons
                         ]
                       }
                     </div>

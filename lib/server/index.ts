@@ -46,3 +46,7 @@ export { feedApi } from './feed'
 // Re-export media API
 export * from './media'
 export { mediaApi } from './media'
+
+// Re-export friend groups API
+export * from './friend-groups'
+export { friendGroupsApi } from './friend-groups'

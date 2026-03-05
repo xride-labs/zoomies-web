@@ -21,9 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ChevronLeft, ImagePlus } from 'lucide-react'
+import { ChevronLeft, ImagePlus, MapPin } from 'lucide-react'
 import { clubsApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
+import { toast } from 'sonner'
 
 const clubTypes = [
   'Riding Club',
@@ -40,6 +41,7 @@ const clubTypes = [
 
 export default function CreateClubPage() {
   const router = useRouter()
+  const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -97,222 +99,221 @@ export default function CreateClubPage() {
         await mediaApi.uploadClubImage(club.id, coverDataUrl, 'cover')
       }
 
+      toast.success('Club created! 🎉', { description: `${clubData.name} is live! Rally your crew.` })
       router.push(`/app/clubs/${club.id}`)
     } catch (error) {
       console.error('Failed to create club:', error)
+      toast.error('Failed to create club', { description: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })
+    } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen p-4 lg:p-6 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Create a Club</h1>
-          <p className="text-sm text-muted-foreground">Start your own riding community</p>
+    <div className="min-h-screen flex flex-col">
+      {/* Progress bar */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b px-4 py-3">
+        <div className="max-w-2xl mx-auto flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => step > 1 ? setStep(step - 1) : router.back()}>
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex-1">
+            <div className="flex gap-2">
+              {[1, 2, 3].map((s) => (
+                <div key={s} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${s <= step ? 'bg-primary' : 'bg-muted'}`} />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Step {step} of 3 — {step === 1 ? 'Identity' : step === 2 ? 'Details' : 'Launch'}
+            </p>
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Club Images */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Club Images</CardTitle>
-            <CardDescription>Add a logo and optional cover image</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-dashed border-border bg-muted/40 p-4 transition-colors hover:bg-muted">
-                <div className="h-20 w-20 overflow-hidden rounded-lg bg-muted flex items-center justify-center">
-                  {logoPreview ? (
-                    <img
-                      src={logoPreview}
-                      alt="Club logo preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="w-8 h-8 text-muted-foreground" />
-                  )}
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Step 1: Identity */}
+          {step === 1 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                  <ImagePlus className="w-8 h-8 text-primary" />
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">Club Logo</p>
-                  <p className="text-xs text-muted-foreground">
-                    Square image, at least 256x256px
-                  </p>
-                </div>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleLogoChange(e.target.files?.[0] || null)}
-                />
-              </label>
-              <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-dashed border-border bg-muted/40 p-4 transition-colors hover:bg-muted">
-                <div className="h-20 w-20 overflow-hidden rounded-lg bg-muted flex items-center justify-center">
-                  {coverPreview ? (
-                    <img
-                      src={coverPreview}
-                      alt="Club cover preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="w-8 h-8 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">Club Cover</p>
-                  <p className="text-xs text-muted-foreground">
-                    Wide image, at least 1200x400px
-                  </p>
-                </div>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleCoverChange(e.target.files?.[0] || null)}
-                />
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>Tell us about your club</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">
-                Club Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                placeholder="e.g., Desert Eagles MC"
-                value={clubData.name}
-                onChange={(e) => setClubData({ ...clubData, name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">
-                Description <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="description"
-                placeholder="Describe your club, its values, and what kind of riders you're looking for..."
-                value={clubData.description}
-                onChange={(e) =>
-                  setClubData({ ...clubData, description: e.target.value })
-                }
-                rows={4}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">
-                Location <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="location"
-                placeholder="e.g., Phoenix, AZ"
-                value={clubData.location}
-                onChange={(e) => setClubData({ ...clubData, location: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="clubType">Club Type</Label>
-              <Select
-                value={clubData.clubType}
-                onValueChange={(value) => setClubData({ ...clubData, clubType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select club type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clubTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Privacy Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Privacy Settings</CardTitle>
-            <CardDescription>Control who can see and join your club</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Public Club</p>
-                <p className="text-sm text-muted-foreground">
-                  Anyone can find and view your club
+                <h1 className="text-3xl font-bold tracking-tight">Give your club an identity</h1>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  A great logo and name makes your crew instantly recognizable on the road.
                 </p>
               </div>
-              <Switch
-                checked={clubData.isPublic}
-                onCheckedChange={(checked) =>
-                  setClubData({ ...clubData, isPublic: checked })
-                }
-              />
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Require Approval</p>
-                <p className="text-sm text-muted-foreground">
-                  Review and approve join requests
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="group flex cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-border bg-muted/20 p-5 transition-all hover:border-primary/50 hover:bg-muted/40">
+                  <div className="h-20 w-20 overflow-hidden rounded-xl bg-muted flex items-center justify-center shrink-0 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Club logo preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">Club Logo</p>
+                    <p className="text-xs text-muted-foreground">Square, at least 256×256px</p>
+                  </div>
+                  <Input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoChange(e.target.files?.[0] || null)} />
+                </label>
+                <label className="group flex cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-border bg-muted/20 p-5 transition-all hover:border-primary/50 hover:bg-muted/40">
+                  <div className="h-20 w-20 overflow-hidden rounded-xl bg-muted flex items-center justify-center shrink-0 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
+                    {coverPreview ? (
+                      <img src={coverPreview} alt="Club cover preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">Cover Banner</p>
+                    <p className="text-xs text-muted-foreground">Wide, at least 1200×400px</p>
+                  </div>
+                  <Input type="file" accept="image/*" className="hidden" onChange={(e) => handleCoverChange(e.target.files?.[0] || null)} />
+                </label>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-base font-semibold">What's your crew called?</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Desert Eagles MC"
+                    value={clubData.name}
+                    onChange={(e) => setClubData({ ...clubData, name: e.target.value })}
+                    className="h-12 text-lg"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="clubType" className="text-base font-semibold">What kind of crew?</Label>
+                  <Select value={clubData.clubType} onValueChange={(value) => setClubData({ ...clubData, clubType: value })}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Pick your riding style" /></SelectTrigger>
+                    <SelectContent>
+                      {clubTypes.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button type="button" className="w-full h-12 text-base" disabled={!clubData.name} onClick={() => setStep(2)}>
+                Continue
+              </Button>
+            </div>
+          )}
+
+          {/* Step 2: Details */}
+          {step === 2 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                  <MapPin className="w-8 h-8 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold tracking-tight">Set the scene</h1>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Tell riders what your club is about and where you ride.
                 </p>
               </div>
-              <Switch
-                checked={clubData.requireApproval}
-                onCheckedChange={(checked) =>
-                  setClubData({ ...clubData, requireApproval: checked })
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Submit */}
-        <div className="flex gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={() => router.back()}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            className="flex-1"
-            disabled={
-              isSubmitting ||
-              !clubData.name ||
-              !clubData.description ||
-              !clubData.location
-            }
-          >
-            {isSubmitting ? 'Creating...' : 'Create Club'}
-          </Button>
-        </div>
-      </form>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-base font-semibold">Your club's story</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="What drives your crew? What kind of riders fit in? Paint the picture..."
+                    value={clubData.description}
+                    onChange={(e) => setClubData({ ...clubData, description: e.target.value })}
+                    rows={5}
+                    className="text-base"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-base font-semibold">Home base</Label>
+                  <Input
+                    id="location"
+                    placeholder="e.g., Phoenix, AZ"
+                    value={clubData.location}
+                    onChange={(e) => setClubData({ ...clubData, location: e.target.value })}
+                    className="h-12 text-base"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button type="button" className="w-full h-12 text-base" disabled={!clubData.description || !clubData.location} onClick={() => setStep(3)}>
+                Almost there...
+              </Button>
+            </div>
+          )}
+
+          {/* Step 3: Launch */}
+          {step === 3 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                  <span className="text-3xl">🚀</span>
+                </div>
+                <h1 className="text-3xl font-bold tracking-tight">Ready for liftoff</h1>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Fine-tune privacy, then launch your club into the wild.
+                </p>
+              </div>
+
+              {/* Preview Card */}
+              <Card className="overflow-hidden border-2">
+                <div className="h-24 bg-linear-to-br from-primary/20 to-primary/5 relative">
+                  {coverPreview && <img src={coverPreview} alt="" className="h-full w-full object-cover" />}
+                </div>
+                <CardContent className="p-4 -mt-8 relative">
+                  <div className="flex items-end gap-3">
+                    <div className="w-16 h-16 rounded-xl bg-primary/10 border-4 border-background overflow-hidden flex items-center justify-center">
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-bold text-primary">{clubData.name?.[0]?.toUpperCase() || '?'}</span>
+                      )}
+                    </div>
+                    <div className="pb-1">
+                      <p className="font-bold text-lg leading-tight">{clubData.name || 'Your Club'}</p>
+                      <p className="text-xs text-muted-foreground">{clubData.location || 'Everywhere'} · {clubData.clubType || 'Riding Club'}</p>
+                    </div>
+                  </div>
+                  {clubData.description && (
+                    <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{clubData.description}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/20">
+                  <div>
+                    <p className="font-semibold">Public Club</p>
+                    <p className="text-sm text-muted-foreground">Anyone can find your club</p>
+                  </div>
+                  <Switch checked={clubData.isPublic} onCheckedChange={(checked) => setClubData({ ...clubData, isPublic: checked })} />
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/20">
+                  <div>
+                    <p className="font-semibold">Require Approval</p>
+                    <p className="text-sm text-muted-foreground">Review join requests first</p>
+                  </div>
+                  <Switch checked={clubData.requireApproval} onCheckedChange={(checked) => setClubData({ ...clubData, requireApproval: checked })} />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full h-14 text-lg font-bold" disabled={isSubmitting || !clubData.name || !clubData.description || !clubData.location}>
+                {isSubmitting ? 'Launching...' : '🔥 Launch Your Club'}
+              </Button>
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   )
 }
