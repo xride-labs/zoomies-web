@@ -60,7 +60,7 @@ import {
   Trophy,
   Loader2,
 } from 'lucide-react'
-import { adminApi } from '@/lib/services'
+import { useAdminClubs } from '@/store/features/admin'
 
 interface AdminClub {
   id: string
@@ -79,76 +79,77 @@ interface AdminClub {
 }
 
 export default function AdminClubsPage() {
-  const [clubs, setClubs] = useState<AdminClub[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    clubs: rawClubs,
+    isLoading: loading,
+    error,
+    pagination,
+    fetchClubs,
+    verifyClub: dispatchVerifyClub,
+    deleteClub: dispatchDeleteClub,
+  } = useAdminClubs()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [verifiedFilter, setVerifiedFilter] = useState<string>('all')
   const [selectedClub, setSelectedClub] = useState<AdminClub | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const fetchClubs = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const params: Record<string, boolean | string> = {}
-      if (verifiedFilter === 'verified') params.verified = true
-      if (verifiedFilter === 'unverified') params.verified = false
-      if (searchQuery) params.search = searchQuery
+  const clubs: AdminClub[] = rawClubs.map((club) => ({
+    id: club.id,
+    name: club.name,
+    description: club.description,
+    location: club.location,
+    memberCount: club.memberCount ?? club._count?.members ?? 0,
+    ridesCount: 0,
+    verified: club.verified,
+    isPublic: club.isPublic,
+    owner: {
+      id: club.owner.id,
+      name: club.owner.name ?? 'Unknown',
+      image: club.owner.image ?? null,
+    },
+    reputation: club.reputation,
+    establishedAt: club.establishedAt,
+    status: club.verified ? 'active' : 'pending',
+    createdAt: club.createdAt,
+  }))
 
-      const response = await adminApi.getClubs(params)
-      setClubs(
-        (response.items || []).map((club) => ({
-          id: club.id,
-          name: club.name,
-          description: club.description,
-          location: club.location,
-          memberCount: club.memberCount ?? club._count?.members ?? 0,
-          ridesCount: 0,
-          verified: club.verified,
-          isPublic: club.isPublic,
-          owner: {
-            id: club.owner.id,
-            name: club.owner.name ?? 'Unknown',
-            image: club.owner.image ?? null,
-          },
-          reputation: club.reputation,
-          establishedAt: club.establishedAt,
-          status: club.verified ? 'active' : 'pending',
-          createdAt: club.createdAt,
-        })),
-      )
-    } catch (err) {
-      setError('Failed to load clubs')
-      console.error(err)
-    } finally {
-      setLoading(false)
+  const doFetch = useCallback(() => {
+    const params: Record<string, boolean | string> = {
+      page: String(currentPage),
+      limit: '20',
     }
-  }, [verifiedFilter, searchQuery])
+    if (verifiedFilter === 'verified') params.verified = true
+    if (verifiedFilter === 'unverified') params.verified = false
+    if (searchQuery) params.search = searchQuery
+    fetchClubs(params)
+  }, [verifiedFilter, searchQuery, currentPage, fetchClubs])
 
   useEffect(() => {
-    fetchClubs()
-  }, [fetchClubs])
+    doFetch()
+  }, [doFetch])
 
   const handleVerifyClub = async (clubId: string) => {
-    try {
-      await adminApi.verifyClub(clubId)
-      fetchClubs()
-      setIsVerifyDialogOpen(false)
-    } catch (err) {
-      console.error('Failed to verify club', err)
-    }
+    await dispatchVerifyClub(clubId)
+    setIsVerifyDialogOpen(false)
   }
 
-  const filteredClubs = clubs.filter((club) => {
-    const matchesSearch =
-      club.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      club.location?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || club.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const handleDeleteClub = async (club: AdminClub) => {
+    if (!confirm(`Delete club "${club.name}"? This cannot be undone.`)) return
+    await dispatchDeleteClub(club.id)
+  }
+
+  // Debounced server-side search
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (currentPage === 1) doFetch()
+      else setCurrentPage(1)
+    }, 400)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
 
   const stats = {
     total: clubs.length,
@@ -295,7 +296,7 @@ export default function AdminClubsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClubs.map((club) => (
+                {clubs.map((club) => (
                   <TableRow key={club.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -395,9 +396,12 @@ export default function AdminClubsPage() {
                             View Members
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => handleDeleteClub(club)}
+                          >
                             <XCircle className="w-4 h-4 mr-2" />
-                            Suspend Club
+                            Delete Club
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -411,13 +415,23 @@ export default function AdminClubsPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredClubs.length} of {clubs.length} clubs
+              Page {pagination.page} of {pagination.totalPages} ({pagination.total} clubs)
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
                 Next
               </Button>
             </div>
@@ -540,7 +554,7 @@ export default function AdminClubsPage() {
             </Button>
             <Button
               className="bg-green-600 hover:bg-green-700"
-              onClick={() => setIsVerifyDialogOpen(false)}
+              onClick={() => selectedClub && handleVerifyClub(selectedClub.id)}
             >
               <ShieldCheck className="w-4 h-4 mr-2" />
               Verify Club

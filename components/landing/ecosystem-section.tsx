@@ -20,7 +20,7 @@ export function EcosystemSection() {
   const [hovered, setHovered] = useState<'rider' | 'partner' | null>(null)
 
   return (
-    <section id="ecosystem" className="py-28 bg-canvas relative overflow-hidden">
+    <section id="ecosystem" className="landing-section bg-canvas">
       {/* Background glow */}
       <div className="absolute inset-0">
         <motion.div
@@ -35,28 +35,55 @@ export function EcosystemSection() {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="landing-container">
         {/* Section header */}
         <motion.div
-          className="text-center mb-20"
+          className="landing-header"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 uppercase tracking-tight">
+          <h2 className="landing-title mb-5">
             Choose Your{' '}
             <span className="bg-linear-to-r from-neon-green to-teal bg-clip-text text-transparent">
               Ride
             </span>
           </h2>
-          <p className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto font-medium">
+          <p className="landing-copy mx-auto max-w-2xl">
             Two paths, one community. Pick the lane that fits you.
           </p>
         </motion.div>
 
+        <motion.div
+          className="mb-8 sm:mb-10 mx-auto max-w-3xl rounded-2xl border border-[#444444]/60 bg-surface/55 p-2.5 backdrop-blur-md"
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.45 }}
+        >
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="rounded-xl border border-neon-green/30 bg-neon-green/8 px-4 py-3">
+              <div className="flex items-center gap-2 text-neon-green text-xs font-bold uppercase tracking-[0.15em]">
+                <Smartphone className="h-3.5 w-3.5" /> Rider App
+              </div>
+              <p className="mt-1.5 text-xs text-text-secondary">
+                Best for riders joining convoys, clubs, and live sessions.
+              </p>
+            </div>
+            <div className="rounded-xl border border-teal/30 bg-teal/8 px-4 py-3">
+              <div className="flex items-center gap-2 text-teal text-xs font-bold uppercase tracking-[0.15em]">
+                <Monitor className="h-3.5 w-3.5" /> Web Command Center
+              </div>
+              <p className="mt-1.5 text-xs text-text-secondary">
+                Best for captains and shops running clubs, events, and sales.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Split-screen Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2 lg:gap-8">
           {/* LEFT: For Riders */}
           <motion.div
             className="group relative"
@@ -68,7 +95,7 @@ export function EcosystemSection() {
             transition={{ duration: 0.7 }}
           >
             <motion.div
-              className="relative overflow-hidden rounded-3xl bg-surface/60 backdrop-blur-md border border-[#444444]/50 p-8 lg:p-10 min-h-150 flex flex-col transition-all duration-500"
+              className="relative overflow-hidden rounded-3xl bg-surface/60 backdrop-blur-md border border-[#444444]/50 p-5 sm:p-7 lg:p-8 min-h-112 sm:min-h-128 lg:min-h-136 flex flex-col transition-all duration-500"
               animate={{
                 opacity: hovered === 'partner' ? 0.45 : 1,
                 scale: hovered === 'rider' ? 1.02 : 1,
@@ -86,7 +113,7 @@ export function EcosystemSection() {
               <div className="absolute top-0 left-0 w-60 h-60 bg-linear-to-br from-neon-green/10 to-transparent pointer-events-none rounded-3xl" />
 
               {/* Badge */}
-              <div className="relative mb-6">
+              <div className="relative mb-5">
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neon-green/15 text-neon-green text-sm font-bold uppercase tracking-wider">
                   <Smartphone className="w-4 h-4" />
                   For Riders
@@ -94,18 +121,29 @@ export function EcosystemSection() {
               </div>
 
               {/* Copy */}
-              <h3 className="relative text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-tight">
+              <h3 className="relative text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 uppercase tracking-tight">
                 Own the Streets
               </h3>
-              <p className="relative text-text-secondary text-lg mb-8 max-w-md">
+              <p className="relative text-text-secondary text-base sm:text-lg mb-5 sm:mb-6 max-w-md leading-relaxed">
                 Track rides, find your squad, and build your riding legacy — all from your
                 pocket.
               </p>
 
+              <div className="relative mb-4 sm:mb-5 flex flex-wrap gap-2">
+                {['Live rider map', 'Auto ride chat', 'Club discover feed'].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-neon-green/30 bg-neon-green/10 px-3 py-1.5 text-[11px] font-semibold text-neon-green"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+
               {/* Phone Mockup */}
-              <div className="relative flex-1 flex items-center justify-center mb-8">
+              <div className="relative flex-1 flex items-center justify-center mb-5 sm:mb-6">
                 <motion.div
-                  className="relative w-52 h-90 sm:w-60 sm:h-105"
+                  className="relative w-38 h-68 sm:w-48 sm:h-84 lg:w-52 lg:h-92"
                   animate={{ y: [0, -10, 0] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 >
@@ -128,7 +166,7 @@ export function EcosystemSection() {
                       </div>
 
                       {/* Map area */}
-                      <div className="mx-3 h-36 sm:h-44 bg-[#1a1a1a] rounded-2xl overflow-hidden relative">
+                      <div className="mx-3 h-32 sm:h-44 bg-[#1a1a1a] rounded-2xl overflow-hidden relative">
                         {/* Grid lines */}
                         <svg
                           className="absolute inset-0 w-full h-full opacity-30"
@@ -197,7 +235,7 @@ export function EcosystemSection() {
 
                       {/* Ride info cards */}
                       <div className="px-3 pt-3 space-y-2">
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 flex items-center gap-3">
+                        <div className="bg-[#1a1a1a] rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3">
                           <div className="w-8 h-8 rounded-full bg-neon-green/15 flex items-center justify-center">
                             <MapPin className="w-4 h-4 text-neon-green" />
                           </div>
@@ -211,7 +249,7 @@ export function EcosystemSection() {
                           </div>
                           <div className="text-[9px] text-neon-green font-bold">LIVE</div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 flex items-center gap-3">
+                        <div className="bg-[#1a1a1a] rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3">
                           <div className="w-8 h-8 rounded-full bg-brand-red-light/15 flex items-center justify-center">
                             <Users className="w-4 h-4 text-brand-red-light" />
                           </div>
@@ -234,7 +272,7 @@ export function EcosystemSection() {
               </div>
 
               {/* Feature pills */}
-              <div className="relative flex flex-wrap gap-2 mb-8">
+              <div className="relative flex flex-wrap gap-2 mb-4 sm:mb-5">
                 {['Live Tracking', 'Club Discovery', 'Ride Chat', 'Rider Profile'].map(
                   (f) => (
                     <span
@@ -251,7 +289,7 @@ export function EcosystemSection() {
               <div className="relative flex flex-col sm:flex-row gap-3">
                 <a
                   href="#download"
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-linear-to-r from-brand-red-light to-brand-red text-white font-bold uppercase tracking-wide text-sm shadow-[0_15px_40px_rgba(200,55,55,0.3)] hover:shadow-[0_20px_50px_rgba(200,55,55,0.4)] hover:scale-[1.02] transition-all duration-300"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-linear-to-r from-brand-red-light to-brand-red text-white font-bold uppercase tracking-wide text-xs sm:text-sm shadow-[0_15px_40px_rgba(200,55,55,0.3)] hover:shadow-[0_20px_50px_rgba(200,55,55,0.4)] hover:scale-[1.02] transition-all duration-300"
                 >
                   {/* Apple icon */}
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -261,7 +299,7 @@ export function EcosystemSection() {
                 </a>
                 <a
                   href="#download"
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-linear-to-r from-brand-red-light to-brand-red text-white font-bold uppercase tracking-wide text-sm shadow-[0_15px_40px_rgba(200,55,55,0.3)] hover:shadow-[0_20px_50px_rgba(200,55,55,0.4)] hover:scale-[1.02] transition-all duration-300"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-linear-to-r from-brand-red-light to-brand-red text-white font-bold uppercase tracking-wide text-xs sm:text-sm shadow-[0_15px_40px_rgba(200,55,55,0.3)] hover:shadow-[0_20px_50px_rgba(200,55,55,0.4)] hover:scale-[1.02] transition-all duration-300"
                 >
                   {/* Android icon */}
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -284,7 +322,7 @@ export function EcosystemSection() {
             transition={{ duration: 0.7, delay: 0.15 }}
           >
             <motion.div
-              className="relative overflow-hidden rounded-3xl bg-surface/60 backdrop-blur-md border border-[#444444]/50 p-8 lg:p-10 min-h-150 flex flex-col transition-all duration-500"
+              className="relative overflow-hidden rounded-3xl bg-surface/60 backdrop-blur-md border border-[#444444]/50 p-5 sm:p-7 lg:p-8 min-h-112 sm:min-h-128 lg:min-h-136 flex flex-col transition-all duration-500"
               animate={{
                 opacity: hovered === 'rider' ? 0.45 : 1,
                 scale: hovered === 'partner' ? 1.02 : 1,
@@ -302,7 +340,7 @@ export function EcosystemSection() {
               <div className="absolute top-0 right-0 w-60 h-60 bg-linear-to-bl from-teal/10 to-transparent pointer-events-none rounded-3xl" />
 
               {/* Badge */}
-              <div className="relative mb-6">
+              <div className="relative mb-5">
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal/15 text-teal text-sm font-bold uppercase tracking-wider">
                   <Monitor className="w-4 h-4" />
                   For Captains & Shops
@@ -310,18 +348,29 @@ export function EcosystemSection() {
               </div>
 
               {/* Copy */}
-              <h3 className="relative text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-tight">
+              <h3 className="relative text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 uppercase tracking-tight">
                 Command Center
               </h3>
-              <p className="relative text-text-secondary text-lg mb-8 max-w-md">
+              <p className="relative text-text-secondary text-base sm:text-lg mb-5 sm:mb-6 max-w-md leading-relaxed">
                 Manage your club, sell gear, and organize the chaos — from a powerful web
                 dashboard.
               </p>
 
+              <div className="relative mb-4 sm:mb-5 flex flex-wrap gap-2">
+                {['Member analytics', 'Ride scheduling', 'Marketplace tools'].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-teal/30 bg-teal/10 px-3 py-1.5 text-[11px] font-semibold text-teal"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+
               {/* Laptop Mockup */}
-              <div className="relative flex-1 flex items-center justify-center mb-8">
+              <div className="relative flex-1 flex items-center justify-center mb-5 sm:mb-6">
                 <motion.div
-                  className="relative w-full max-w-sm"
+                  className="relative w-full max-w-64 sm:max-w-78"
                   animate={{ y: [0, -8, 0] }}
                   transition={{
                     duration: 5,
@@ -347,7 +396,7 @@ export function EcosystemSection() {
                     </div>
 
                     {/* Dashboard content */}
-                    <div className="p-4 space-y-3 aspect-16/10">
+                    <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3 aspect-16/10">
                       {/* Top stat cards */}
                       <div className="grid grid-cols-3 gap-2">
                         {[
@@ -471,7 +520,7 @@ export function EcosystemSection() {
               </div>
 
               {/* Feature pills */}
-              <div className="relative flex flex-wrap gap-2 mb-8">
+              <div className="relative flex flex-wrap gap-2 mb-5 sm:mb-6">
                 {[
                   'Club Analytics',
                   'Event Management',
@@ -490,7 +539,7 @@ export function EcosystemSection() {
               {/* Web Portal CTA */}
               <Link
                 href="/login"
-                className="relative flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border-2 border-teal text-teal font-bold uppercase tracking-wide text-sm hover:bg-teal/10 hover:shadow-[0_0_30px_rgba(55,200,195,0.2)] hover:scale-[1.02] transition-all duration-300"
+                className="relative flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl border-2 border-teal text-teal font-bold uppercase tracking-wide text-xs sm:text-sm hover:bg-teal/10 hover:shadow-[0_0_30px_rgba(55,200,195,0.2)] hover:scale-[1.02] transition-all duration-300"
               >
                 <Shield className="w-4 h-4" />
                 Access Web Portal

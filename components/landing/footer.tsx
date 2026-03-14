@@ -21,11 +21,11 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer className="relative bg-linear-to-b from-canvas to-black py-20 overflow-hidden">
+    <footer className="landing-section relative overflow-hidden bg-linear-to-b from-canvas to-black">
       {/* Fade-to-black gradient overlay */}
       <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="landing-container">
         <motion.div
           className="flex flex-col items-center text-center"
           initial={{ opacity: 0, y: 50 }}

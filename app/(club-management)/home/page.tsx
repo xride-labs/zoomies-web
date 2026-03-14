@@ -177,7 +177,7 @@ export default function FeedPage() {
                 {/* Author Header */}
                 <div className="flex items-start justify-between mb-3">
                   <Link
-                    href={`/app/profile/${post.author.username}`}
+                    href={`/profile/${post.author.username}`}
                     className="flex items-start gap-3"
                   >
                     <Avatar className="w-10 h-10">
@@ -240,7 +240,7 @@ export default function FeedPage() {
 
                 {/* Ride Card */}
                 {post.type === 'ride' && post.ride && (
-                  <Link href={`/app/rides/${post.ride.id}`}>
+                  <Link href={`/rides/${post.ride.id}`}>
                     <div className="bg-linear-to-r from-primary/10 to-amber-100/50 rounded-xl p-4 mb-3 border border-primary/20">
                       <div className="flex items-start justify-between">
                         <div>
@@ -266,7 +266,7 @@ export default function FeedPage() {
 
                 {/* Listing Card */}
                 {post.type === 'listing' && post.listing && (
-                  <Link href={`/app/marketplace/${post.listing.id}`}>
+                  <Link href={`/marketplace/${post.listing.id}`}>
                     <div className="bg-muted rounded-xl p-4 mb-3">
                       <div className="flex items-center gap-4">
                         <div className="w-20 h-20 bg-background rounded-lg flex items-center justify-center">

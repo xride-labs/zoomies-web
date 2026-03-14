@@ -56,7 +56,7 @@ import {
   Package,
   Star,
 } from 'lucide-react'
-import { adminApi } from '@/lib/services'
+import { useAdminMarketplace } from '@/store/features/admin'
 
 interface AdminListing {
   id: string
@@ -83,66 +83,77 @@ const statusColors: Record<string, string> = {
 }
 
 export default function AdminMarketplacePage() {
-  const [listings, setListings] = useState<AdminListing[]>([])
+  const {
+    listings: rawListings,
+    isLoading: loading,
+    error,
+    pagination,
+    fetchListings,
+    updateListingStatus: dispatchUpdateListingStatus,
+    deleteListing: dispatchDeleteListing,
+  } = useAdminMarketplace()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [selectedListing, setSelectedListing] = useState<AdminListing | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const listings: AdminListing[] = rawListings.map((listing) => ({
+    id: listing.id,
+    title: listing.title,
+    description: listing.description,
+    price: listing.price,
+    currency: listing.currency,
+    category: listing.category,
+    subcategory: listing.subcategory,
+    condition: listing.condition,
+    status: listing.status,
+    images: listing.images,
+    seller: {
+      id: listing.seller.id,
+      name: listing.seller.name ?? 'Unknown',
+      image: listing.seller.image ?? null,
+    },
+    createdAt: listing.createdAt,
+    views: 0,
+    inquiries: 0,
+  }))
 
   useEffect(() => {
-    const loadListings = async () => {
-      try {
-        const params: Record<string, string> = {}
+    const params: Record<string, string> = {
+      page: String(currentPage),
+      limit: '20',
+    }
+    if (statusFilter !== 'all') params.status = statusFilter
+    if (searchQuery) params.search = searchQuery
+    fetchListings(params)
+  }, [statusFilter, currentPage, fetchListings])
+
+  // Debounced server-side search
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (currentPage === 1) {
+        const params: Record<string, string> = { page: '1', limit: '20' }
         if (statusFilter !== 'all') params.status = statusFilter
         if (searchQuery) params.search = searchQuery
-
-        const response = await adminApi.getListings(params)
-        setListings(
-          (response.items || []).map((listing) => ({
-            id: listing.id,
-            title: listing.title,
-            description: listing.description,
-            price: listing.price,
-            currency: listing.currency,
-            category: listing.category,
-            subcategory: listing.subcategory,
-            condition: listing.condition,
-            status: listing.status,
-            images: listing.images,
-            seller: {
-              id: listing.seller.id,
-              name: listing.seller.name ?? 'Unknown',
-              image: listing.seller.image ?? null,
-            },
-            createdAt: listing.createdAt,
-            views: 0,
-            inquiries: 0,
-          })),
-        )
-      } catch (err) {
-        console.error('Failed to load listings', err)
+        fetchListings(params)
+      } else {
+        setCurrentPage(1)
       }
-    }
-    loadListings()
-  }, [statusFilter, searchQuery])
+    }, 400)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value)
+  const handleUpdateListingStatus = async (listing: AdminListing, newStatus: string) => {
+    await dispatchUpdateListingStatus(listing.id, newStatus)
   }
 
-  const handleStatusChange = (value: string) => {
-    setStatusFilter(value)
+  const handleDeleteListing = async (listing: AdminListing) => {
+    if (!confirm(`Delete listing "${listing.title}"? This cannot be undone.`)) return
+    await dispatchDeleteListing(listing.id)
   }
-
-  const filteredListings = listings.filter((listing) => {
-    const matchesSearch =
-      listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.seller?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory =
-      categoryFilter === 'all' || listing.category === categoryFilter
-    return matchesSearch && matchesCategory
-  })
 
   const stats = {
     total: listings.length,
@@ -237,7 +248,7 @@ export default function AdminMarketplacePage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setStatusFilter(statusFilter)}
+                onClick={() => fetchListings({ page: currentPage, status: statusFilter !== 'all' ? statusFilter : undefined, search: searchQuery || undefined })}
               >
                 <Search className="w-4 h-4 mr-2" />
                 Refresh
@@ -258,10 +269,10 @@ export default function AdminMarketplacePage() {
                 placeholder="Search listings..."
                 className="pl-9"
                 value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-37.5">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -302,7 +313,7 @@ export default function AdminMarketplacePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredListings.map((listing) => (
+                {listings.map((listing) => (
                   <TableRow key={listing.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -377,22 +388,39 @@ export default function AdminMarketplacePage() {
                           </DropdownMenuItem>
                           {listing.status === 'FLAGGED' && (
                             <>
-                              <DropdownMenuItem className="text-green-600">
+                              <DropdownMenuItem
+                                className="text-green-600"
+                                onClick={() => handleUpdateListingStatus(listing, 'ACTIVE')}
+                              >
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Approve Listing
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleDeleteListing(listing)}
+                              >
                                 <XCircle className="w-4 h-4 mr-2" />
                                 Remove Listing
                               </DropdownMenuItem>
                             </>
                           )}
                           {listing.status === 'ACTIVE' && (
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleUpdateListingStatus(listing, 'FLAGGED')}
+                            >
                               <AlertTriangle className="w-4 h-4 mr-2" />
                               Flag Listing
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => handleDeleteListing(listing)}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Delete Listing
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -405,13 +433,23 @@ export default function AdminMarketplacePage() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredListings.length} of {listings.length} listings
+              Page {pagination.page} of {pagination.totalPages} ({pagination.total} listings)
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
                 Next
               </Button>
             </div>
@@ -497,8 +535,24 @@ export default function AdminMarketplacePage() {
             </Button>
             {selectedListing?.status === 'FLAGGED' && (
               <>
-                <Button variant="destructive">Remove Listing</Button>
-                <Button className="bg-green-600 hover:bg-green-700">Approve</Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (selectedListing) handleDeleteListing(selectedListing)
+                    setIsViewDialogOpen(false)
+                  }}
+                >
+                  Remove Listing
+                </Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    if (selectedListing) handleUpdateListingStatus(selectedListing, 'ACTIVE')
+                    setIsViewDialogOpen(false)
+                  }}
+                >
+                  Approve
+                </Button>
               </>
             )}
           </DialogFooter>

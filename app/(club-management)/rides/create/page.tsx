@@ -119,7 +119,7 @@ export default function CreateRidePage() {
       }
 
       toast.success('Ride created! 🏍️', { description: `"${rideData.title}" is ready. Share it with your crew!` })
-      router.push(`/app/rides/${ride.id}`)
+      router.push(`/rides/${ride.id}`)
     } catch (error) {
       console.error('Failed to create ride:', error)
       toast.error('Failed to create ride', { description: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })

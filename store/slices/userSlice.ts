@@ -131,12 +131,13 @@ const userSlice = createSlice({
     },
     addBikeLocal: (state, action: PayloadAction<Bike>) => {
       if (state.profile) {
+        state.profile.bikes = state.profile.bikes || []
         state.profile.bikes.push(action.payload)
       }
     },
     removeBikeLocal: (state, action: PayloadAction<string>) => {
       if (state.profile) {
-        state.profile.bikes = state.profile.bikes.filter(
+        state.profile.bikes = (state.profile.bikes || []).filter(
           (bike) => bike.id !== action.payload,
         )
       }
@@ -203,6 +204,7 @@ const userSlice = createSlice({
       .addCase(addUserBike.fulfilled, (state, action) => {
         state.isLoading = false
         if (state.profile && action.payload) {
+          state.profile.bikes = state.profile.bikes || []
           state.profile.bikes.push(action.payload)
         }
       })
@@ -214,17 +216,21 @@ const userSlice = createSlice({
     // Update bike
     builder.addCase(updateUserBike.fulfilled, (state, action) => {
       if (state.profile && action.payload) {
-        const index = state.profile.bikes.findIndex((b) => b.id === action.payload.id)
+        const bikes = state.profile.bikes || []
+        const index = bikes.findIndex((b) => b.id === action.payload.id)
         if (index !== -1) {
-          state.profile.bikes[index] = action.payload
+          bikes[index] = action.payload
         }
+        state.profile.bikes = bikes
       }
     })
 
     // Delete bike
     builder.addCase(deleteUserBike.fulfilled, (state, action) => {
       if (state.profile) {
-        state.profile.bikes = state.profile.bikes.filter((b) => b.id !== action.payload)
+        state.profile.bikes = (state.profile.bikes || []).filter(
+          (b) => b.id !== action.payload,
+        )
       }
     })
   },

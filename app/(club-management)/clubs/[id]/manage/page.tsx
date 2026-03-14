@@ -230,7 +230,7 @@ export default function ClubManagePage() {
     if (!clubSettings || deleteConfirmText !== clubSettings.name) return
     clubsApi
       .deleteClub(clubSettings.id)
-      .then(() => router.push('/app/clubs'))
+      .then(() => router.push('/clubs'))
       .catch((err) => console.error('Failed to delete club:', err))
   }
 

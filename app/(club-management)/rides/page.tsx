@@ -73,7 +73,7 @@ export default function RidesPage() {
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Active Ride Banner */}
       {activeRide && (
-        <Link href={`/app/rides/${activeRide.id}`}>
+        <Link href={`/rides/${activeRide.id}`}>
           <Card className="bg-linear-to-r from-green-500 to-emerald-600 text-white mb-6 overflow-hidden">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -136,7 +136,7 @@ export default function RidesPage() {
               </div>
             ) : (
               upcomingRides.map((ride) => (
-                <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+                <Link key={ride.id} href={`/rides/${ride.id}`}>
                   <Card className="hover:border-primary/50 transition-colors">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
@@ -229,7 +229,7 @@ export default function RidesPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Set the route, invite riders, and lead the convoy.
                 </p>
-                <Link href="/app/rides/create">
+                <Link href="/rides/create">
                   <Button className="gap-2">
                     <Plus className="w-4 h-4" />
                     Create Ride
@@ -253,7 +253,7 @@ export default function RidesPage() {
               <Button variant="outline" onClick={() => setActiveTab('upcoming')}>
                 Browse Rides
               </Button>
-              <Link href="/app/rides/create">
+              <Link href="/rides/create">
                 <Button className="gap-2">
                   <Plus className="w-4 h-4" />
                   Create Ride
@@ -264,7 +264,7 @@ export default function RidesPage() {
         ) : (
           <div className="space-y-4">
             {myRides.map((ride) => (
-              <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+              <Link key={ride.id} href={`/rides/${ride.id}`}>
                 <Card className="hover:border-primary/50 transition-colors">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -297,7 +297,7 @@ export default function RidesPage() {
         ) : (
           <div className="space-y-4">
             {pastRides.map((ride) => (
-              <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+              <Link key={ride.id} href={`/rides/${ride.id}`}>
                 <Card className="hover:border-primary/50 transition-colors opacity-80">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">

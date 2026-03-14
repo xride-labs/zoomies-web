@@ -246,7 +246,7 @@ export default function ClubDetailPage() {
     try {
       await clubsApi.deleteClub(club.id)
       toast.success('Club deleted', { description: `${club.name} has been permanently removed.` })
-      router.push('/app/clubs')
+      router.push('/clubs')
     } catch (err) {
       console.error('Failed to delete club:', err)
       toast.error('Failed to delete club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
@@ -501,7 +501,7 @@ export default function ClubDetailPage() {
                       .map((member) => (
                         <Link
                           key={member.id}
-                          href={`/app/profile/${member.username}`}
+                          href={`/profile/${member.username}`}
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
                         >
                           <Avatar>
@@ -553,7 +553,7 @@ export default function ClubDetailPage() {
                     {members.map((member) => (
                       <Link
                         key={member.id}
-                        href={`/app/profile/${member.username}`}
+                        href={`/profile/${member.username}`}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                       >
                         <Avatar>
@@ -596,7 +596,7 @@ export default function ClubDetailPage() {
                   {rides.map((ride) => (
                     <Link
                       key={ride.id}
-                      href={`/app/rides/${ride.id}`}
+                      href={`/rides/${ride.id}`}
                       className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
                     >
                       <div>

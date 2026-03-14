@@ -127,13 +127,23 @@ export function AppLayout({ children }: AppLayoutProps) {
 
         {/* Quick Actions */}
         <div className="p-4 border-t border-border space-y-2">
-          <Button className="w-full justify-start gap-2" variant="outline">
-            <Plus className="w-4 h-4" />
-            Create Ride
+          <Button asChild className="w-full justify-start gap-2" variant="outline">
+            <Link href="/rides/create">
+              <Plus className="w-4 h-4" />
+              Create Ride
+            </Link>
           </Button>
-          <Button className="w-full justify-start gap-2" variant="outline">
-            <ShoppingBag className="w-4 h-4" />
-            New Listing
+          <Button asChild className="w-full justify-start gap-2" variant="outline">
+            <Link href="/marketplace/create">
+              <ShoppingBag className="w-4 h-4" />
+              New Listing
+            </Link>
+          </Button>
+          <Button asChild className="w-full justify-start gap-2" variant="outline">
+            <Link href="/clubs/create">
+              <Users className="w-4 h-4" />
+              Create Club
+            </Link>
           </Button>
           {isAdmin && (
             <Button
@@ -200,6 +210,16 @@ export function AppLayout({ children }: AppLayoutProps) {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  className="inline-flex items-center gap-2 h-9 px-3"
+                  onClick={() => router.push('/admin')}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
               <Button variant="ghost" size="icon" className="relative">
                 <Search className="w-5 h-5" />
               </Button>

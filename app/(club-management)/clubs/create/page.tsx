@@ -100,7 +100,7 @@ export default function CreateClubPage() {
       }
 
       toast.success('Club created! 🎉', { description: `${clubData.name} is live! Rally your crew.` })
-      router.push(`/app/clubs/${club.id}`)
+      router.push(`/clubs/${club.id}`)
     } catch (error) {
       console.error('Failed to create club:', error)
       toast.error('Failed to create club', { description: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })

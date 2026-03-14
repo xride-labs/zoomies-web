@@ -129,7 +129,10 @@ export default function ProfilePage() {
         location: userData.location,
         avatar: userData.avatar,
       })
-      setGalleryItems(userData.gallery || [])
+      setGalleryItems(
+        (userData as { gallery?: Array<{ id: string; url: string | null }> }).gallery ||
+        [],
+      )
     } catch (err) {
       console.error('Failed to fetch profile:', err)
     } finally {
@@ -220,7 +223,7 @@ export default function ProfilePage() {
             <Share2 className="w-5 h-5" />
           </Button>
           {isOwnProfile ? (
-            <Link href="/app/profile/settings">
+            <Link href="/profile/settings">
               <Button
                 variant="ghost"
                 size="icon"
@@ -285,7 +288,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex gap-2">
             {isOwnProfile ? (
-              <Link href="/app/profile/edit">
+              <Link href="/profile/edit">
                 <Button variant="outline">Edit Profile</Button>
               </Link>
             ) : (
@@ -416,7 +419,7 @@ export default function ProfilePage() {
                 <CardContent>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {(user.clubs || []).map((club) => (
-                      <Link key={club.id} href={`/app/clubs/${club.id}`}>
+                      <Link key={club.id} href={`/clubs/${club.id}`}>
                         <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted transition-colors">
                           <Avatar>
                             <AvatarFallback>
@@ -465,7 +468,7 @@ export default function ProfilePage() {
               ))}
               {isOwnProfile && (
                 <Card className="border-dashed">
-                  <CardContent className="p-4 flex items-center justify-center h-full min-h-[200px]">
+                  <CardContent className="p-4 flex items-center justify-center h-full min-h-50">
                     <Button variant="ghost">
                       <Bike className="w-4 h-4 mr-2" />
                       Add a Bike
@@ -482,10 +485,10 @@ export default function ProfilePage() {
                 <CardTitle>Recent Rides</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-100">
                   <div className="space-y-3">
                     {(user.recentRides || []).map((ride) => (
-                      <Link key={ride.id} href={`/app/rides/${ride.id}`}>
+                      <Link key={ride.id} href={`/rides/${ride.id}`}>
                         <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-4">
                             <div className="p-2 rounded-lg bg-primary/10">

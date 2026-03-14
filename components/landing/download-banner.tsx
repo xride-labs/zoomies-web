@@ -2,26 +2,29 @@
 
 import { motion } from 'framer-motion'
 import { Smartphone } from 'lucide-react'
+import { useReducedMotion } from 'framer-motion'
 
 export function DownloadBanner() {
+  const shouldReduceMotion = useReducedMotion()
+
   return (
-    <section id="download" className="relative overflow-hidden">
+    <section id="download" className="landing-section relative overflow-hidden">
       {/* Red gradient background */}
       <div className="absolute inset-0 bg-linear-to-r from-brand-red-light to-brand-red" />
 
       {/* Animated noise/glow effects */}
       <motion.div
         className="absolute top-0 right-0 w-125 h-125 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"
-        animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 6, repeat: Infinity }}
+        animate={shouldReduceMotion ? { opacity: 0.35 } : { scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 6, repeat: shouldReduceMotion ? 0 : Infinity }}
       />
       <motion.div
         className="absolute bottom-0 left-0 w-96 h-96 bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"
-        animate={{ scale: [1.15, 1, 1.15], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 8, repeat: Infinity }}
+        animate={shouldReduceMotion ? { opacity: 0.25 } : { scale: [1.15, 1, 1.15], opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 8, repeat: shouldReduceMotion ? 0 : Infinity }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+      <div className="landing-container py-6 sm:py-8">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
           {/* Left: Copy */}
           <motion.div
@@ -31,10 +34,10 @@ export function DownloadBanner() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 uppercase tracking-tight">
+            <h2 className="landing-title mb-4 text-3xl sm:text-4xl lg:text-5xl">
               Don&apos;t just watch. <span className="text-white/90">Ride.</span>
             </h2>
-            <p className="text-white/80 text-lg sm:text-xl max-w-lg font-medium">
+            <p className="landing-copy mt-0 max-w-lg text-white/80">
               Download Zoomies and join thousands of riders building their legacy on the
               road.
             </p>
@@ -42,14 +45,14 @@ export function DownloadBanner() {
 
           {/* Center: QR Code + store buttons */}
           <motion.div
-            className="flex flex-col sm:flex-row items-center gap-8"
+            className="flex w-full flex-col items-center gap-6 sm:w-auto sm:flex-row sm:gap-8"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {/* QR Code */}
-            <div className="flex flex-col items-center gap-3">
+            <div className="hidden sm:flex flex-col items-center gap-3">
               <div className="w-32 h-32 bg-white rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
                 {/* QR code placeholder using SVG pattern */}
                 <div className="w-full h-full bg-white rounded-xl flex items-center justify-center relative overflow-hidden">
@@ -182,10 +185,10 @@ export function DownloadBanner() {
             </div>
 
             {/* Store buttons */}
-            <div className="flex flex-col gap-3">
+            <div className="flex w-full flex-col gap-3 sm:w-auto">
               <a
-                href="#"
-                className="flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 hover:scale-[1.03]"
+                href="/signup"
+                className="flex w-full items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-white backdrop-blur-sm transition-all duration-300 hover:scale-[1.03] hover:bg-white/20"
               >
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
@@ -198,8 +201,8 @@ export function DownloadBanner() {
                 </div>
               </a>
               <a
-                href="#"
-                className="flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 hover:scale-[1.03]"
+                href="/signup"
+                className="flex w-full items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-white backdrop-blur-sm transition-all duration-300 hover:scale-[1.03] hover:bg-white/20"
               >
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-1.414l2.937 1.696c.776.449.776 1.573 0 2.022l-2.937 1.696-2.598-2.598 2.598-2.816zM5.864 2.658L16.8 9.025l-2.302 2.302L5.864 2.658z" />
@@ -224,8 +227,8 @@ export function DownloadBanner() {
           >
             <motion.div
               className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center"
-              animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              animate={shouldReduceMotion ? { y: 0, rotate: 0 } : { y: [0, -10, 0], rotate: [0, 5, 0] }}
+              transition={{ duration: 4, repeat: shouldReduceMotion ? 0 : Infinity, ease: 'easeInOut' }}
             >
               <Smartphone className="w-12 h-12 text-white" />
             </motion.div>

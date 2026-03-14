@@ -6,40 +6,55 @@ import { Users, MapPin, Radio, Shield, Compass } from 'lucide-react'
 const features = [
   {
     icon: MapPin,
+    badge: 'Live Ops',
+    metric: '12 riders syncing',
     title: 'Live Group Tracking',
     description:
       'Real-time GPS tracking for your entire convoy. See all riders, their status, and keep everyone safe on the road. Never lose sight of your pack.',
     color: '#77ff00',
-    size: 'large', // Spans 2 columns
+    size: 'hero',
+    layout: 'lg:col-span-7 lg:row-span-2',
   },
   {
     icon: Users,
+    badge: 'Social Graph',
+    metric: 'Profiles + achievements',
     title: 'Rider Identity',
     description:
       'Build your motorcycle profile. Show off your clubs, rides, and reputation.',
     color: '#c83737',
-    size: 'small',
+    size: 'compact',
+    layout: 'lg:col-span-5 lg:row-span-1',
   },
   {
     icon: Shield,
+    badge: 'Community',
+    metric: 'Verified clubs',
     title: 'Motorcycle Clubs',
     description: 'Join exclusive clubs. Club badges show your brotherhood.',
     color: '#37c8c3',
-    size: 'small',
+    size: 'compact',
+    layout: 'lg:col-span-3 lg:row-span-1',
   },
   {
     icon: Compass,
+    badge: 'Events',
+    metric: 'Planned group routes',
     title: 'Organized Rides',
     description: 'Like clan wars for bikers. Schedule rides and epic group journeys.',
     color: '#77ff00',
-    size: 'small',
+    size: 'wide',
+    layout: 'lg:col-span-4 lg:row-span-1',
   },
   {
     icon: Radio,
+    badge: 'Comms',
+    metric: 'Ride-only channels',
     title: 'Ride Chat',
     description: 'Chat activates when rides start. Auto-archives after rides end.',
     color: '#c83737',
-    size: 'small',
+    size: 'wide',
+    layout: 'lg:col-span-5 lg:row-span-1',
   },
 ]
 
@@ -65,30 +80,34 @@ export function FeaturesSection() {
   }
 
   return (
-    <section id="features" className="py-28 bg-canvas">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="features" className="landing-section bg-canvas">
+      <div className="landing-container">
         {/* Section header */}
         <motion.div
-          className="text-center mb-20"
+          className="landing-header"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 uppercase tracking-tight">
+          <h2 className="landing-title mb-5">
             The Bento{' '}
             <span className="bg-linear-to-r from-brand-red-light to-brand-red bg-clip-text text-transparent">
               Garage
             </span>
           </h2>
-          <p className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto font-medium">
+          <p className="landing-copy mx-auto max-w-2xl">
             Everything bikers need. From discovering clubs to tracking rides in real-time.
           </p>
         </motion.div>
 
+        <div className="mb-6 sm:mb-8 rounded-2xl border border-[#444444]/60 bg-surface/50 px-4 py-3 sm:px-5 sm:py-3.5 text-center text-xs sm:text-sm text-text-secondary">
+          Pick your lane above, then unlock this full stack below.
+        </div>
+
         {/* Bento Grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-12 lg:auto-rows-[13rem]"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -96,23 +115,21 @@ export function FeaturesSection() {
         >
           {features.map((feature, index) => {
             const Icon = feature.icon
-            const isLarge = feature.size === 'large'
+            const isHero = feature.size === 'hero'
 
             return (
               <motion.div
                 key={index}
                 variants={itemVariants}
-                className={`group relative ${isLarge ? 'md:col-span-2' : ''}`}
+                className={`group relative ${feature.layout}`}
               >
                 <motion.div
                   className={`
-                                        relative overflow-hidden rounded-3xl bg-[#333333]/80 backdrop-blur-md
-                                        border border-[#444444]/50 p-8
-                                        shadow-atmospheric
-                                        transition-all duration-500
-                                        hover:border-teal/50
-                                        ${isLarge ? 'min-h-80' : 'min-h-60'}
-                                    `}
+                    relative overflow-hidden rounded-3xl bg-[#333333]/80 backdrop-blur-md
+                    border border-[#444444]/50 p-5 sm:p-6
+                    shadow-atmospheric transition-all duration-500 hover:border-teal/50
+                    h-full ${isHero ? 'min-h-100 sm:min-h-120' : 'min-h-60 sm:min-h-72'}
+                  `}
                   whileHover={{
                     scale: 1.02,
                     boxShadow: '0 0 40px rgba(55, 200, 195, 0.2)',
@@ -127,30 +144,46 @@ export function FeaturesSection() {
                     }}
                   />
 
+                  <div className="relative z-10 flex items-center justify-between gap-3 mb-4">
+                    <span
+                      className="rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                      style={{
+                        color: feature.color,
+                        borderColor: `${feature.color}44`,
+                        backgroundColor: `${feature.color}12`,
+                      }}
+                    >
+                      {feature.badge}
+                    </span>
+                    <span className="text-[11px] font-medium text-text-secondary/75">
+                      {feature.metric}
+                    </span>
+                  </div>
+
                   {/* Icon */}
                   <motion.div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
+                    className="w-13 h-13 sm:w-15 sm:h-15 rounded-2xl flex items-center justify-center mb-4 sm:mb-5"
                     style={{ backgroundColor: `${feature.color}15` }}
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     animate={{ y: [0, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, delay: index * 0.15 }}
                   >
-                    <Icon className="w-8 h-8" style={{ color: feature.color }} />
+                    <Icon className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: feature.color }} />
                   </motion.div>
 
                   {/* Content */}
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 uppercase tracking-wide">
+                  <h3 className="relative z-10 text-lg sm:text-xl font-bold text-white mb-2 sm:mb-2.5 uppercase tracking-wide leading-tight">
                     {feature.title}
                   </h3>
-                  <p className="text-text-secondary text-base leading-relaxed">
+                  <p className="relative z-10 text-text-secondary text-sm sm:text-[15px] leading-relaxed max-w-2xl">
                     {feature.description}
                   </p>
 
                   {/* Large card extra content - Map mockup */}
-                  {isLarge && (
-                    <div className="mt-8 relative">
+                  {isHero && (
+                    <div className="mt-5 sm:mt-6 relative hidden sm:block">
                       <div className="absolute inset-0 bg-linear-to-t from-surface to-transparent z-10" />
-                      <div className="relative h-40 bg-[#1a1a1a] rounded-2xl overflow-hidden">
+                      <div className="relative h-36 bg-[#1a1a1a] rounded-2xl overflow-hidden">
                         {/* Map mockup */}
                         <div className="absolute inset-0 opacity-60">
                           <svg className="w-full h-full" viewBox="0 0 400 160">
@@ -227,6 +260,11 @@ export function FeaturesSection() {
                       </div>
                     </div>
                   )}
+
+                  <div className="relative z-10 mt-4 sm:mt-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.13em] text-white/80">
+                    Learn more
+                    <span className="h-px w-8 bg-white/35" />
+                  </div>
 
                   {/* Corner decoration */}
                   <div

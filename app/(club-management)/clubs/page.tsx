@@ -62,10 +62,10 @@ export default function ClubsPage() {
       {activeTab === 'my' ? (
         <>
           {/* My Clubs */}
-          {myClubs.length > 0 ? (
+          {myClubs?.length > 0 ? (
             <div className="space-y-4">
               {myClubs.map((club) => (
-                <Link key={club.id} href={`/app/clubs/${club.id}`}>
+                <Link key={club.id} href={`/clubs/${club.id}`}>
                   <Card className="hover:border-primary/50 transition-colors">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
@@ -141,7 +141,7 @@ export default function ClubsPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Build your motorcycle community from the ground up.
               </p>
-              <Link href="/app/clubs/create">
+              <Link href="/clubs/create">
                 <Button className="gap-2">
                   <Plus className="w-4 h-4" />
                   Create Club
@@ -164,7 +164,7 @@ export default function ClubsPage() {
           <h2 className="font-semibold mb-4">Clubs Near You</h2>
           <div className="space-y-4">
             {discoveredClubs.map((club) => (
-              <Link key={club.id} href={`/app/clubs/${club.id}`}>
+              <Link key={club.id} href={`/clubs/${club.id}`}>
                 <Card className="hover:border-primary/50 transition-colors">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import {
   Card,
   CardContent,
@@ -41,45 +41,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { adminApi } from '@/lib/services'
-
-interface DashboardStats {
-  overview: {
-    totalUsers: number
-    totalRides: number
-    totalClubs: number
-    totalListings: number
-    activeRides: number
-    completedRides: number
-    verifiedClubs: number
-  }
-  recent: {
-    newUsersLast7Days: number
-    newRidesLast7Days: number
-  }
-  breakdown: {
-    usersByRole: Record<string, number>
-    ridesByStatus: Record<string, number>
-  }
-}
-
-interface RecentUser {
-  id: string
-  name: string
-  email: string
-  roles: string[]
-  joinedAt: string
-  status: string
-  createdAt?: string
-}
-
-interface PendingReport {
-  id: string
-  type: string
-  title: string
-  priority: string
-  createdAt: string
-}
+import { useAdminDashboard } from '@/store/features/admin'
 
 const activityData = [
   { day: 'Mon', users: 45, rides: 23, sales: 12 },
@@ -92,97 +54,72 @@ const activityData = [
 ]
 
 export default function AdminDashboardPage() {
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
-  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([])
-  const [pendingReports, setPendingReports] = useState<PendingReport[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    stats: dashboardStats,
+    recentUsers: rawRecentUsers,
+    pendingReports,
+    isLoading: loading,
+    error,
+    fetchStats,
+    fetchRecentUsers,
+    fetchPendingReports,
+  } = useAdminDashboard()
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [])
+    fetchStats()
+    fetchRecentUsers()
+    fetchPendingReports()
+  }, [fetchStats, fetchRecentUsers, fetchPendingReports])
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const [statsRes, usersRes, reportsRes] = await Promise.all([
-        adminApi.getStats(),
-        adminApi.getUsers({ limit: 5 }),
-        adminApi.getReports({ status: 'pending' }),
-      ])
-
-      setDashboardStats(statsRes)
-      setRecentUsers(
-        (usersRes.items || []).map((user) => ({
-          id: user.id,
-          name: user.name ?? 'Unknown',
-          email: user.email ?? '',
-          roles: user.roles,
-          joinedAt: user.createdAt,
-          status: 'active',
-        })),
-      )
-      setPendingReports((reportsRes.items || []).slice(0, 4))
-    } catch (err) {
-      setError('Failed to load dashboard data')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(hours / 24)
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`
-    return 'Just now'
-  }
+  const recentUsers = rawRecentUsers.map((user) => ({
+    id: user.id,
+    name: user.name ?? 'Unknown',
+    email: user.email ?? '',
+    roles: user.roles,
+    joinedAt: user.createdAt,
+    status: 'active',
+    createdAt: user.createdAt,
+  }))
 
   const stats = dashboardStats
     ? [
-        {
-          title: 'Total Users',
-          value: dashboardStats.overview.totalUsers.toLocaleString(),
-          change: `+${dashboardStats.recent.newUsersLast7Days}`,
-          trend: 'up' as const,
-          icon: Users,
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-100',
-        },
-        {
-          title: 'Active Clubs',
-          value: dashboardStats.overview.totalClubs.toLocaleString(),
-          change: `${dashboardStats.overview.verifiedClubs} verified`,
-          trend: 'up' as const,
-          icon: Shield,
-          color: 'text-purple-600',
-          bgColor: 'bg-purple-100',
-        },
-        {
-          title: 'Total Rides',
-          value: dashboardStats.overview.totalRides.toLocaleString(),
-          change: `+${dashboardStats.recent.newRidesLast7Days}`,
-          trend: 'up' as const,
-          icon: MapPin,
-          color: 'text-green-600',
-          bgColor: 'bg-green-100',
-        },
-        {
-          title: 'Marketplace Listings',
-          value: dashboardStats.overview.totalListings.toLocaleString(),
-          change: `${dashboardStats.overview.activeRides} active`,
-          trend: 'up' as const,
-          icon: DollarSign,
-          color: 'text-amber-600',
-          bgColor: 'bg-amber-100',
-        },
-      ]
+      {
+        title: 'Total Users',
+        value: dashboardStats.overview.totalUsers.toLocaleString(),
+        change: `+${dashboardStats.recent.newUsersLast7Days}`,
+        trend: 'up' as const,
+        icon: Users,
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-100',
+      },
+      {
+        title: 'Active Clubs',
+        value: dashboardStats.overview.totalClubs.toLocaleString(),
+        change: `${dashboardStats.overview.verifiedClubs} verified`,
+        trend: 'up' as const,
+        icon: Shield,
+        color: 'text-purple-600',
+        bgColor: 'bg-purple-100',
+      },
+      {
+        title: 'Total Rides',
+        value: dashboardStats.overview.totalRides.toLocaleString(),
+        change: `+${dashboardStats.recent.newRidesLast7Days}`,
+        trend: 'up' as const,
+        icon: MapPin,
+        color: 'text-green-600',
+        bgColor: 'bg-green-100',
+      },
+      {
+        title: 'Marketplace Listings',
+        value: dashboardStats.overview.totalListings.toLocaleString(),
+        change: `${dashboardStats.overview.activeRides} active`,
+        trend: 'up' as const,
+        icon: DollarSign,
+        color: 'text-amber-600',
+        bgColor: 'bg-amber-100',
+      },
+    ]
     : []
 
   if (loading) {
@@ -197,7 +134,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="text-center py-8 text-destructive">
         {error}
-        <Button onClick={fetchDashboardData} className="ml-4">
+        <Button onClick={() => { fetchStats(); fetchRecentUsers(); fetchPendingReports(); }} className="ml-4">
           Retry
         </Button>
       </div>

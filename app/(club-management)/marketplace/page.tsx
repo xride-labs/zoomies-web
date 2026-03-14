@@ -60,7 +60,7 @@ export default function MarketplacePage() {
     fetchListings(params)
   }, [activeCategory])
 
-  const filteredListings = listings.filter((listing) => {
+  const filteredListings = listings?.filter((listing) => {
     const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesSearch
   })
@@ -100,7 +100,7 @@ export default function MarketplacePage() {
 
       {/* Results count */}
       <p className="text-sm text-muted-foreground mb-4">
-        {filteredListings.length} listings found
+        {filteredListings?.length} listings found
       </p>
 
       {/* Listings Grid */}
@@ -108,14 +108,14 @@ export default function MarketplacePage() {
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
-      ) : filteredListings.length === 0 ? (
+      ) : filteredListings?.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>No listings found. Try adjusting your search.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredListings.map((listing) => (
-            <Link key={listing.id} href={`/app/marketplace/${listing.id}`}>
+            <Link key={listing.id} href={`/marketplace/${listing.id}`}>
               <Card className="overflow-hidden hover:border-primary/50 transition-colors h-full">
                 {/* Image placeholder */}
                 <div className="aspect-square bg-muted flex items-center justify-center relative">
@@ -186,7 +186,7 @@ export default function MarketplacePage() {
       )}
 
       {/* Floating Create Button */}
-      <Link href="/app/marketplace/create">
+      <Link href="/marketplace/create">
         <Button
           className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 rounded-full w-14 h-14 shadow-lg"
           size="icon"

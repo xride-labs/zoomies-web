@@ -328,7 +328,7 @@ export function InvestSection() {
 
   return (
     <>
-      <section id="invest" className="py-28 bg-canvas relative overflow-hidden">
+      <section id="invest" className="landing-section bg-canvas">
         {/* Background effects */}
         <div className="absolute inset-0">
           <motion.div
@@ -343,19 +343,19 @@ export function InvestSection() {
           />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="landing-container">
           {/* Section header */}
           <motion.div
-            className="text-center mb-20"
+            className="landing-header"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
           >
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 uppercase tracking-tight">
+            <h2 className="landing-title mb-5">
               Fuel The <span className="text-neon-green">Revolution</span>
             </h2>
-            <p className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto font-medium">
+            <p className="landing-copy mx-auto max-w-2xl">
               Be part of the movement shaping the future of motorcycle culture in India.
             </p>
           </motion.div>

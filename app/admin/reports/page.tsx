@@ -40,19 +40,7 @@ import {
   Clock,
   Loader2,
 } from 'lucide-react'
-import { adminApi } from '@/lib/services'
-
-interface AdminReport {
-  id: string
-  type: string
-  title: string
-  description?: string
-  reportedItem: { id: string; name: string; type: string }
-  reporter: { id: string; name: string }
-  status: string
-  priority: string
-  createdAt: string
-}
+import { useAdminReports } from '@/store/features/admin'
 
 const typeIcons: Record<string, any> = {
   user: User,
@@ -75,30 +63,24 @@ const priorityColors: Record<string, string> = {
 }
 
 export default function AdminReportsPage() {
-  const [reports, setReports] = useState<AdminReport[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    reports,
+    isLoading: loading,
+    error,
+    fetchReports,
+    updateReport: dispatchUpdateReport,
+  } = useAdminReports()
+
   const [activeTab, setActiveTab] = useState('all')
 
   useEffect(() => {
-    fetchReports()
-  }, [activeTab])
+    const params: Record<string, string> = {}
+    if (activeTab !== 'all') params.status = activeTab
+    fetchReports(params)
+  }, [activeTab, fetchReports])
 
-  const fetchReports = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const params: Record<string, string> = {}
-      if (activeTab !== 'all') params.status = activeTab
-
-      const response = await adminApi.getReports(params)
-      setReports(response.items || [])
-    } catch (err) {
-      setError('Failed to load reports')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  const handleUpdateReport = async (reportId: string, status: string) => {
+    await dispatchUpdateReport(reportId, { status })
   }
 
   const stats = {
@@ -285,16 +267,24 @@ export default function AdminReportsPage() {
                               View Details
                             </DropdownMenuItem>
                             {report.status === 'pending' && (
-                              <DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleUpdateReport(report.id, 'REVIEWING')}
+                              >
                                 <AlertTriangle className="w-4 h-4 mr-2" />
                                 Start Investigation
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="text-green-600">
+                            <DropdownMenuItem
+                              className="text-green-600"
+                              onClick={() => handleUpdateReport(report.id, 'RESOLVED')}
+                            >
                               <CheckCircle className="w-4 h-4 mr-2" />
                               Mark Resolved
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-gray-600">
+                            <DropdownMenuItem
+                              className="text-gray-600"
+                              onClick={() => handleUpdateReport(report.id, 'DISMISSED')}
+                            >
                               <XCircle className="w-4 h-4 mr-2" />
                               Dismiss
                             </DropdownMenuItem>

@@ -7,6 +7,7 @@ import { signIn as betterAuthSignIn } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PortalBackdropArt } from '@/components/auth/portal-backdrop-art'
 import { Eye, EyeOff, Loader2, Shield, Store } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -91,6 +92,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-canvas relative overflow-hidden p-4">
+      <PortalBackdropArt accent={activeTab === 'admin' ? 'red' : 'teal'} />
+
       {/* Background decorations */}
       <motion.div
         className="absolute top-20 left-10 w-72 h-72 bg-brand-red-light/10 rounded-full blur-3xl"
@@ -140,11 +143,10 @@ export default function LoginPage() {
                   setActiveTab('manager')
                   setError('')
                 }}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'manager'
+                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${activeTab === 'manager'
                     ? 'bg-surface text-white shadow-md'
                     : 'text-text-secondary/60 hover:text-text-secondary'
-                }`}
+                  }`}
               >
                 <Store className="w-4 h-4" />
                 Manager
@@ -155,11 +157,10 @@ export default function LoginPage() {
                   setActiveTab('admin')
                   setError('')
                 }}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'admin'
+                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${activeTab === 'admin'
                     ? 'bg-linear-to-r from-brand-red-light to-brand-red text-white shadow-md'
                     : 'text-text-secondary/60 hover:text-text-secondary'
-                }`}
+                  }`}
               >
                 <Shield className="w-4 h-4" />
                 Admin
@@ -277,11 +278,10 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm ${
-                  activeTab === 'admin'
+                className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm ${activeTab === 'admin'
                     ? 'bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]'
                     : 'bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]'
-                } text-white transition-shadow`}
+                  } text-white transition-shadow`}
                 disabled={isLoading}
               >
                 {isLoading ? (

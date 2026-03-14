@@ -36,8 +36,39 @@ export {
 } from './marketplace'
 
 // Re-export admin API
-export * from './admin'
-export { adminApi } from './admin'
+export {
+  adminApi,
+  getStats,
+  getUsers,
+  getUserById,
+  updateUserRole,
+  updateUserStatus,
+  getRides as getAdminRides,
+  getClubs as getAdminClubs,
+  getListings as getAdminListings,
+  getReports,
+  updateReport,
+  verifyClub,
+  deleteUser,
+  updateRideStatus,
+  deleteRide as deleteAdminRide,
+  deleteClub as deleteAdminClub,
+  updateListingStatus,
+  deleteListing as deleteAdminListing,
+  type AdminStats,
+  type AdminUserRecord,
+  type AdminRideRecord,
+  type AdminClubRecord,
+  type AdminListingRecord,
+  type AdminReportRecord,
+  type AdminPagination,
+  type PaginatedData as AdminPaginatedData,
+  type UserFilters as AdminUserFilters,
+  type RideFilters as AdminRideFilters,
+  type ClubFilters as AdminClubFilters,
+  type ListingFilters as AdminListingFilters,
+  type ReportFilters as AdminReportFilters,
+} from './admin'
 
 // Re-export feed API
 export * from './feed'

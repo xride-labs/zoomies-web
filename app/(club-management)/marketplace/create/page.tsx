@@ -74,7 +74,7 @@ export default function CreateListingPage() {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    router.push('/app/marketplace')
+    router.push('/marketplace')
   }
 
   return (

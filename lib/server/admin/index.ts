@@ -308,6 +308,53 @@ export async function verifyClub(clubId: string): Promise<void> {
   return apiAuthenticated.patch<void>(`/admin/clubs/${clubId}/verify`, {})
 }
 
+/**
+ * Delete a user
+ */
+export async function deleteUser(userId: string): Promise<void> {
+  return apiAuthenticated.delete<void>(`/admin/users/${userId}`)
+}
+
+/**
+ * Update ride status (cancel, etc.)
+ */
+export async function updateRideStatus(rideId: string, status: string): Promise<void> {
+  return apiAuthenticated.patch<void>(`/admin/rides/${rideId}/status`, { status })
+}
+
+/**
+ * Delete a ride
+ */
+export async function deleteRide(rideId: string): Promise<void> {
+  return apiAuthenticated.delete<void>(`/admin/rides/${rideId}`)
+}
+
+/**
+ * Delete a club
+ */
+export async function deleteClub(clubId: string): Promise<void> {
+  return apiAuthenticated.delete<void>(`/admin/clubs/${clubId}`)
+}
+
+/**
+ * Update listing status (approve, flag, remove)
+ */
+export async function updateListingStatus(
+  listingId: string,
+  status: string,
+): Promise<void> {
+  return apiAuthenticated.patch<void>(`/admin/marketplace/${listingId}/status`, {
+    status,
+  })
+}
+
+/**
+ * Delete a listing
+ */
+export async function deleteListing(listingId: string): Promise<void> {
+  return apiAuthenticated.delete<void>(`/admin/marketplace/${listingId}`)
+}
+
 // Export all as adminApi object
 export const adminApi = {
   getStats,
@@ -321,4 +368,10 @@ export const adminApi = {
   getReports,
   updateReport,
   verifyClub,
+  deleteUser,
+  updateRideStatus,
+  deleteRide,
+  deleteClub,
+  updateListingStatus,
+  deleteListing,
 }

@@ -11,7 +11,7 @@ import {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-canvas">
+    <main className="landing-shell min-h-screen bg-canvas">
       <Navbar />
       <HeroSection />
       <EcosystemSection />

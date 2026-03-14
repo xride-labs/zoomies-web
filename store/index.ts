@@ -4,6 +4,7 @@ import clubsReducer from './slices/clubsSlice'
 import ridesReducer from './slices/ridesSlice'
 import marketplaceReducer from './slices/marketplaceSlice'
 import feedReducer from './slices/feedSlice'
+import adminReducer from './slices/adminSlice'
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     rides: ridesReducer,
     marketplace: marketplaceReducer,
     feed: feedReducer,
+    admin: adminReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

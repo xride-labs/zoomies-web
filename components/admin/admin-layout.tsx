@@ -188,6 +188,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </h1>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="inline-flex items-center gap-2 h-9 px-3"
+                onClick={() => router.push('/home')}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Club Manager</span>
+              </Button>
               <Button variant="ghost" size="icon">
                 <Search className="w-5 h-5" />
               </Button>

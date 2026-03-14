@@ -326,7 +326,7 @@ export default function RideDetailPage() {
     try {
       await ridesApi.deleteRide(ride.id)
       toast.success('Ride deleted', { description: 'The ride has been permanently removed.' })
-      router.push('/app/rides')
+      router.push('/rides')
     } catch (err) {
       console.error('Failed to delete ride:', err)
       toast.error('Failed to delete ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
@@ -405,7 +405,7 @@ export default function RideDetailPage() {
             </Badge>
           </div>
           {ride.club && (
-            <Link href={`/app/clubs/${ride.club.id}`}>
+            <Link href={`/clubs/${ride.club.id}`}>
               <Badge variant="outline" className="mt-2">
                 {ride.club.name}
               </Badge>
@@ -565,7 +565,7 @@ export default function RideDetailPage() {
               <CardTitle className="text-base">Organizer</CardTitle>
             </CardHeader>
             <CardContent>
-              <Link href={`/app/profile/${ride.organizer.username || ride.organizer.id}`}>
+              <Link href={`/profile/${ride.organizer.username || ride.organizer.id}`}>
                 <div className="flex items-center gap-4">
                   <Avatar className="w-12 h-12">
                     <AvatarFallback>
@@ -606,7 +606,7 @@ export default function RideDetailPage() {
                 {participants.map((participant) => (
                   <Link
                     key={participant.id}
-                    href={`/app/profile/${participant.username}`}
+                    href={`/profile/${participant.username}`}
                   >
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
                       <Avatar className="w-10 h-10">

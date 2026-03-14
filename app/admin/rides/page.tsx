@@ -58,7 +58,7 @@ import {
   Pause,
   Loader2,
 } from 'lucide-react'
-import { adminApi } from '@/lib/services'
+import { useAdminRides } from '@/store/features/admin'
 
 interface AdminRide {
   id: string
@@ -91,62 +91,76 @@ const statusIcons: Record<string, any> = {
 }
 
 export default function AdminRidesPage() {
-  const [rides, setRides] = useState<AdminRide[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    rides: rawRides,
+    isLoading: loading,
+    error,
+    pagination,
+    fetchRides,
+    updateRideStatus: dispatchUpdateRideStatus,
+    deleteRide: dispatchDeleteRide,
+  } = useAdminRides()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [selectedRide, setSelectedRide] = useState<AdminRide | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const rides: AdminRide[] = rawRides.map((ride) => ({
+    id: ride.id,
+    title: ride.title,
+    description: ride.description,
+    startLocation: ride.startLocation,
+    endLocation: ride.endLocation,
+    distance: ride.distance,
+    duration: ride.duration,
+    scheduledAt: ride.scheduledAt,
+    status: ride.status,
+    experienceLevel: ride.experienceLevel,
+    pace: ride.pace,
+    participantCount: ride._count?.participants ?? 0,
+    creator: {
+      id: ride.creator.id,
+      name: ride.creator.name ?? 'Unknown',
+      image: ride.creator.image ?? null,
+    },
+  }))
 
   useEffect(() => {
-    fetchRides()
-  }, [statusFilter])
-
-  const fetchRides = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const params: Record<string, string> = {}
-      if (statusFilter !== 'all') params.status = statusFilter
-      if (searchQuery) params.search = searchQuery
-
-      const response = await adminApi.getRides(params)
-      setRides(
-        (response.items || []).map((ride) => ({
-          id: ride.id,
-          title: ride.title,
-          description: ride.description,
-          startLocation: ride.startLocation,
-          endLocation: ride.endLocation,
-          distance: ride.distance,
-          duration: ride.duration,
-          scheduledAt: ride.scheduledAt,
-          status: ride.status,
-          experienceLevel: ride.experienceLevel,
-          pace: ride.pace,
-          participantCount: ride._count?.participants ?? 0,
-          creator: {
-            id: ride.creator.id,
-            name: ride.creator.name ?? 'Unknown',
-            image: ride.creator.image ?? null,
-          },
-        })),
-      )
-    } catch (err) {
-      setError('Failed to load rides')
-      console.error(err)
-    } finally {
-      setLoading(false)
+    const params: Record<string, string> = {
+      page: String(currentPage),
+      limit: '20',
     }
+    if (statusFilter !== 'all') params.status = statusFilter
+    if (searchQuery) params.search = searchQuery
+    fetchRides(params)
+  }, [statusFilter, currentPage, fetchRides])
+
+  // Debounced server-side search
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (currentPage === 1) {
+        const params: Record<string, string> = { page: '1', limit: '20' }
+        if (statusFilter !== 'all') params.status = statusFilter
+        if (searchQuery) params.search = searchQuery
+        fetchRides(params)
+      } else {
+        setCurrentPage(1)
+      }
+    }, 400)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
+
+  const handleCancelRide = async (ride: AdminRide) => {
+    if (!confirm(`Cancel ride "${ride.title}"?`)) return
+    await dispatchUpdateRideStatus(ride.id, 'CANCELLED')
   }
 
-  const filteredRides = rides.filter((ride) => {
-    const matchesSearch =
-      ride.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ride.startLocation?.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
-  })
+  const handleDeleteRide = async (ride: AdminRide) => {
+    if (!confirm(`Delete ride "${ride.title}"? This cannot be undone.`)) return
+    await dispatchDeleteRide(ride.id)
+  }
 
   const stats = {
     total: rides.length,
@@ -258,7 +272,7 @@ export default function AdminRidesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRides.map((ride) => {
+                {rides.map((ride) => {
                   const StatusIcon = statusIcons[ride.status as keyof typeof statusIcons]
                   return (
                     <TableRow key={ride.id}>
@@ -347,11 +361,21 @@ export default function AdminRidesPage() {
                             <DropdownMenuSeparator />
                             {ride.status !== 'CANCELLED' &&
                               ride.status !== 'COMPLETED' && (
-                                <DropdownMenuItem className="text-red-600">
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() => handleCancelRide(ride)}
+                                >
                                   <XCircle className="w-4 h-4 mr-2" />
                                   Cancel Ride
                                 </DropdownMenuItem>
                               )}
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteRide(ride)}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Delete Ride
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -365,13 +389,23 @@ export default function AdminRidesPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredRides.length} of {rides.length} rides
+              Page {pagination.page} of {pagination.totalPages} ({pagination.total} rides)
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
                 Next
               </Button>
             </div>

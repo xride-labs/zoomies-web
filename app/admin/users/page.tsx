@@ -59,7 +59,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { UserRole } from '@/types'
-import { adminApi } from '@/lib/services'
+import { useAdminUsers } from '@/store/features/admin'
 
 interface AdminUser {
   id: string
@@ -77,70 +77,87 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    users: rawUsers,
+    isLoading: loading,
+    error,
+    pagination,
+    fetchUsers,
+    updateUserRole: dispatchUpdateUserRole,
+    deleteUser: dispatchDeleteUser,
+  } = useAdminUsers()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    totalPages: 1,
-    limit: 50,
-  })
+  const [editRole, setEditRole] = useState<string>('')
+  const [saving, setSaving] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const users: AdminUser[] = rawUsers.map((user) => ({
+    id: user.id,
+    name: user.name ?? 'Unknown',
+    username: user.email ? user.email.split('@')[0] : 'user',
+    email: user.email ?? '',
+    phone: user.phone ?? undefined,
+    roles: user.roles as UserRole[],
+    status: 'active',
+    ridesCompleted: user.ridesCompleted ?? 0,
+    xpPoints: 0,
+    joinedAt: user.createdAt,
+    createdAt: user.createdAt,
+  }))
 
   useEffect(() => {
-    fetchUsers()
-  }, [roleFilter, statusFilter])
+    const params: Record<string, string | number> = {
+      page: currentPage,
+      limit: 50,
+    }
+    if (roleFilter !== 'all') params.role = roleFilter
+    if (statusFilter !== 'all') params.status = statusFilter
+    if (searchQuery) params.search = searchQuery
+    fetchUsers(params)
+  }, [roleFilter, statusFilter, currentPage, fetchUsers])
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const params: Record<string, string | number> = {
-        page: pagination.page,
-        limit: pagination.limit,
+  // Debounced server-side search
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (currentPage === 1) {
+        const params: Record<string, string | number> = { page: 1, limit: 50 }
+        if (roleFilter !== 'all') params.role = roleFilter
+        if (statusFilter !== 'all') params.status = statusFilter
+        if (searchQuery) params.search = searchQuery
+        fetchUsers(params)
+      } else {
+        setCurrentPage(1)
       }
-      if (roleFilter !== 'all') params.role = roleFilter
-      if (statusFilter !== 'all') params.status = statusFilter
-      if (searchQuery) params.search = searchQuery
+    }, 400)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
 
-      const response = await adminApi.getUsers(params)
-      setUsers(
-        (response.items || []).map((user) => ({
-          id: user.id,
-          name: user.name ?? 'Unknown',
-          username: user.email ? user.email.split('@')[0] : 'user',
-          email: user.email ?? '',
-          phone: user.phone ?? undefined,
-          roles: user.roles as UserRole[],
-          status: 'active',
-          ridesCompleted: user.ridesCompleted ?? 0,
-          xpPoints: 0,
-          joinedAt: user.createdAt,
-          createdAt: user.createdAt,
-        })),
-      )
-      setPagination(response.pagination)
+  const handleSaveRole = async () => {
+    if (!selectedUser || !editRole) return
+    try {
+      setSaving(true)
+      await dispatchUpdateUserRole(selectedUser.id, editRole)
+      setIsEditDialogOpen(false)
     } catch (err) {
-      setError('Failed to load users')
-      console.error(err)
+      console.error('Failed to update role', err)
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username?.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
-  })
+  const handleDeleteUser = async (user: AdminUser) => {
+    if (!confirm(`Are you sure you want to delete ${user.name}? This cannot be undone.`))
+      return
+    await dispatchDeleteUser(user.id)
+  }
+
+  const filteredUsers = users
 
   const stats = {
     total: pagination.total || users.length,
@@ -350,6 +367,7 @@ export default function AdminUsersPage() {
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedUser(user)
+                                setEditRole(user.roles?.[0] || '')
                                 setIsEditDialogOpen(true)
                               }}
                             >
@@ -372,6 +390,13 @@ export default function AdminUsersPage() {
                                 Suspend User
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteUser(user)}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Delete User
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -382,16 +407,26 @@ export default function AdminUsersPage() {
             </Table>
           </div>
 
-          {/* Pagination placeholder */}
+          {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredUsers.length} of {users.length} users
+              Page {pagination.page} of {pagination.totalPages} ({pagination.total} users)
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
                 Next
               </Button>
             </div>
@@ -483,7 +518,10 @@ export default function AdminUsersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Select defaultValue={selectedUser?.roles?.[0]}>
+            <Select
+              value={editRole}
+              onValueChange={setEditRole}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -499,7 +537,10 @@ export default function AdminUsersPage() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsEditDialogOpen(false)}>Save Changes</Button>
+            <Button onClick={handleSaveRole} disabled={saving || !editRole}>
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

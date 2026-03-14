@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { PortalBackdropArt } from '@/components/auth/portal-backdrop-art'
 import { Eye, EyeOff, Loader2, Check, Shield, Store } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -93,6 +94,8 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-canvas relative overflow-hidden p-4 py-12">
+      <PortalBackdropArt accent="teal" />
+
       {/* Background decorations */}
       <motion.div
         className="absolute top-20 left-10 w-72 h-72 bg-neon-green/8 rounded-full blur-3xl"
@@ -143,11 +146,10 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedRole('CLUB_OWNER')}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${
-                    selectedRole === 'CLUB_OWNER'
+                  className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${selectedRole === 'CLUB_OWNER'
                       ? 'border-teal bg-teal/10 text-teal'
                       : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
-                  }`}
+                    }`}
                 >
                   <Shield className="w-6 h-6" />
                   <span className="text-sm font-medium">Manage a Club</span>
@@ -158,11 +160,10 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedRole('SELLER')}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${
-                    selectedRole === 'SELLER'
+                  className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${selectedRole === 'SELLER'
                       ? 'border-neon-green bg-neon-green/10 text-neon-green'
                       : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
-                  }`}
+                    }`}
                 >
                   <Store className="w-6 h-6" />
                   <span className="text-sm font-medium">Sell on Marketplace</span>

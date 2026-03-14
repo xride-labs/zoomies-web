@@ -84,7 +84,7 @@ export default function EditProfilePage() {
         bio: profileData.bio,
         location: profileData.location,
       })
-      router.push('/app/profile/me')
+      router.push('/profile/me')
     } catch (err) {
       console.error('Failed to update profile:', err)
       setIsSubmitting(false)

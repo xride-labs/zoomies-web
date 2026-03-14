@@ -195,9 +195,8 @@ export default function ListingDetailPage() {
           {images.map((_, index) => (
             <button
               key={index}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index === selectedImageIndex ? 'bg-white' : 'bg-white/50'
-              }`}
+              className={`w-2 h-2 rounded-full transition-colors ${index === selectedImageIndex ? 'bg-white' : 'bg-white/50'
+                }`}
               onClick={() => setSelectedImageIndex(index)}
             />
           ))}
@@ -209,9 +208,8 @@ export default function ListingDetailPage() {
         {images.map((_, index) => (
           <button
             key={index}
-            className={`w-16 h-16 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center border-2 transition-colors ${
-              index === selectedImageIndex ? 'border-primary' : 'border-transparent'
-            }`}
+            className={`w-16 h-16 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center border-2 transition-colors ${index === selectedImageIndex ? 'border-primary' : 'border-transparent'
+              }`}
             onClick={() => setSelectedImageIndex(index)}
           >
             <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
@@ -283,7 +281,7 @@ export default function ListingDetailPage() {
         {listing.seller && (
           <Card>
             <CardContent className="p-4">
-              <Link href={`/app/profile/${listing.seller.username}`}>
+              <Link href={`/profile/${listing.seller.username}`}>
                 <div className="flex items-center gap-4">
                   <Avatar className="w-14 h-14">
                     <AvatarFallback>
@@ -329,7 +327,7 @@ export default function ListingDetailPage() {
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {sellerListings.map((item) => (
-                <Link key={item.id} href={`/app/marketplace/${item.id}`}>
+                <Link key={item.id} href={`/marketplace/${item.id}`}>
                   <Card className="w-36 flex-shrink-0">
                     <CardContent className="p-2">
                       <div className="aspect-square rounded-md bg-muted flex items-center justify-center mb-2">
