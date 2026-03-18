@@ -3,7 +3,7 @@
 import { useSession as useBetterAuthSession } from '@/lib/auth-client'
 import { useEffect, useState } from 'react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
 export interface UserWithRoles {
   id: string

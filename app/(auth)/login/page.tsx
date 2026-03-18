@@ -11,7 +11,7 @@ import { PortalBackdropArt } from '@/components/auth/portal-backdrop-art'
 import { Eye, EyeOff, Loader2, Shield, Store } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
 type LoginTab = 'admin' | 'manager'
 
@@ -144,8 +144,8 @@ export default function LoginPage() {
                   setError('')
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${activeTab === 'manager'
-                    ? 'bg-surface text-white shadow-md'
-                    : 'text-text-secondary/60 hover:text-text-secondary'
+                  ? 'bg-surface text-white shadow-md'
+                  : 'text-text-secondary/60 hover:text-text-secondary'
                   }`}
               >
                 <Store className="w-4 h-4" />
@@ -158,8 +158,8 @@ export default function LoginPage() {
                   setError('')
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${activeTab === 'admin'
-                    ? 'bg-linear-to-r from-brand-red-light to-brand-red text-white shadow-md'
-                    : 'text-text-secondary/60 hover:text-text-secondary'
+                  ? 'bg-linear-to-r from-brand-red-light to-brand-red text-white shadow-md'
+                  : 'text-text-secondary/60 hover:text-text-secondary'
                   }`}
               >
                 <Shield className="w-4 h-4" />
@@ -279,8 +279,8 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm ${activeTab === 'admin'
-                    ? 'bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]'
-                    : 'bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]'
+                  ? 'bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]'
+                  : 'bg-linear-to-r from-brand-red-light to-brand-red hover:shadow-[0_10px_30px_rgba(200,55,55,0.3)]'
                   } text-white transition-shadow`}
                 disabled={isLoading}
               >

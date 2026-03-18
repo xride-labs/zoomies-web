@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+const AUTH_SESSION_URL =
+  API_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '') + '/api/auth/get-session'
 
 export interface SessionUser {
   id: string
@@ -32,7 +34,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
       .map((c) => `${c.name}=${c.value}`)
       .join('; ')
 
-    const response = await fetch(`${API_URL}/api/auth/get-session`, {
+    const response = await fetch(AUTH_SESSION_URL, {
       method: 'GET',
       headers: {
         cookie: cookieHeader,
