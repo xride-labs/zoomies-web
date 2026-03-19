@@ -47,6 +47,7 @@ import Link from 'next/link'
 import { userApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
 import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/use-toast'
 
 interface UserProfile {
   id: string
@@ -93,6 +94,12 @@ export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
   const username = params.username as string
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
 
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -113,6 +120,9 @@ export default function ProfilePage() {
   }, [username])
 
   const fetchProfile = async () => {
+    const loadingToastId = loadingToast('Loading profile...', {
+      description: 'Fetching profile details and gallery.',
+    })
     try {
       setLoading(true)
       const response =
@@ -135,7 +145,11 @@ export default function ProfilePage() {
       )
     } catch (err) {
       console.error('Failed to fetch profile:', err)
+      errorToast('Failed to load profile', {
+        description: err instanceof Error ? err.message : 'Please refresh and try again.',
+      })
     } finally {
+      dismissToast(loadingToastId)
       setLoading(false)
     }
   }
@@ -162,6 +176,9 @@ export default function ProfilePage() {
 
   const handleGalleryUpload = async () => {
     if (galleryFiles.length === 0) return
+    const loadingToastId = loadingToast('Uploading gallery photos...', {
+      description: `Uploading ${galleryFiles.length} image(s).`,
+    })
     try {
       setIsGalleryUploading(true)
       const uploads = [] as Array<{ id: string; url: string | null }>
@@ -176,9 +193,16 @@ export default function ProfilePage() {
       setGalleryItems((prev) => [...uploads, ...prev])
       setGalleryFiles([])
       setIsGalleryDialogOpen(false)
+      successToast('Gallery updated', {
+        description: `${uploads.length} photo(s) uploaded successfully.`,
+      })
     } catch (err) {
       console.error('Failed to upload gallery images:', err)
+      errorToast('Gallery upload failed', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
     } finally {
+      dismissToast(loadingToastId)
       setIsGalleryUploading(false)
     }
   }

@@ -21,14 +21,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -45,7 +37,6 @@ import {
 } from '@/components/ui/select'
 import {
   Search,
-  MoreHorizontal,
   Download,
   Eye,
   MapPin,
@@ -59,6 +50,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useAdminRides } from '@/store/features/admin'
+import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
 
 interface AdminRide {
   id: string
@@ -330,54 +322,52 @@ export default function AdminRidesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedRide(ride)
-                                setIsViewDialogOpen(true)
-                              }}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Users className="w-4 h-4 mr-2" />
-                              View Participants
-                            </DropdownMenuItem>
-                            {ride.status === 'IN_PROGRESS' && (
-                              <DropdownMenuItem>
-                                <MapPin className="w-4 h-4 mr-2" />
-                                Track Live
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            {ride.status !== 'CANCELLED' &&
-                              ride.status !== 'COMPLETED' && (
-                                <DropdownMenuItem
-                                  className="text-red-600"
-                                  onClick={() => handleCancelRide(ride)}
-                                >
-                                  <XCircle className="w-4 h-4 mr-2" />
-                                  Cancel Ride
-                                </DropdownMenuItem>
-                              )}
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              onClick={() => handleDeleteRide(ride)}
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Delete Ride
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <AdminCRUDPopover
+                          actions={[
+                            CRUDActionBuilders.view(() => {
+                              setSelectedRide(ride)
+                              setIsViewDialogOpen(true)
+                            }),
+                            CRUDActionBuilders.custom(
+                              'view-participants',
+                              'View Participants',
+                              () => {
+                                // TODO: Implement participants view
+                              },
+                              { icon: <Users className="h-4 w-4" /> }
+                            ),
+                            ...(ride.status === 'IN_PROGRESS'
+                              ? [
+                                CRUDActionBuilders.custom(
+                                  'track-live',
+                                  'Track Live',
+                                  () => {
+                                    // TODO: Implement live tracking
+                                  },
+                                  { icon: <MapPin className="h-4 w-4" /> }
+                                ),
+                              ]
+                              : []),
+                            ...(ride.status !== 'CANCELLED' && ride.status !== 'COMPLETED'
+                              ? [
+                                CRUDActionBuilders.custom(
+                                  'cancel',
+                                  'Cancel Ride',
+                                  () => handleCancelRide(ride),
+                                  {
+                                    icon: <XCircle className="h-4 w-4" />,
+                                    variant: 'destructive',
+                                  }
+                                ),
+                              ]
+                              : []),
+                            CRUDActionBuilders.delete(
+                              () => handleDeleteRide(ride),
+                              false,
+                              false
+                            ),
+                          ]}
+                        />
                       </TableCell>
                     </TableRow>
                   )

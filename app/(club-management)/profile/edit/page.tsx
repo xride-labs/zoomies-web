@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ChevronLeft, Camera, Loader2 } from 'lucide-react'
 import { mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
+import { useToast } from '@/hooks/use-toast'
 
 interface ProfileData {
   name: string
@@ -30,6 +31,12 @@ interface ProfileData {
 
 export default function EditProfilePage() {
   const router = useRouter()
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -48,6 +55,9 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      const loadingToastId = loadingToast('Loading profile...', {
+        description: 'Fetching your profile settings.',
+      })
       try {
         setLoading(true)
         const response = await userApi.getProfile()
@@ -65,7 +75,11 @@ export default function EditProfilePage() {
       } catch (err) {
         setError('Failed to load profile')
         console.error(err)
+        errorToast('Failed to load profile', {
+          description: err instanceof Error ? err.message : 'Please refresh and try again.',
+        })
       } finally {
+        dismissToast(loadingToastId)
         setLoading(false)
       }
     }
@@ -76,6 +90,9 @@ export default function EditProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    const loadingToastId = loadingToast('Saving profile...', {
+      description: 'Updating your account details.',
+    })
 
     try {
       await userApi.updateProfile({
@@ -84,37 +101,61 @@ export default function EditProfilePage() {
         bio: profileData.bio,
         location: profileData.location,
       })
+      successToast('Profile updated', {
+        description: 'Your profile changes have been saved.',
+      })
       router.push('/profile/me')
     } catch (err) {
       console.error('Failed to update profile:', err)
+      errorToast('Failed to update profile', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
       setIsSubmitting(false)
     }
   }
 
   const handleAvatarUpload = async (file: File | null) => {
     if (!file) return
+    const loadingToastId = loadingToast('Uploading avatar...', {
+      description: 'Processing and saving your profile image.',
+    })
     try {
       setIsUploadingAvatar(true)
       const dataUrl = await fileToDataUrl(file)
       const response = await mediaApi.uploadProfileImage(dataUrl)
       setAvatarUrl(response.imageUrl || response.media?.secureUrl || dataUrl)
+      successToast('Avatar updated')
     } catch (err) {
       console.error('Failed to upload avatar:', err)
+      errorToast('Avatar upload failed', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
     } finally {
+      dismissToast(loadingToastId)
       setIsUploadingAvatar(false)
     }
   }
 
   const handleCoverUpload = async (file: File | null) => {
     if (!file) return
+    const loadingToastId = loadingToast('Uploading cover...', {
+      description: 'Processing and saving your cover image.',
+    })
     try {
       setIsUploadingCover(true)
       const dataUrl = await fileToDataUrl(file)
       const response = await mediaApi.uploadProfileCover(dataUrl)
       setCoverUrl(response.imageUrl || response.media?.secureUrl || dataUrl)
+      successToast('Cover image updated')
     } catch (err) {
       console.error('Failed to upload cover:', err)
+      errorToast('Cover upload failed', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
     } finally {
+      dismissToast(loadingToastId)
       setIsUploadingCover(false)
     }
   }

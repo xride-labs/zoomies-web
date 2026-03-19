@@ -40,6 +40,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
+import { useToast } from '@/hooks/use-toast'
 
 interface Seller {
   id: string
@@ -81,6 +82,7 @@ interface Listing {
 export default function ListingDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { error: errorToast, loading: loadingToast, dismiss: dismissToast } = useToast()
   const [isSaved, setIsSaved] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false)
@@ -92,6 +94,9 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     const fetchListing = async () => {
+      const loadingToastId = loadingToast('Loading listing details...', {
+        description: 'Fetching seller details and item information.',
+      })
       try {
         setLoading(true)
         const listingId = params.id as string
@@ -100,7 +105,11 @@ export default function ListingDetailPage() {
       } catch (err) {
         setError('Failed to load listing details')
         console.error(err)
+        errorToast('Failed to load listing', {
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
       } finally {
+        dismissToast(loadingToastId)
         setLoading(false)
       }
     }

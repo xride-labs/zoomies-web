@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { signUp as betterAuthSignUp, signIn as betterAuthSignIn } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,11 +10,21 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { PortalBackdropArt } from '@/components/auth/portal-backdrop-art'
 import { Eye, EyeOff, Loader2, Check, Shield, Store } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useAuth } from '@/store/features/auth'
+import { useToast } from '@/hooks/use-toast'
+import { signIn as betterAuthSignIn } from '@/lib/auth-client'
 
 type SignupRole = 'CLUB_OWNER' | 'SELLER'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { register } = useAuth()
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [selectedRole, setSelectedRole] = useState<SignupRole>('CLUB_OWNER')
   const [formData, setFormData] = useState({
     name: '',
@@ -26,7 +35,6 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: formData.password.length >= 8 },
@@ -40,56 +48,65 @@ export default function SignupPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-    setError('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!isPasswordValid) {
-      setError('Please meet all password requirements')
+      errorToast('Please meet all password requirements', { description: 'Check the requirements list below.' })
       return
     }
 
     if (!doPasswordsMatch) {
-      setError("Passwords don't match")
+      errorToast("Passwords don't match", { description: 'Please make sure your passwords match.' })
       return
     }
 
     if (!agreedToTerms) {
-      setError('Please agree to the terms and conditions')
+      errorToast('Please agree to the terms and conditions', { description: 'You must agree before continuing.' })
       return
     }
 
     setIsLoading(true)
-    setError('')
+    const loadingToastId = loadingToast('Creating your account...', {
+      description: 'Setting up your profile and access permissions.',
+    })
 
     try {
-      const result = await betterAuthSignUp.email({
+      await register({
         email: formData.email,
         password: formData.password,
         name: formData.name,
       })
 
-      if (result.error) {
-        setError(result.error.message || 'Failed to create account')
-        return
-      }
-
+      successToast('Account created successfully!', { description: `Welcome ${formData.name}!` })
       router.push('/home')
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      errorToast(err instanceof Error ? err.message : 'Failed to create account', { description: 'Please check your information and try again.' })
     } finally {
+      dismissToast(loadingToastId)
       setIsLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    await betterAuthSignIn.social({
-      provider: 'google',
-      callbackURL: '/home',
+    const loadingToastId = loadingToast('Connecting to Google...', {
+      description: 'You will be redirected to complete authentication.',
     })
+    try {
+      await betterAuthSignIn.social({
+        provider: 'google',
+        callbackURL: '/home',
+      })
+    } catch {
+      dismissToast(loadingToastId)
+      errorToast('Google sign-up failed', {
+        description: 'Please try again or continue with email signup.',
+      })
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -147,8 +164,8 @@ export default function SignupPage() {
                   type="button"
                   onClick={() => setSelectedRole('CLUB_OWNER')}
                   className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${selectedRole === 'CLUB_OWNER'
-                      ? 'border-teal bg-teal/10 text-teal'
-                      : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
+                    ? 'border-teal bg-teal/10 text-teal'
+                    : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
                     }`}
                 >
                   <Shield className="w-6 h-6" />
@@ -161,8 +178,8 @@ export default function SignupPage() {
                   type="button"
                   onClick={() => setSelectedRole('SELLER')}
                   className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${selectedRole === 'SELLER'
-                      ? 'border-neon-green bg-neon-green/10 text-neon-green'
-                      : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
+                    ? 'border-neon-green bg-neon-green/10 text-neon-green'
+                    : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
                     }`}
                 >
                   <Store className="w-6 h-6" />
@@ -216,12 +233,6 @@ export default function SignupPage() {
 
             {/* Signup Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-brand-red/15 text-brand-red-light text-sm p-3 rounded-2xl text-center border border-brand-red/20">
-                  {error}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-text-secondary text-sm">
                   Full Name

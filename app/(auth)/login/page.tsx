@@ -3,36 +3,39 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { signIn as betterAuthSignIn } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PortalBackdropArt } from '@/components/auth/portal-backdrop-art'
 import { Eye, EyeOff, Loader2, Shield, Store } from 'lucide-react'
 import { motion } from 'framer-motion'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+import { useUser } from '@/store/features/user'
+import { useAuth } from '@/store/features/auth'
+import { useToast } from '@/hooks/use-toast'
+import { signIn as betterAuthSignIn } from '@/lib/auth-client'
 
 type LoginTab = 'admin' | 'manager'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { fetchMe } = useUser()
+  const { login } = useAuth()
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [activeTab, setActiveTab] = useState<LoginTab>('manager')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
 
   const fetchUserRoles = async (): Promise<string[]> => {
     try {
-      const response = await fetch(`${API_URL}/account/me`, {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        return data.data?.user?.roles || []
-      }
+      const user = await fetchMe()
+      return user?.roles || []
     } catch (err) {
       console.error('Failed to fetch user roles:', err)
     }
@@ -42,27 +45,23 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError('')
+    const loadingToastId = loadingToast('Signing you in...', {
+      description: 'Verifying credentials and loading your role access.',
+    })
 
     try {
-      const result = await betterAuthSignIn.email({
-        email,
-        password,
-      })
-
-      if (result.error) {
-        setError(result.error.message || 'Invalid email or password')
-        return
-      }
+      // Login via Redux thunk using Better Auth
+      await login({ email, password })
 
       // Fetch user roles and verify access
       const roles = await fetchUserRoles()
 
       if (activeTab === 'admin') {
         if (!roles.includes('ADMIN')) {
-          setError('Access denied. Admin role required.')
+          errorToast('Access denied. Admin role required.', { description: 'Contact support if this is unexpected.' })
           return
         }
+        successToast('Welcome back Admin')
         router.push('/admin')
       } else {
         // Manager tab - check for CLUB_OWNER, SELLER, or ADMIN
@@ -70,24 +69,37 @@ export default function LoginPage() {
           ['CLUB_OWNER', 'SELLER', 'ADMIN'].includes(role),
         )
         if (!hasAccess) {
-          setError('Access denied. Club owner or seller role required.')
+          errorToast('Access denied. Club owner or seller role required.', { description: 'Manager account required.' })
           return
         }
+        successToast('Login successful')
         router.push('/home')
       }
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      errorToast(err instanceof Error ? err.message : 'Invalid email or password', { description: 'Please try again.' })
     } finally {
+      dismissToast(loadingToastId)
       setIsLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    await betterAuthSignIn.social({
-      provider: 'google',
-      callbackURL: activeTab === 'admin' ? '/admin' : '/home',
+    const loadingToastId = loadingToast('Connecting to Google...', {
+      description: 'You will be redirected to complete authentication.',
     })
+    try {
+      await betterAuthSignIn.social({
+        provider: 'google',
+        callbackURL: activeTab === 'admin' ? '/admin' : '/home',
+      })
+    } catch {
+      dismissToast(loadingToastId)
+      errorToast('Google sign-in failed', {
+        description: 'Please try again or continue with email and password.',
+      })
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -141,7 +153,6 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setActiveTab('manager')
-                  setError('')
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${activeTab === 'manager'
                   ? 'bg-surface text-white shadow-md'
@@ -155,7 +166,6 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setActiveTab('admin')
-                  setError('')
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${activeTab === 'admin'
                   ? 'bg-linear-to-r from-brand-red-light to-brand-red text-white shadow-md'
@@ -215,12 +225,6 @@ export default function LoginPage() {
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-brand-red/15 text-brand-red-light text-sm p-3 rounded-2xl text-center border border-brand-red/20">
-                  {error}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-text-secondary text-sm">
                   Email

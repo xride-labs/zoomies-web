@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { feedApi } from '@/lib/services'
+import { useToast } from '@/hooks/use-toast'
 
 interface FeedPost {
   id: string
@@ -81,6 +82,7 @@ function formatDate(dateString: string) {
 }
 
 export default function FeedPage() {
+  const { error: errorToast, loading: loadingToast, dismiss: dismissToast } = useToast()
   const [posts, setPosts] = useState<FeedPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -90,6 +92,9 @@ export default function FeedPage() {
   }, [])
 
   const fetchFeed = async () => {
+    const loadingToastId = loadingToast('Loading feed...', {
+      description: 'Fetching the latest posts and ride updates.',
+    })
     try {
       setLoading(true)
       const response = await feedApi.getFeed()
@@ -97,7 +102,11 @@ export default function FeedPage() {
     } catch (err) {
       setError('Failed to load feed')
       console.error(err)
+      errorToast('Failed to load feed', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
     } finally {
+      dismissToast(loadingToastId)
       setLoading(false)
     }
   }

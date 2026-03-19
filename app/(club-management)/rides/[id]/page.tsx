@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 import { fileToDataUrl } from '@/lib/media-utils'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 interface Organizer {
   id: string
@@ -126,6 +126,13 @@ const participantStatusIcons = {
 export default function RideDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const {
+    success: successToast,
+    error: errorToast,
+    info: infoToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [isJoined, setIsJoined] = useState(false)
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false)
   const [ride, setRide] = useState<Ride | null>(null)
@@ -252,31 +259,44 @@ export default function RideDetailPage() {
 
   const handleJoinRide = async () => {
     if (!ride) return
+    const loadingToastId = loadingToast('Joining ride...', {
+      description: 'Sending your participation request.',
+    })
     try {
       await ridesApi.joinRide(ride.id)
       setIsJoined(true)
-      toast.success('You\'re in! 🏍️', { description: `You joined "${ride.title}". See you on the road!` })
+      successToast('You\'re in! 🏍️', { description: `You joined "${ride.title}". See you on the road!` })
     } catch (err) {
       console.error('Failed to join ride:', err)
-      toast.error('Failed to join ride', { description: err instanceof Error ? err.message : 'Something went wrong. Try again.' })
+      errorToast('Failed to join ride', { description: err instanceof Error ? err.message : 'Something went wrong. Try again.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 
   const handleLeaveRide = async () => {
     if (!ride) return
+    const loadingToastId = loadingToast('Leaving ride...', {
+      description: 'Updating your participation status.',
+    })
     try {
       await ridesApi.leaveRide(ride.id)
       setIsJoined(false)
       setIsLeaveDialogOpen(false)
-      toast.info('You left the ride', { description: `You are no longer part of "${ride.title}".` })
+      infoToast('You left the ride', { description: `You are no longer part of "${ride.title}".` })
     } catch (err) {
       console.error('Failed to leave ride:', err)
-      toast.error('Failed to leave ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+      errorToast('Failed to leave ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 
   const handleGalleryUpload = async () => {
     if (!ride || galleryFiles.length === 0) return
+    const loadingToastId = loadingToast('Uploading photos...', {
+      description: `Uploading ${galleryFiles.length} image(s) to the gallery.`,
+    })
     try {
       setIsGalleryUploading(true)
       const uploadedUrls: string[] = []
@@ -288,17 +308,21 @@ export default function RideDetailPage() {
       setGalleryItems((prev) => [...uploadedUrls, ...prev])
       setGalleryFiles([])
       setIsGalleryDialogOpen(false)
-      toast.success('Photos uploaded!', { description: `${uploadedUrls.length} photo(s) added to the gallery.` })
+      successToast('Photos uploaded!', { description: `${uploadedUrls.length} photo(s) added to the gallery.` })
     } catch (err) {
       console.error('Failed to upload ride media:', err)
-      toast.error('Upload failed', { description: 'Could not upload photos. Please try again.' })
+      errorToast('Upload failed', { description: 'Could not upload photos. Please try again.' })
     } finally {
+      dismissToast(loadingToastId)
       setIsGalleryUploading(false)
     }
   }
 
   const handleUpdateRide = async () => {
     if (!ride) return
+    const loadingToastId = loadingToast('Updating ride...', {
+      description: 'Saving your latest ride changes.',
+    })
     try {
       const payload = {
         title: editData.title,
@@ -314,22 +338,29 @@ export default function RideDetailPage() {
       const { ride: updatedRide } = await ridesApi.updateRide(ride.id, payload)
       setRide((prev) => (prev ? { ...prev, ...updatedRide } : prev))
       setIsEditDialogOpen(false)
-      toast.success('Ride updated!', { description: 'Your changes have been saved.' })
+      successToast('Ride updated!', { description: 'Your changes have been saved.' })
     } catch (err) {
       console.error('Failed to update ride:', err)
-      toast.error('Failed to update ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+      errorToast('Failed to update ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 
   const handleDeleteRide = async () => {
     if (!ride) return
+    const loadingToastId = loadingToast('Deleting ride...', {
+      description: 'Removing ride and associated metadata.',
+    })
     try {
       await ridesApi.deleteRide(ride.id)
-      toast.success('Ride deleted', { description: 'The ride has been permanently removed.' })
+      successToast('Ride deleted', { description: 'The ride has been permanently removed.' })
       router.push('/rides')
     } catch (err) {
       console.error('Failed to delete ride:', err)
-      toast.error('Failed to delete ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+      errorToast('Failed to delete ride', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 

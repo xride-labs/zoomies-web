@@ -21,14 +21,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -46,7 +38,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Search,
-  MoreHorizontal,
   UserPlus,
   Download,
   Filter,
@@ -60,6 +51,7 @@ import {
 } from 'lucide-react'
 import { UserRole } from '@/types'
 import { useAdminUsers } from '@/store/features/admin'
+import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
 
 interface AdminUser {
   id: string
@@ -346,59 +338,54 @@ export default function AdminUsersPage() {
                         {user.lastActive || 'N/A'}
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedUser(user)
-                                setIsViewDialogOpen(true)
-                              }}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedUser(user)
-                                setEditRole(user.roles?.[0] || '')
-                                setIsEditDialogOpen(true)
-                              }}
-                            >
-                              <Shield className="w-4 h-4 mr-2" />
-                              Change Role
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className="w-4 h-4 mr-2" />
-                              Send Email
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {user.status === 'suspended' ? (
-                              <DropdownMenuItem className="text-green-600">
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Activate User
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem className="text-red-600">
-                                <Ban className="w-4 h-4 mr-2" />
-                                Suspend User
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              onClick={() => handleDeleteUser(user)}
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Delete User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <AdminCRUDPopover
+                          actions={[
+                            CRUDActionBuilders.view(() => {
+                              setSelectedUser(user)
+                              setIsViewDialogOpen(true)
+                            }),
+                            CRUDActionBuilders.edit(() => {
+                              setSelectedUser(user)
+                              setEditRole(user.roles?.[0] || '')
+                              setIsEditDialogOpen(true)
+                            }),
+                            CRUDActionBuilders.custom(
+                              'send-email',
+                              'Send Email',
+                              () => {
+                                // TODO: Implement email sending
+                              },
+                              { icon: <Mail className="h-4 w-4" /> }
+                            ),
+                            user.status === 'suspended'
+                              ? CRUDActionBuilders.custom(
+                                'activate',
+                                'Activate User',
+                                () => {
+                                  // TODO: Implement user activation
+                                },
+                                {
+                                  icon: <CheckCircle className="h-4 w-4" />,
+                                }
+                              )
+                              : CRUDActionBuilders.custom(
+                                'suspend',
+                                'Suspend User',
+                                () => {
+                                  // TODO: Implement user suspension
+                                },
+                                {
+                                  icon: <Ban className="h-4 w-4" />,
+                                  variant: 'destructive',
+                                }
+                              ),
+                            CRUDActionBuilders.delete(
+                              () => handleDeleteUser(user),
+                              false,
+                              false
+                            ),
+                          ]}
+                        />
                       </TableCell>
                     </TableRow>
                   ))

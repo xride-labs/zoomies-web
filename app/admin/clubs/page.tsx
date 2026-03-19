@@ -21,14 +21,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -46,14 +38,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Search,
-  MoreHorizontal,
   Download,
   CheckCircle,
   XCircle,
   Eye,
   Shield,
+  ShieldAlert,
   ShieldCheck,
-  ShieldX,
   Users,
   MapPin,
   Calendar,
@@ -61,6 +52,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useAdminClubs } from '@/store/features/admin'
+import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
 
 interface AdminClub {
   id: string
@@ -192,7 +184,7 @@ export default function AdminClubsPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <ShieldX className="w-5 h-5 text-amber-600" />
+                <ShieldAlert className="w-5 h-5 text-amber-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
@@ -361,50 +353,35 @@ export default function AdminClubsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedClub(club)
-                              setIsViewDialogOpen(true)
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          {!club.verified && (
-                            <DropdownMenuItem
-                              onClick={() => {
+                      <AdminCRUDPopover
+                        actions={[
+                          CRUDActionBuilders.view(() => {
+                            setSelectedClub(club)
+                            setIsViewDialogOpen(true)
+                          }),
+                          ...(club.verified
+                            ? []
+                            : [
+                              CRUDActionBuilders.verify(() => {
                                 setSelectedClub(club)
                                 setIsVerifyDialogOpen(true)
-                              }}
-                              className="text-green-600"
-                            >
-                              <ShieldCheck className="w-4 h-4 mr-2" />
-                              Verify Club
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem>
-                            <Users className="w-4 h-4 mr-2" />
-                            View Members
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDeleteClub(club)}
-                          >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Delete Club
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                              }),
+                            ]),
+                          CRUDActionBuilders.custom(
+                            'view-members',
+                            'View Members',
+                            () => {
+                              // TODO: Implement members view
+                            },
+                            { icon: <Users className="h-4 w-4" /> }
+                          ),
+                          CRUDActionBuilders.delete(
+                            () => handleDeleteClub(club),
+                            false,
+                            false
+                          ),
+                        ]}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

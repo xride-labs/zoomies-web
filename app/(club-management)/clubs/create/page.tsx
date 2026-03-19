@@ -24,7 +24,7 @@ import {
 import { ChevronLeft, ImagePlus, MapPin } from 'lucide-react'
 import { clubsApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 const clubTypes = [
   'Riding Club',
@@ -41,6 +41,12 @@ const clubTypes = [
 
 export default function CreateClubPage() {
   const router = useRouter()
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -79,6 +85,9 @@ export default function CreateClubPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    const loadingToastId = loadingToast('Creating club...', {
+      description: 'Saving details and uploading media assets.',
+    })
 
     try {
       const { club } = await clubsApi.createClub({
@@ -99,12 +108,13 @@ export default function CreateClubPage() {
         await mediaApi.uploadClubImage(club.id, coverDataUrl, 'cover')
       }
 
-      toast.success('Club created! 🎉', { description: `${clubData.name} is live! Rally your crew.` })
+      successToast('Club created! 🎉', { description: `${clubData.name} is live! Rally your crew.` })
       router.push(`/clubs/${club.id}`)
     } catch (error) {
       console.error('Failed to create club:', error)
-      toast.error('Failed to create club', { description: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })
+      errorToast('Failed to create club', { description: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })
     } finally {
+      dismissToast(loadingToastId)
       setIsSubmitting(false)
     }
   }

@@ -24,7 +24,7 @@ import {
 import { ChevronLeft, MapPin, Plus, X, Calendar, Route, ImagePlus } from 'lucide-react'
 import { ridesApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 const difficulties = ['Beginner', 'Intermediate', 'Advanced', 'Expert']
 
@@ -39,13 +39,14 @@ const terrainTypes = [
   'Urban/City',
 ]
 
-const mockClubs = [
-  { id: 'c1', name: 'Desert Eagles MC' },
-  { id: 'c2', name: 'Phoenix Riders' },
-]
-
 export default function CreateRidePage() {
   const router = useRouter()
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [waypoints, setWaypoints] = useState<string[]>([])
@@ -83,6 +84,9 @@ export default function CreateRidePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    const loadingToastId = loadingToast('Creating ride...', {
+      description: 'Saving ride details and uploading media.',
+    })
 
     try {
       const scheduledAt =
@@ -118,12 +122,13 @@ export default function CreateRidePage() {
         }
       }
 
-      toast.success('Ride created! 🏍️', { description: `"${rideData.title}" is ready. Share it with your crew!` })
+      successToast('Ride created! 🏍️', { description: `"${rideData.title}" is ready. Share it with your crew!` })
       router.push(`/rides/${ride.id}`)
     } catch (error) {
       console.error('Failed to create ride:', error)
-      toast.error('Failed to create ride', { description: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })
+      errorToast('Failed to create ride', { description: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })
     } finally {
+      dismissToast(loadingToastId)
       setIsSubmitting(false)
     }
   }
@@ -171,7 +176,7 @@ export default function CreateRidePage() {
                   <Input id="title" placeholder="e.g., Sunrise Mountain Loop" value={rideData.title} onChange={(e) => setRideData({ ...rideData, title: e.target.value })} className="h-12 text-lg" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-base font-semibold">What's the vibe?</Label>
+                  <Label htmlFor="description" className="text-base font-semibold">What&apos;s the vibe?</Label>
                   <Textarea id="description" placeholder="Describe the route, highlights, scenery, difficulty..." value={rideData.description} onChange={(e) => setRideData({ ...rideData, description: e.target.value })} rows={4} className="text-base" required />
                 </div>
               </div>
@@ -248,7 +253,7 @@ export default function CreateRidePage() {
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight">Dial in the details</h1>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  When does the ride happen, how intense, and who's invited?
+                  When does the ride happen, how intense, and who&apos;s invited?
                 </p>
               </div>
 

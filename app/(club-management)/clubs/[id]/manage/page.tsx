@@ -66,6 +66,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { useToast } from '@/hooks/use-toast'
 
 interface ClubSettings {
   id: string
@@ -116,6 +117,12 @@ const roleColors = {
 export default function ClubManagePage() {
   const params = useParams()
   const router = useRouter()
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [activeTab, setActiveTab] = useState('members')
   const [clubSettings, setClubSettings] = useState<ClubSettings | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -129,6 +136,9 @@ export default function ClubManagePage() {
 
   useEffect(() => {
     const fetchClubData = async () => {
+      const loadingToastId = loadingToast('Loading club management...', {
+        description: 'Fetching settings, members, and requests.',
+      })
       try {
         setLoading(true)
         const clubId = params.id as string
@@ -171,7 +181,11 @@ export default function ClubManagePage() {
       } catch (err) {
         setError('Failed to load club management data')
         console.error(err)
+        errorToast('Failed to load club management', {
+          description: err instanceof Error ? err.message : 'Please refresh and try again.',
+        })
       } finally {
+        dismissToast(loadingToastId)
         setLoading(false)
       }
     }
@@ -189,53 +203,113 @@ export default function ClubManagePage() {
     })
   }
 
-  const handleApproveRequest = (requestId: string) => {
+  const handleApproveRequest = async (requestId: string) => {
     if (!clubSettings) return
-    clubsApi.approveRequest(clubSettings.id, requestId).catch((err) => {
+    const loadingToastId = loadingToast('Approving request...', {
+      description: 'Updating membership status.',
+    })
+    try {
+      await clubsApi.approveRequest(clubSettings.id, requestId)
+      setPendingRequests((prev) => prev.filter((request) => request.id !== requestId))
+      successToast('Request approved')
+    } catch (err) {
       console.error('Failed to approve request:', err)
-    })
+      errorToast('Failed to approve request', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
+    }
   }
 
-  const handleRejectRequest = (requestId: string) => {
+  const handleRejectRequest = async (requestId: string) => {
     if (!clubSettings) return
-    clubsApi.rejectRequest(clubSettings.id, requestId).catch((err) => {
+    const loadingToastId = loadingToast('Rejecting request...', {
+      description: 'Updating membership status.',
+    })
+    try {
+      await clubsApi.rejectRequest(clubSettings.id, requestId)
+      setPendingRequests((prev) => prev.filter((request) => request.id !== requestId))
+      successToast('Request rejected')
+    } catch (err) {
       console.error('Failed to reject request:', err)
-    })
+      errorToast('Failed to reject request', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
+    }
   }
 
-  const handleRoleChange = (memberId: string, newRole: string) => {
+  const handleRoleChange = async (memberId: string, newRole: string) => {
     if (!clubSettings) return
+    const loadingToastId = loadingToast('Updating role...', {
+      description: 'Applying member role changes.',
+    })
     const member = members.find((m) => m.id === memberId)
     const userId = member?.userId || memberId
-    clubsApi.updateMemberRole(clubSettings.id, userId, newRole).catch((err) => {
+    try {
+      await clubsApi.updateMemberRole(clubSettings.id, userId, newRole)
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m)),
+      )
+      successToast('Member role updated')
+    } catch (err) {
       console.error('Failed to update member role:', err)
-    })
-    setMembers((prev) =>
-      prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m)),
-    )
+      errorToast('Failed to update role', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
+    }
   }
 
-  const handleRemoveMember = () => {
+  const handleRemoveMember = async () => {
     if (!clubSettings || !selectedMember) return
-    const userId = selectedMember.userId || selectedMember.id
-    clubsApi.removeMember(clubSettings.id, userId).catch((err) => {
-      console.error('Failed to remove member:', err)
+    const loadingToastId = loadingToast('Removing member...', {
+      description: 'Updating club membership list.',
     })
-    setMembers((prev) => prev.filter((m) => m.id !== selectedMember.id))
-    setIsRemoveDialogOpen(false)
-    setSelectedMember(null)
+    const userId = selectedMember.userId || selectedMember.id
+    try {
+      await clubsApi.removeMember(clubSettings.id, userId)
+      setMembers((prev) => prev.filter((m) => m.id !== selectedMember.id))
+      setIsRemoveDialogOpen(false)
+      setSelectedMember(null)
+      successToast('Member removed')
+    } catch (err) {
+      console.error('Failed to remove member:', err)
+      errorToast('Failed to remove member', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
+    }
   }
 
-  const handleDeleteClub = () => {
+  const handleDeleteClub = async () => {
     if (!clubSettings || deleteConfirmText !== clubSettings.name) return
-    clubsApi
-      .deleteClub(clubSettings.id)
-      .then(() => router.push('/clubs'))
-      .catch((err) => console.error('Failed to delete club:', err))
+    const loadingToastId = loadingToast('Deleting club...', {
+      description: 'Removing club data and members.',
+    })
+    try {
+      await clubsApi.deleteClub(clubSettings.id)
+      successToast('Club deleted')
+      router.push('/clubs')
+    } catch (err) {
+      console.error('Failed to delete club:', err)
+      errorToast('Failed to delete club', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
+    }
   }
 
   const handleSaveSettings = async () => {
     if (!clubSettings) return
+    const loadingToastId = loadingToast('Saving settings...', {
+      description: 'Updating club configuration.',
+    })
     try {
       const { club } = await clubsApi.updateClub(clubSettings.id, {
         name: clubSettings.name,
@@ -250,8 +324,14 @@ export default function ClubManagePage() {
         location: club.location || clubSettings.location,
         isPublic: club.isPublic ?? clubSettings.isPublic,
       })
+      successToast('Club settings saved')
     } catch (err) {
       console.error('Failed to update club settings:', err)
+      errorToast('Failed to save settings', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 

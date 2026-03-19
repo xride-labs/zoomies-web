@@ -2,8 +2,7 @@
 
 import { useSession as useBetterAuthSession } from '@/lib/auth-client'
 import { useEffect, useState } from 'react'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+import { useUser } from '@/store/features/user'
 
 export interface UserWithRoles {
   id: string
@@ -33,83 +32,76 @@ export interface AuthState {
  */
 export function useAuth(): AuthState {
   const { data: session, isPending: sessionPending } = useBetterAuthSession()
-  const [user, setUser] = useState<UserWithRoles | null>(null)
+  const { profile, isLoading, error: userError, fetchMe } = useUser()
   const [isPending, setIsPending] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchUserWithRoles() {
       if (sessionPending) return
 
       if (!session?.user) {
-        setUser(null)
         setIsPending(false)
         return
       }
 
-      try {
-        const response = await fetch(`${API_URL}/account/me`, {
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            setUser(null)
-            setIsPending(false)
-            return
-          }
-          throw new Error('Failed to fetch user data')
+      // If we don't have the profile in Redux yet, fetch it
+      if (!profile) {
+        try {
+          await fetchMe()
+        } catch (err) {
+          console.error('[useAuth] Error fetching user:', err)
         }
-
-        const data = await response.json()
-        setUser(data.data?.user || null)
-        setError(null)
-      } catch (err) {
-        console.error('[useAuth] Error fetching user:', err)
-        setError(err instanceof Error ? err.message : 'Unknown error')
-        // Still set basic user info from session even if /me fails
-        setUser({
-          id: session.user.id,
-          email: session.user.email ?? null,
-          name: session.user.name ?? null,
-          image: session.user.image ?? null,
-          phone: null,
-          phoneVerified: null,
-          emailVerified: null,
-          bio: null,
-          location: null,
-          roles: ['USER'], // Default role
-          createdAt: session.user.createdAt?.toString() || '',
-          updatedAt: session.user.updatedAt?.toString() || '',
-        })
-      } finally {
-        setIsPending(false)
       }
+      setIsPending(false)
     }
 
     fetchUserWithRoles()
-  }, [session, sessionPending])
+  }, [session, sessionPending, profile])
+
+  // Transform Redux profile to match the expected UserWithRoles signature
+  const user = profile
+    ? {
+        id: profile.id,
+        email: profile.email ?? null,
+        name: profile.name ?? null,
+        image: profile.avatar ?? null,
+        phone: null, // Depending on profile structure
+        phoneVerified: null,
+        emailVerified: null,
+        bio: profile.bio ?? null,
+        location: profile.location ?? null,
+        roles: profile.roles ?? ['USER'],
+        createdAt: profile.createdAt?.toString() || '',
+        updatedAt: '',
+      }
+    : null
 
   return {
     user,
     isAuthenticated: !!user,
-    isPending,
-    error,
+    isPending: sessionPending || isPending || isLoading,
+    error: userError,
   }
 }
 
 /**
  * Check if user has any of the specified roles
  */
-export function hasAnyRole(user: UserWithRoles | null, ...roles: string[]): boolean {
-  if (!user) return false
+export function hasAnyRole(
+  user: UserWithRoles | null | undefined,
+  ...roles: string[]
+): boolean {
+  if (!user || !user.roles) return false
   return roles.some((role) => user.roles.includes(role))
 }
 
 /**
  * Check if user has all of the specified roles
  */
-export function hasAllRoles(user: UserWithRoles | null, ...roles: string[]): boolean {
-  if (!user) return false
+export function hasAllRoles(
+  user: UserWithRoles | null | undefined,
+  ...roles: string[]
+): boolean {
+  if (!user || !user.roles) return false
   return roles.every((role) => user.roles.includes(role))
 }

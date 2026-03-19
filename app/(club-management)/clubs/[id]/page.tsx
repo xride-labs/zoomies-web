@@ -55,7 +55,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import Image from 'next/image'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 interface ClubOwner {
   id: string
@@ -122,6 +122,13 @@ const roleColors = {
 export default function ClubDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const {
+    success: successToast,
+    error: errorToast,
+    info: infoToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [isMember, setIsMember] = useState(true)
   const [isPending, setIsPending] = useState(false)
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false)
@@ -198,34 +205,47 @@ export default function ClubDetailPage() {
 
   const handleJoinRequest = async () => {
     if (!club) return
+    const loadingToastId = loadingToast('Joining club...', {
+      description: club.isPublic ? 'Adding you to the club.' : 'Submitting your join request.',
+    })
     try {
       await clubsApi.requestToJoin(club.id)
       setIsPending(true)
       setIsJoinDialogOpen(false)
-      toast.success(
+      successToast(
         club.isPublic ? 'Welcome to the crew!' : 'Request sent!',
         { description: club.isPublic ? `You're now a member of ${club.name}` : 'The club admins will review your request.' }
       )
     } catch (err) {
       console.error('Failed to join club:', err)
-      toast.error('Failed to join club', { description: err instanceof Error ? err.message : 'Something went wrong. Try again.' })
+      errorToast('Failed to join club', { description: err instanceof Error ? err.message : 'Something went wrong. Try again.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 
   const handleLeaveClub = async () => {
     if (!club) return
+    const loadingToastId = loadingToast('Leaving club...', {
+      description: 'Updating your membership status.',
+    })
     try {
       await clubsApi.leaveClub(club.id)
       setIsMember(false)
-      toast.info('You left the club', { description: `You are no longer a member of ${club.name}.` })
+      infoToast('You left the club', { description: `You are no longer a member of ${club.name}.` })
     } catch (err) {
       console.error('Failed to leave club:', err)
-      toast.error('Failed to leave club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+      errorToast('Failed to leave club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 
   const handleUpdateClub = async () => {
     if (!club) return
+    const loadingToastId = loadingToast('Updating club...', {
+      description: 'Saving your club profile changes.',
+    })
     try {
       const { club: updatedClub } = await clubsApi.updateClub(club.id, {
         name: editData.name,
@@ -234,27 +254,37 @@ export default function ClubDetailPage() {
       })
       setClub((prev) => (prev ? { ...prev, ...updatedClub } : prev))
       setIsEditDialogOpen(false)
-      toast.success('Club updated!', { description: 'Your changes have been saved.' })
+      successToast('Club updated!', { description: 'Your changes have been saved.' })
     } catch (err) {
       console.error('Failed to update club:', err)
-      toast.error('Failed to update club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+      errorToast('Failed to update club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 
   const handleDeleteClub = async () => {
     if (!club) return
+    const loadingToastId = loadingToast('Deleting club...', {
+      description: 'Removing club and related content.',
+    })
     try {
       await clubsApi.deleteClub(club.id)
-      toast.success('Club deleted', { description: `${club.name} has been permanently removed.` })
+      successToast('Club deleted', { description: `${club.name} has been permanently removed.` })
       router.push('/clubs')
     } catch (err) {
       console.error('Failed to delete club:', err)
-      toast.error('Failed to delete club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+      errorToast('Failed to delete club', { description: err instanceof Error ? err.message : 'Something went wrong.' })
+    } finally {
+      dismissToast(loadingToastId)
     }
   }
 
   const handleGalleryUpload = async () => {
     if (!club || galleryFiles.length === 0) return
+    const loadingToastId = loadingToast('Uploading photos...', {
+      description: `Uploading ${galleryFiles.length} image(s) to the club gallery.`,
+    })
     try {
       setIsGalleryUploading(true)
       const uploads = [] as GalleryItem[]
@@ -269,11 +299,12 @@ export default function ClubDetailPage() {
       setGalleryItems((prev) => [...uploads, ...prev])
       setGalleryFiles([])
       setIsGalleryDialogOpen(false)
-      toast.success('Photos uploaded!', { description: `${uploads.length} photo(s) added to the gallery.` })
+      successToast('Photos uploaded!', { description: `${uploads.length} photo(s) added to the gallery.` })
     } catch (err) {
       console.error('Failed to upload club gallery:', err)
-      toast.error('Upload failed', { description: 'Could not upload photos. Please try again.' })
+      errorToast('Upload failed', { description: 'Could not upload photos. Please try again.' })
     } finally {
+      dismissToast(loadingToastId)
       setIsGalleryUploading(false)
     }
   }

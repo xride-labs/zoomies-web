@@ -19,12 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   AlertTriangle,
@@ -33,7 +27,6 @@ import {
   User,
   ShoppingBag,
   Shield,
-  MoreHorizontal,
   CheckCircle,
   XCircle,
   Eye,
@@ -41,6 +34,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useAdminReports } from '@/store/features/admin'
+import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
 
 const typeIcons: Record<string, any> = {
   user: User,
@@ -255,41 +249,44 @@ export default function AdminReportsPage() {
                         {formatDate(report.createdAt)}
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            {report.status === 'pending' && (
-                              <DropdownMenuItem
-                                onClick={() => handleUpdateReport(report.id, 'REVIEWING')}
-                              >
-                                <AlertTriangle className="w-4 h-4 mr-2" />
-                                Start Investigation
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              className="text-green-600"
-                              onClick={() => handleUpdateReport(report.id, 'RESOLVED')}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Mark Resolved
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-gray-600"
-                              onClick={() => handleUpdateReport(report.id, 'DISMISSED')}
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Dismiss
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <AdminCRUDPopover
+                          actions={[
+                            CRUDActionBuilders.view(() => {
+                              // TODO: Open report details dialog
+                            }),
+                            ...(report.status === 'pending'
+                              ? [
+                                CRUDActionBuilders.custom(
+                                  'investigate',
+                                  'Start Investigation',
+                                  () =>
+                                    handleUpdateReport(report.id, 'REVIEWING'),
+                                  {
+                                    icon: <AlertTriangle className="h-4 w-4" />,
+                                  }
+                                ),
+                              ]
+                              : []),
+                            CRUDActionBuilders.custom(
+                              'resolve',
+                              'Mark Resolved',
+                              () =>
+                                handleUpdateReport(report.id, 'RESOLVED'),
+                              {
+                                icon: <CheckCircle className="h-4 w-4" />,
+                              }
+                            ),
+                            CRUDActionBuilders.custom(
+                              'dismiss',
+                              'Dismiss',
+                              () =>
+                                handleUpdateReport(report.id, 'DISMISSED'),
+                              {
+                                icon: <XCircle className="h-4 w-4" />,
+                              }
+                            ),
+                          ]}
+                        />
                       </TableCell>
                     </TableRow>
                   )
