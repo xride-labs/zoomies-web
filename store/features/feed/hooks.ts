@@ -14,6 +14,7 @@ import {
   unlikePostThunk,
   savePostThunk,
   unsavePostThunk,
+  type CreatePostData,
 } from './thunks'
 
 export const useFeed = () => {
@@ -30,7 +31,7 @@ export const useFeed = () => {
     hasMore,
     fetchFeed: (page?: number) => dispatch(fetchFeed(page || 1)),
     fetchMoreFeed: (page: number) => dispatch(fetchMoreFeed(page)),
-    createPost: (data: any) => dispatch(createPostThunk(data)),
+    createPost: (data: CreatePostData) => dispatch(createPostThunk(data)),
     deletePost: (postId: string) => dispatch(deletePostThunk(postId)),
     likePost: (postId: string) => dispatch(likePostThunk(postId)),
     unlikePost: (postId: string) => dispatch(unlikePostThunk(postId)),

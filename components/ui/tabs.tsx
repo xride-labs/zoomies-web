@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
-import { cva, type VariantProps } from 'class-variance-authority'
+import { cva } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
 
@@ -45,7 +45,9 @@ function TabsList({
   variant = 'default',
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> &
-  VariantProps<typeof tabsListVariants>) {
+  {
+    variant?: 'default' | 'line'
+  }) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"

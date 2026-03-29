@@ -85,7 +85,7 @@ export default function EditProfilePage() {
     }
 
     fetchProfile()
-  }, [])
+  }, [dismissToast, errorToast, loadingToast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

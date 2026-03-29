@@ -58,28 +58,34 @@ export function HowItWorksSection() {
 
   const stepVariants = {
     hidden: { opacity: 0, x: 100 },
-    visible: (i: number) => ({
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: i * 0.2,
-        duration: 0.6,
-        ease: 'easeOut',
-      },
-    }),
+    visible: (custom: unknown) => {
+      const i = typeof custom === 'number' ? custom : 0
+      return {
+        opacity: 1,
+        x: 0,
+        transition: {
+          delay: i * 0.2,
+          duration: 0.6,
+          ease: 'easeOut',
+        },
+      }
+    },
   }
 
   const imageVariants = {
     hidden: { opacity: 0, x: -100 },
-    visible: (i: number) => ({
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: i * 0.2,
-        duration: 0.6,
-        ease: 'easeOut',
-      },
-    }),
+    visible: (custom: unknown) => {
+      const i = typeof custom === 'number' ? custom : 0
+      return {
+        opacity: 1,
+        x: 0,
+        transition: {
+          delay: i * 0.2,
+          duration: 0.6,
+          ease: 'easeOut',
+        },
+      }
+    },
   }
 
   return (

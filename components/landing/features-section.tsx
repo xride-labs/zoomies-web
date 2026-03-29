@@ -128,7 +128,9 @@ export function FeaturesSection() {
                     relative overflow-hidden rounded-3xl bg-[#333333]/80 backdrop-blur-md
                     border border-[#444444]/50 p-5 sm:p-6
                     shadow-atmospheric transition-all duration-500 hover:border-teal/50
-                    h-full ${isHero ? 'min-h-100 sm:min-h-120' : 'min-h-60 sm:min-h-72'}
+                    h-full ${isHero
+                      ? 'min-h-[26rem] sm:min-h-[30rem] lg:min-h-0'
+                      : 'min-h-[16rem] sm:min-h-[18rem] lg:min-h-0'}
                   `}
                   whileHover={{
                     scale: 1.02,

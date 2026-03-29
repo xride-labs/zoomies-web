@@ -18,7 +18,7 @@ import {
 import Link from 'next/link'
 import { useMarketplace } from '@/store/features/marketplace'
 
-interface Listing {
+interface _Listing {
   id: string
   title: string
   price: number
@@ -58,6 +58,8 @@ export default function MarketplacePage() {
       params.category = activeCategory
     }
     fetchListings(params)
+  
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory])
 
   const filteredListings = listings?.filter((listing) => {

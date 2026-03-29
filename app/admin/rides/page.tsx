@@ -38,16 +38,13 @@ import {
 import {
   Search,
   Download,
-  Eye,
   MapPin,
   Calendar,
   Users,
-  Clock,
   CheckCircle,
   XCircle,
   PlayCircle,
-  Pause,
-  Loader2,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAdminRides } from '@/store/features/admin'
 import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
@@ -75,7 +72,7 @@ const statusColors: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-700',
 }
 
-const statusIcons: Record<string, any> = {
+const statusIcons: Record<string, LucideIcon> = {
   PLANNED: Calendar,
   IN_PROGRESS: PlayCircle,
   COMPLETED: CheckCircle,
@@ -85,8 +82,6 @@ const statusIcons: Record<string, any> = {
 export default function AdminRidesPage() {
   const {
     rides: rawRides,
-    isLoading: loading,
-    error,
     pagination,
     fetchRides,
     updateRideStatus: dispatchUpdateRideStatus,
@@ -113,9 +108,9 @@ export default function AdminRidesPage() {
     pace: ride.pace,
     participantCount: ride._count?.participants ?? 0,
     creator: {
-      id: ride.creator.id,
-      name: ride.creator.name ?? 'Unknown',
-      image: ride.creator.image ?? null,
+      id: ride.creator?.id ?? '',
+      name: ride.creator?.name ?? 'Unknown',
+      image: ride.creator?.image ?? null,
     },
   }))
 
@@ -127,7 +122,7 @@ export default function AdminRidesPage() {
     if (statusFilter !== 'all') params.status = statusFilter
     if (searchQuery) params.search = searchQuery
     fetchRides(params)
-  }, [statusFilter, currentPage, fetchRides])
+  }, [statusFilter, currentPage, searchQuery, fetchRides])
 
   // Debounced server-side search
   useEffect(() => {
@@ -142,7 +137,7 @@ export default function AdminRidesPage() {
       }
     }, 400)
     return () => clearTimeout(timeout)
-  }, [searchQuery])
+  }, [searchQuery, currentPage, statusFilter, fetchRides])
 
   const handleCancelRide = async (ride: AdminRide) => {
     if (!confirm(`Cancel ride "${ride.title}"?`)) return

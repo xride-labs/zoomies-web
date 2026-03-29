@@ -35,13 +35,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Search,
   Download,
   CheckCircle,
   XCircle,
-  Eye,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -49,7 +48,6 @@ import {
   MapPin,
   Calendar,
   Trophy,
-  Loader2,
 } from 'lucide-react'
 import { useAdminClubs } from '@/store/features/admin'
 import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
@@ -73,8 +71,6 @@ interface AdminClub {
 export default function AdminClubsPage() {
   const {
     clubs: rawClubs,
-    isLoading: loading,
-    error,
     pagination,
     fetchClubs,
     verifyClub: dispatchVerifyClub,
@@ -99,9 +95,9 @@ export default function AdminClubsPage() {
     verified: club.verified,
     isPublic: club.isPublic,
     owner: {
-      id: club.owner.id,
-      name: club.owner.name ?? 'Unknown',
-      image: club.owner.image ?? null,
+      id: club.owner?.id ?? '',
+      name: club.owner?.name ?? 'Unknown',
+      image: club.owner?.image ?? null,
     },
     reputation: club.reputation,
     establishedAt: club.establishedAt,
@@ -141,7 +137,7 @@ export default function AdminClubsPage() {
       else setCurrentPage(1)
     }, 400)
     return () => clearTimeout(timeout)
-  }, [searchQuery])
+  }, [searchQuery, currentPage, doFetch])
 
   const stats = {
     total: clubs.length,

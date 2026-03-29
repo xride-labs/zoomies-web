@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, ReactElement } from 'react'
+import { ReactElement } from 'react'
 import {
     Popover,
     PopoverContent,

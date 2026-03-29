@@ -10,10 +10,13 @@ export interface AdminStats {
     activeRides: number
     completedRides: number
     verifiedClubs: number
+    pendingReports: number
+    highPriorityReports: number
   }
   recent: {
     newUsersLast7Days: number
     newRidesLast7Days: number
+    reportsLast7Days: number
   }
   breakdown: {
     usersByRole: Record<string, number>
@@ -21,12 +24,35 @@ export interface AdminStats {
   }
 }
 
+export interface AdminWeeklyActivityPoint {
+  label: string
+  date: string
+  usersRegistered: number
+  ridesCreated: number
+  clubsCreated: number
+  listingsCreated: number
+  reportsCreated: number
+}
+
+export interface AdminWeeklyActivity {
+  days: number
+  activity: AdminWeeklyActivityPoint[]
+}
+
 export interface AdminUserRecord {
   id: string
   email: string | null
   name: string | null
+  username?: string | null
   image: string | null
   phone: string | null
+  bio?: string | null
+  location?: string | null
+  activityLevel?: string
+  emailVerified?: boolean
+  phoneVerified?: boolean
+  status?: 'active' | 'pending'
+  lastActive?: string
   roles: string[]
   ridesCompleted: number | null
   createdAt: string
@@ -137,8 +163,33 @@ export interface UserFilters {
   page?: number
   limit?: number
   role?: string
-  status?: string
+  status?: 'active' | 'pending'
   search?: string
+}
+
+export interface CreateAdminUserInput {
+  email: string
+  password: string
+  name?: string
+  username?: string
+  phone?: string
+  bio?: string
+  location?: string
+  activityLevel?: 'Casual' | 'Regular' | 'Enthusiast' | 'Pro'
+  roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+}
+
+export interface UpdateAdminUserInput {
+  email?: string
+  name?: string
+  username?: string
+  phone?: string | null
+  bio?: string | null
+  location?: string | null
+  activityLevel?: 'Casual' | 'Regular' | 'Enthusiast' | 'Pro'
+  emailVerified?: boolean
+  phoneVerified?: boolean
+  roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
 }
 
 export interface RideFilters {
@@ -171,6 +222,13 @@ export interface ReportFilters {
  */
 export async function getStats(): Promise<AdminStats> {
   return apiAuthenticated.get<AdminStats>('/admin/stats')
+}
+
+/**
+ * Get weekly activity metrics for admin dashboard charts
+ */
+export async function getWeeklyActivity(days = 7): Promise<AdminWeeklyActivity> {
+  return apiAuthenticated.get<AdminWeeklyActivity>(`/admin/activity/weekly?days=${days}`)
 }
 
 /**
@@ -213,6 +271,23 @@ export async function updateUserStatus(userId: string, status: string): Promise<
   return apiAuthenticated.patch<void>(`/admin/users/${userId}/status`, {
     status,
   })
+}
+
+/**
+ * Create a user from admin panel
+ */
+export async function createUser(data: CreateAdminUserInput): Promise<AdminUserRecord> {
+  return apiAuthenticated.post<AdminUserRecord>('/admin/users', data)
+}
+
+/**
+ * Update full user profile data from admin panel
+ */
+export async function updateUser(
+  userId: string,
+  data: UpdateAdminUserInput,
+): Promise<AdminUserRecord> {
+  return apiAuthenticated.patch<AdminUserRecord>(`/admin/users/${userId}`, data)
 }
 
 /**
@@ -358,10 +433,13 @@ export async function deleteListing(listingId: string): Promise<void> {
 // Export all as adminApi object
 export const adminApi = {
   getStats,
+  getWeeklyActivity,
   getUsers,
   getUserById,
   updateUserRole,
   updateUserStatus,
+  createUser,
+  updateUser,
   getRides,
   getClubs,
   getListings,

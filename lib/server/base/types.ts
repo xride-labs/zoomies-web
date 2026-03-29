@@ -1,4 +1,4 @@
-import { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
@@ -46,12 +46,18 @@ export class ApiError extends Error {
 /**
  * Create error handler for axios interceptors
  */
-function createErrorHandler(onUnauthorized?: () => void) {
-  return async (error: AxiosError<ApiResponse<unknown>>) => {
+function createErrorHandler(
+  onUnauthorized?: (error: AxiosError<ApiResponse<unknown>>) => void | Promise<void>,
+) {
+  return async (error: unknown) => {
+    if (!axios.isAxiosError<ApiResponse<unknown>>(error)) {
+      throw new ApiError('An unexpected error occurred', 'UNKNOWN_ERROR', 500)
+    }
+
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined' && onUnauthorized) {
-        onUnauthorized()
+        await onUnauthorized(error)
       }
     }
 

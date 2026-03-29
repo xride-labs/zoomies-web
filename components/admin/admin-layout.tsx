@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
+  Inbox,
   Users,
   Shield,
   ShoppingBag,
@@ -28,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 const adminNavigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Launch Interest', href: '/admin/launch-interest', icon: Inbox },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Clubs', href: '/admin/clubs', icon: Shield },
   { name: 'Rides', href: '/admin/rides', icon: MapPin },
@@ -37,32 +39,101 @@ const adminNavigation = [
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
+const SUPER_ADMIN_ONLY_ROUTES = ['/admin/monitoring', '/admin/settings']
+
+function isSuperAdminOnlyRoute(pathname: string): boolean {
+  return SUPER_ADMIN_ONLY_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  )
+}
+
 interface AdminLayoutProps {
   children: React.ReactNode
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, isPending } = useAuth()
+  const { user, hasSession, isPending, error } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const debugAuth = process.env.NODE_ENV !== 'production'
 
   // Get user roles from the user object
   const userRoles: string[] = user?.roles || []
+  const hasAdminAccess = hasAnyRole(user, 'ADMIN', 'CO_ADMIN')
   const isSuperAdmin = userRoles.includes('ADMIN')
+  const isCoAdmin = userRoles.includes('CO_ADMIN') && !isSuperAdmin
 
   useEffect(() => {
+    if (debugAuth) {
+      console.log('[AdminLayout] auth guard', {
+        pathname,
+        isPending,
+        hasSession,
+        hasUser: !!user,
+        userRoles: user?.roles || [],
+        error,
+      })
+    }
+
     if (isPending) return
-    if (!user) {
+
+    if (!hasSession) {
+      if (debugAuth) {
+        console.warn('[AdminLayout] no session -> /login')
+      }
       router.push('/login')
       return
     }
-    if (!hasAnyRole(user, 'ADMIN')) {
-      router.push('/home')
+
+    if (!user) {
+      if (debugAuth) {
+        console.warn(
+          '[AdminLayout] session exists but profile missing; waiting for hydration',
+        )
+      }
       return
     }
-  }, [user, isPending, router])
 
-  if (isPending) {
+    if (!hasAdminAccess) {
+      const hasManagerAccess = hasAnyRole(
+        user,
+        'CLUB_OWNER',
+        'SELLER',
+        'CO_ADMIN',
+        'ADMIN',
+      )
+      if (debugAuth) {
+        console.warn('[AdminLayout] user is not admin', {
+          hasManagerAccess,
+          redirectTo: hasManagerAccess ? '/home' : '/',
+        })
+      }
+      router.push(hasManagerAccess ? '/home' : '/')
+      return
+    }
+
+    if (!isSuperAdmin && isSuperAdminOnlyRoute(pathname)) {
+      if (debugAuth) {
+        console.warn('[AdminLayout] co-admin blocked from super-admin route', {
+          pathname,
+        })
+      }
+      router.push('/admin')
+      return
+    }
+  }, [
+    user,
+    hasSession,
+    isPending,
+    router,
+    pathname,
+    error,
+    debugAuth,
+    hasAdminAccess,
+    isSuperAdmin,
+  ])
+
+  if (isPending || (hasSession && !user)) {
     return (
       <div className="min-h-screen bg-background flex">
         <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-border bg-card">
@@ -88,11 +159,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     )
   }
 
-  if (!user || !hasAnyRole(user, 'ADMIN')) {
+  if (!user || !hasAdminAccess) {
     return null
   }
 
-  const navigationItems = adminNavigation
+  const navigationItems = isSuperAdmin
+    ? adminNavigation
+    : adminNavigation.filter((item) => !isSuperAdminOnlyRoute(item.href))
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,7 +239,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{user.name}</p>
               <p className="text-xs text-muted-foreground truncate">
-                {isSuperAdmin ? 'Super Administrator' : 'Administrator'}
+                {isSuperAdmin
+                  ? 'Super Administrator'
+                  : isCoAdmin
+                    ? 'Co-Administrator'
+                    : 'Administrator'}
               </p>
             </div>
           </div>

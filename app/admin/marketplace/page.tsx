@@ -54,7 +54,6 @@ import {
   ShoppingBag,
   DollarSign,
   Package,
-  Star,
 } from 'lucide-react'
 import { useAdminMarketplace } from '@/store/features/admin'
 
@@ -85,8 +84,6 @@ const statusColors: Record<string, string> = {
 export default function AdminMarketplacePage() {
   const {
     listings: rawListings,
-    isLoading: loading,
-    error,
     pagination,
     fetchListings,
     updateListingStatus: dispatchUpdateListingStatus,
@@ -112,9 +109,9 @@ export default function AdminMarketplacePage() {
     status: listing.status,
     images: listing.images,
     seller: {
-      id: listing.seller.id,
-      name: listing.seller.name ?? 'Unknown',
-      image: listing.seller.image ?? null,
+      id: listing.seller?.id ?? '',
+      name: listing.seller?.name ?? 'Unknown',
+      image: listing.seller?.image ?? null,
     },
     createdAt: listing.createdAt,
     views: 0,
@@ -129,7 +126,7 @@ export default function AdminMarketplacePage() {
     if (statusFilter !== 'all') params.status = statusFilter
     if (searchQuery) params.search = searchQuery
     fetchListings(params)
-  }, [statusFilter, currentPage, fetchListings])
+  }, [statusFilter, currentPage, searchQuery, fetchListings])
 
   // Debounced server-side search
   useEffect(() => {
@@ -144,7 +141,7 @@ export default function AdminMarketplacePage() {
       }
     }, 400)
     return () => clearTimeout(timeout)
-  }, [searchQuery])
+  }, [searchQuery, currentPage, statusFilter, fetchListings])
 
   const handleUpdateListingStatus = async (listing: AdminListing, newStatus: string) => {
     await dispatchUpdateListingStatus(listing.id, newStatus)

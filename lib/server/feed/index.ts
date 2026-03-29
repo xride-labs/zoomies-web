@@ -22,6 +22,15 @@ export interface CreatePostData {
   images?: string[]
 }
 
+export interface CreateReportData {
+  type: 'post' | 'comment' | 'ride' | 'club' | 'listing' | 'user' | 'message'
+  title: string
+  description?: string
+  priority?: 'low' | 'medium' | 'high' | 'critical'
+  reportedItemId: string
+  reportedItemType?: string
+}
+
 // ============ Feed API ============
 
 /**
@@ -130,6 +139,16 @@ export async function getUserPosts(
   )
 }
 
+/**
+ * Submit a moderation report for user-generated content.
+ */
+export async function submitReport(data: CreateReportData): Promise<{
+  id: string
+  status: string
+}> {
+  return apiAuthenticated.post<{ id: string; status: string }>('/feed/reports', data)
+}
+
 // Export all as feedApi object
 export const feedApi = {
   getFeed,
@@ -145,4 +164,5 @@ export const feedApi = {
   addComment,
   deleteComment,
   getUserPosts,
+  submitReport,
 }

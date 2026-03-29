@@ -10,7 +10,7 @@ import { MapPin, Users, Calendar, ChevronRight, Plus, Loader2 } from 'lucide-rea
 import Link from 'next/link'
 import { useClubs } from '@/store/features/clubs'
 
-interface Club {
+interface _Club {
   id: string
   name: string
   description: string
@@ -29,7 +29,7 @@ export default function ClubsPage() {
   useEffect(() => {
     fetchMyClubs()
     discoverClubs(1)
-  }, [])
+  }, [discoverClubs, fetchMyClubs])
 
   if (isLoading) {
     return (

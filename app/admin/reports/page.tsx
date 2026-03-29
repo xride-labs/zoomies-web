@@ -9,8 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
   TableBody,
@@ -31,12 +30,12 @@ import {
   XCircle,
   Eye,
   Clock,
-  Loader2,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAdminReports } from '@/store/features/admin'
 import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
 
-const typeIcons: Record<string, any> = {
+const typeIcons: Record<string, LucideIcon> = {
   user: User,
   listing: ShoppingBag,
   club: Shield,
@@ -59,8 +58,6 @@ const priorityColors: Record<string, string> = {
 export default function AdminReportsPage() {
   const {
     reports,
-    isLoading: loading,
-    error,
     fetchReports,
     updateReport: dispatchUpdateReport,
   } = useAdminReports()
@@ -190,7 +187,8 @@ export default function AdminReportsPage() {
               </TableHeader>
               <TableBody>
                 {filteredReports.map((report) => {
-                  const TypeIcon = typeIcons[report.type as keyof typeof typeIcons]
+                  const TypeIcon =
+                    typeIcons[report.type as keyof typeof typeIcons] || AlertTriangle
                   return (
                     <TableRow key={report.id}>
                       <TableCell>
@@ -260,7 +258,7 @@ export default function AdminReportsPage() {
                                   'investigate',
                                   'Start Investigation',
                                   () =>
-                                    handleUpdateReport(report.id, 'REVIEWING'),
+                                    handleUpdateReport(report.id, 'investigating'),
                                   {
                                     icon: <AlertTriangle className="h-4 w-4" />,
                                   }
@@ -271,7 +269,7 @@ export default function AdminReportsPage() {
                               'resolve',
                               'Mark Resolved',
                               () =>
-                                handleUpdateReport(report.id, 'RESOLVED'),
+                                handleUpdateReport(report.id, 'resolved'),
                               {
                                 icon: <CheckCircle className="h-4 w-4" />,
                               }
@@ -280,7 +278,7 @@ export default function AdminReportsPage() {
                               'dismiss',
                               'Dismiss',
                               () =>
-                                handleUpdateReport(report.id, 'DISMISSED'),
+                                handleUpdateReport(report.id, 'dismissed'),
                               {
                                 icon: <XCircle className="h-4 w-4" />,
                               }

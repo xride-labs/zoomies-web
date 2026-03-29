@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '../shared/hooks'
 import {
   selectAdminStats,
+  selectAdminWeeklyActivity,
   selectAdminUsers,
   selectAdminRides,
   selectAdminClubs,
@@ -13,8 +14,11 @@ import {
 } from './selectors'
 import {
   fetchAdminStats,
+  fetchAdminWeeklyActivity,
   fetchAdminUsers,
   updateAdminUserRole,
+  updateAdminUser,
+  createAdminUser,
   deleteAdminUser,
   fetchAdminRides,
   updateAdminRideStatus,
@@ -39,6 +43,7 @@ import type {
 export const useAdminDashboard = () => {
   const dispatch = useAppDispatch()
   const stats = useAppSelector(selectAdminStats)
+  const weeklyActivity = useAppSelector(selectAdminWeeklyActivity)
   const users = useAppSelector(selectAdminUsers)
   const reports = useAppSelector(selectAdminReports)
   const isLoading = useAppSelector(selectAdminLoading)
@@ -46,11 +51,16 @@ export const useAdminDashboard = () => {
 
   return {
     stats,
+    weeklyActivity,
     recentUsers: users.slice(0, 5),
     pendingReports: reports.filter((r) => r.status === 'pending').slice(0, 4),
     isLoading,
     error,
     fetchStats: useCallback(() => dispatch(fetchAdminStats()), [dispatch]),
+    fetchWeeklyActivity: useCallback(
+      (days?: number) => dispatch(fetchAdminWeeklyActivity(days)),
+      [dispatch],
+    ),
     fetchRecentUsers: useCallback(
       () => dispatch(fetchAdminUsers({ limit: 5 })),
       [dispatch],
@@ -80,6 +90,34 @@ export const useAdminUsers = () => {
     ),
     updateUserRole: useCallback(
       (userId: string, role: string) => dispatch(updateAdminUserRole({ userId, role })),
+      [dispatch],
+    ),
+    createUser: useCallback(
+      (payload: {
+        email: string
+        password: string
+        name?: string
+        username?: string
+        phone?: string
+        bio?: string
+        location?: string
+        roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+      }) => dispatch(createAdminUser(payload)),
+      [dispatch],
+    ),
+    updateUser: useCallback(
+      (
+        userId: string,
+        data: {
+          email?: string
+          name?: string
+          username?: string
+          phone?: string | null
+          bio?: string | null
+          location?: string | null
+          roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+        },
+      ) => dispatch(updateAdminUser({ userId, data })),
       [dispatch],
     ),
     deleteUser: useCallback(

@@ -39,7 +39,7 @@ export function CTASection() {
     },
   }
 
-  const decorativeVariants = {
+  const _decorativeVariants = {
     animate: {
       scale: [1, 1.2, 1],
       opacity: [0.5, 0.8, 0.5],

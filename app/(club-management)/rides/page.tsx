@@ -58,15 +58,15 @@ export default function RidesPage() {
     fetchMyRides,
     fetchPastRides,
   } = useRides()
-  const [activeRide, setActiveRide] = useState<Ride | null>(null)
+  const [activeRide, _setActiveRide] = useState<Ride | null>(null)
 
   useEffect(() => {
     fetchUpcomingRides(1)
     fetchMyRides(1)
     fetchPastRides(1)
-  }, [])
+  }, [fetchMyRides, fetchPastRides, fetchUpcomingRides])
 
-  const currentRides =
+  const _currentRides =
     activeTab === 'upcoming' ? upcomingRides : activeTab === 'my' ? myRides : pastRides
 
   return (

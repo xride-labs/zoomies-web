@@ -5,9 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -188,7 +185,7 @@ export default function CreateClubPage() {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-base font-semibold">What's your crew called?</Label>
+                  <Label htmlFor="name" className="text-base font-semibold">What&apos;s your crew called?</Label>
                   <Input
                     id="name"
                     placeholder="e.g., Desert Eagles MC"
@@ -232,7 +229,7 @@ export default function CreateClubPage() {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-base font-semibold">Your club's story</Label>
+                  <Label htmlFor="description" className="text-base font-semibold">Your club&apos;s story</Label>
                   <Textarea
                     id="description"
                     placeholder="What drives your crew? What kind of riders fit in? Paint the picture..."

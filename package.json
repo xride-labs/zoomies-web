@@ -55,6 +55,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-redux": "^9.2.0",
+    "recharts": "^3.8.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0"
   },
@@ -67,6 +68,7 @@
     "eslint-config-next": "16.1.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "tailwindcss": "^4",

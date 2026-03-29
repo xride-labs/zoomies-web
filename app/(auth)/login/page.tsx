@@ -12,7 +12,10 @@ import { motion } from 'framer-motion'
 import { useUser } from '@/store/features/user'
 import { useAuth } from '@/store/features/auth'
 import { useToast } from '@/hooks/use-toast'
-import { signIn as betterAuthSignIn } from '@/lib/auth-client'
+import {
+  signIn as betterAuthSignIn,
+  resolveAuthCallbackURL,
+} from '@/lib/auth-client'
 
 type LoginTab = 'admin' | 'manager'
 
@@ -57,19 +60,26 @@ export default function LoginPage() {
       const roles = await fetchUserRoles()
 
       if (activeTab === 'admin') {
-        if (!roles.includes('ADMIN')) {
-          errorToast('Access denied. Admin role required.', { description: 'Contact support if this is unexpected.' })
+        const hasAdminAccess = roles.some((role) =>
+          ['ADMIN', 'CO_ADMIN'].includes(role),
+        )
+        if (!hasAdminAccess) {
+          errorToast('Access denied. Admin or Co-Admin role required.', {
+            description: 'Contact support if this is unexpected.',
+          })
           return
         }
         successToast('Welcome back Admin')
         router.push('/admin')
       } else {
-        // Manager tab - check for CLUB_OWNER, SELLER, or ADMIN
+        // Manager tab - check for CLUB_OWNER, SELLER, ADMIN, or CO_ADMIN
         const hasAccess = roles.some((role) =>
-          ['CLUB_OWNER', 'SELLER', 'ADMIN'].includes(role),
+          ['CLUB_OWNER', 'SELLER', 'ADMIN', 'CO_ADMIN'].includes(role),
         )
         if (!hasAccess) {
-          errorToast('Access denied. Club owner or seller role required.', { description: 'Manager account required.' })
+          errorToast('Access denied. Manager or admin role required.', {
+            description: 'Club owner, seller, admin, or co-admin account required.',
+          })
           return
         }
         successToast('Login successful')
@@ -91,10 +101,13 @@ export default function LoginPage() {
     try {
       await betterAuthSignIn.social({
         provider: 'google',
-        callbackURL: activeTab === 'admin' ? '/admin' : '/home',
+        callbackURL: resolveAuthCallbackURL(
+          activeTab === 'admin' ? '/admin' : '/home',
+        ),
       })
-    } catch {
+    } catch (err) {
       dismissToast(loadingToastId)
+      console.error('Google sign-in failed:', err)
       errorToast('Google sign-in failed', {
         description: 'Please try again or continue with email and password.',
       })

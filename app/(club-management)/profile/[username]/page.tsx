@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Dialog,
@@ -117,6 +116,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username])
 
   const fetchProfile = async () => {

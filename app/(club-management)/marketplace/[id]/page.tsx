@@ -117,7 +117,7 @@ export default function ListingDetailPage() {
     if (params.id) {
       fetchListing()
     }
-  }, [params.id])
+  }, [params.id, dismissToast, errorToast, loadingToast])
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {

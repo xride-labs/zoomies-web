@@ -193,7 +193,7 @@ export default function ClubManagePage() {
     if (params.id) {
       fetchClubData()
     }
-  }, [params.id])
+  }, [params.id, dismissToast, errorToast, loadingToast])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

@@ -12,7 +12,10 @@ import { Eye, EyeOff, Loader2, Check, Shield, Store } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/store/features/auth'
 import { useToast } from '@/hooks/use-toast'
-import { signIn as betterAuthSignIn } from '@/lib/auth-client'
+import {
+  signIn as betterAuthSignIn,
+  resolveAuthCallbackURL,
+} from '@/lib/auth-client'
 
 type SignupRole = 'CLUB_OWNER' | 'SELLER'
 
@@ -98,7 +101,7 @@ export default function SignupPage() {
     try {
       await betterAuthSignIn.social({
         provider: 'google',
-        callbackURL: '/home',
+        callbackURL: resolveAuthCallbackURL('/home'),
       })
     } catch {
       dismissToast(loadingToastId)

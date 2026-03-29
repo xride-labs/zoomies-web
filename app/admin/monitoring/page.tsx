@@ -28,23 +28,52 @@ const PROMETHEUS_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localho
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export default function AdminMonitoringPage() {
-  const { user, isPending } = useAuth()
+  const { user, hasSession, isPending, error } = useAuth()
   const router = useRouter()
   const userRoles: string[] = user?.roles || []
-  const isAdmin = userRoles.includes('ADMIN')
+  const isSuperAdmin = userRoles.includes('ADMIN')
+  const debugAuth = process.env.NODE_ENV !== 'production'
 
   useEffect(() => {
+    if (debugAuth) {
+      console.log('[AdminMonitoringPage] auth guard', {
+        isPending,
+        hasSession,
+        hasUser: !!user,
+        isSuperAdmin,
+        userRoles: user?.roles || [],
+        error,
+      })
+    }
+
     if (isPending) return
-    if (!user) {
+
+    if (!hasSession) {
+      if (debugAuth) {
+        console.warn('[AdminMonitoringPage] no session -> /login')
+      }
       router.push('/login')
       return
     }
-    if (!isAdmin) {
+
+    if (!user) {
+      if (debugAuth) {
+        console.warn(
+          '[AdminMonitoringPage] session exists but profile missing; waiting for hydration',
+        )
+      }
+      return
+    }
+
+    if (!isSuperAdmin) {
+      if (debugAuth) {
+        console.warn('[AdminMonitoringPage] not super admin -> /admin')
+      }
       router.push('/admin')
     }
-  }, [user, isPending, isAdmin, router])
+  }, [user, hasSession, isPending, isSuperAdmin, router, error, debugAuth])
 
-  if (isPending) {
+  if (isPending || (hasSession && !user)) {
     return (
       <div className="flex items-center justify-center min-h-100">
         <div className="text-center space-y-2">
@@ -55,7 +84,7 @@ export default function AdminMonitoringPage() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <Card className="border-red-200 bg-red-50/60">
         <CardHeader>
@@ -64,7 +93,7 @@ export default function AdminMonitoringPage() {
             <CardTitle>Restricted</CardTitle>
           </div>
           <CardDescription>
-            Monitoring dashboards are available to admins only.
+            Monitoring dashboards are available to super admins only.
           </CardDescription>
         </CardHeader>
       </Card>

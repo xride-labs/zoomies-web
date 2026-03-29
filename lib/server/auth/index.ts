@@ -1,4 +1,4 @@
-import { authClient } from '@/lib/auth-client'
+import { authClient, resolveAuthCallbackURL } from '@/lib/auth-client'
 import { apiAuthenticated } from '../base'
 
 // ============ Types ============
@@ -74,7 +74,7 @@ export async function login(data: LoginData): Promise<AuthSession | null> {
 export async function loginWithGoogle(callbackURL = '/home'): Promise<void> {
   await authClient.signIn.social({
     provider: 'google',
-    callbackURL,
+    callbackURL: resolveAuthCallbackURL(callbackURL),
   })
 }
 

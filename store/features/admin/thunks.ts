@@ -1,13 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
   adminApi,
-  type AdminStats,
-  type AdminUserRecord,
-  type AdminRideRecord,
-  type AdminClubRecord,
-  type AdminListingRecord,
-  type AdminReportRecord,
-  type PaginatedData,
   type UserFilters,
   type RideFilters,
   type ClubFilters,
@@ -24,6 +17,19 @@ export const fetchAdminStats = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : 'Failed to fetch stats',
+      )
+    }
+  },
+)
+
+export const fetchAdminWeeklyActivity = createAsyncThunk(
+  'admin/fetchWeeklyActivity',
+  async (days: number | undefined, { rejectWithValue }) => {
+    try {
+      return await adminApi.getWeeklyActivity(days ?? 7)
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to fetch weekly activity',
       )
     }
   },
@@ -66,6 +72,61 @@ export const deleteAdminUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : 'Failed to delete user',
+      )
+    }
+  },
+)
+
+export const createAdminUser = createAsyncThunk(
+  'admin/createUser',
+  async (
+    payload: {
+      email: string
+      password: string
+      name?: string
+      username?: string
+      phone?: string
+      bio?: string
+      location?: string
+      roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      return await adminApi.createUser(payload)
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to create user',
+      )
+    }
+  },
+)
+
+export const updateAdminUser = createAsyncThunk(
+  'admin/updateUser',
+  async (
+    {
+      userId,
+      data,
+    }: {
+      userId: string
+      data: {
+        email?: string
+        name?: string
+        username?: string
+        phone?: string | null
+        bio?: string | null
+        location?: string | null
+        roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+      }
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      return await adminApi.updateUser(userId, data)
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to update user',
       )
     }
   },

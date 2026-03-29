@@ -83,15 +83,18 @@ export function CommunitySection() {
 
   const statsVariants = {
     hidden: { opacity: 0, scale: 0.8 },
-    visible: (i: number) => ({
-      opacity: 1,
-      scale: 1,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.5,
-        ease: 'easeOut',
-      },
-    }),
+    visible: (custom: unknown) => {
+      const i = typeof custom === 'number' ? custom : 0
+      return {
+        opacity: 1,
+        scale: 1,
+        transition: {
+          delay: i * 0.1,
+          duration: 0.5,
+          ease: 'easeOut',
+        },
+      }
+    },
   }
 
   return (

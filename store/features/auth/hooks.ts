@@ -1,15 +1,13 @@
-import { useAppDispatch, useAppSelector } from '../shared/hooks'
+import { useAppSelector } from '../shared/hooks'
 import {
   selectUser,
   selectIsAuthenticated,
   selectUserLoading,
   selectUserError,
 } from './selectors'
-import { loginUser, registerUser, logoutUser } from './thunks'
-import type { LoginData, RegisterData } from '@/lib/server/auth'
+import { authApi, type LoginData, type RegisterData } from '@/lib/server/auth'
 
 export const useAuth = () => {
-  const dispatch = useAppDispatch()
   const user = useAppSelector(selectUser)
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const isLoading = useAppSelector(selectUserLoading)
@@ -20,8 +18,8 @@ export const useAuth = () => {
     isAuthenticated,
     isLoading,
     error,
-    login: (data: LoginData) => dispatch(loginUser(data)).unwrap(),
-    register: (data: RegisterData) => dispatch(registerUser(data)).unwrap(),
-    logout: () => dispatch(logoutUser()).unwrap(),
+    login: (data: LoginData) => authApi.login(data),
+    register: (data: RegisterData) => authApi.register(data),
+    logout: () => authApi.logout(),
   }
 }

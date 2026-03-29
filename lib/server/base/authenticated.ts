@@ -33,8 +33,41 @@ axiosAuthenticated.interceptors.request.use(
 // Response interceptor - handle errors and 401
 axiosAuthenticated.interceptors.response.use(
   (response) => response,
-  createErrorHandler(async () => {
-    // Sign out on 401
+  createErrorHandler(async (error) => {
+    const debugAuth = process.env.NODE_ENV !== 'production'
+
+    if (debugAuth) {
+      console.warn('[apiAuthenticated] 401 response', {
+        method: error.config?.method,
+        url: error.config?.url,
+        status: error.response?.status,
+      })
+    }
+
+    try {
+      const session = await authClient.getSession()
+      const hasSession = !!session.data?.user
+
+      if (debugAuth) {
+        console.warn('[apiAuthenticated] Better Auth session on 401', {
+          hasSession,
+        })
+      }
+
+      // If there is still a valid auth session, avoid hard redirect loops.
+      if (hasSession) {
+        return
+      }
+    } catch (sessionError) {
+      if (debugAuth) {
+        console.error(
+          '[apiAuthenticated] failed to read auth session on 401',
+          sessionError,
+        )
+      }
+    }
+
+    // No active session: sign out local state and send user to login.
     await authClient.signOut()
     window.location.href = '/login'
   }),

@@ -14,6 +14,24 @@ export const authClient = createAuthClient({
   baseURL: cleanBaseUrl,
 })
 
+const frontendBaseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL
+
+export function resolveAuthCallbackURL(path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    return path
+  }
+
+  if (typeof window !== 'undefined') {
+    return new URL(path, window.location.origin).toString()
+  }
+
+  if (frontendBaseUrl) {
+    return new URL(path, frontendBaseUrl).toString()
+  }
+
+  return path
+}
+
 // Export individual methods for convenience
 export const { signIn, signUp, signOut, useSession, getSession } = authClient
 

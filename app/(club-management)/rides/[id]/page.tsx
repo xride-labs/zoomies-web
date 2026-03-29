@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import {
   Dialog,
@@ -37,7 +36,6 @@ import {
   Route,
   Gauge,
   Mountain,
-  Fuel,
   Loader2,
 } from 'lucide-react'
 import {
@@ -161,8 +159,9 @@ export default function RideDetailPage() {
         setLoading(true)
         const rideId = params.id as string
         const response = await ridesApi.getRide(rideId)
-        setRide(response.ride)
-        setGalleryItems((response.ride as any).images || [])
+        const rideData = response.ride as Ride
+        setRide(rideData)
+        setGalleryItems(rideData.images || [])
       } catch (err) {
         setError('Failed to load ride details')
         console.error(err)

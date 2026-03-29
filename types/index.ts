@@ -24,7 +24,7 @@ export interface PaginatedResponse<T> {
 }
 
 // User roles matching Prisma schema
-export type UserRole = 'ADMIN' | 'CLUB_OWNER' | 'RIDER' | 'SELLER'
+export type UserRole = 'ADMIN' | 'CO_ADMIN' | 'CLUB_OWNER' | 'RIDER' | 'SELLER'
 
 export type ClubMemberRole = 'MEMBER' | 'OFFICER' | 'ADMIN' | 'FOUNDER'
 

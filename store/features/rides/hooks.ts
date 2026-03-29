@@ -20,6 +20,7 @@ import {
   leaveRideThunk,
   startRideThunk,
   endRideThunk,
+  type CreateRideData,
 } from './thunks'
 
 export const useRides = () => {
@@ -44,8 +45,8 @@ export const useRides = () => {
     fetchMyRides: (page?: number) => dispatch(fetchMyRides(page || 1)),
     fetchPastRides: (page?: number) => dispatch(fetchPastRides(page || 1)),
     fetchRideDetails: (rideId: string) => dispatch(fetchRideDetails(rideId)),
-    createRide: (data: any) => dispatch(createRideThunk(data)),
-    updateRide: (rideId: string, data: any) =>
+    createRide: (data: CreateRideData) => dispatch(createRideThunk(data)),
+    updateRide: (rideId: string, data: Partial<CreateRideData>) =>
       dispatch(updateRideThunk({ rideId, data })),
     deleteRide: (rideId: string) => dispatch(deleteRideThunk(rideId)),
     joinRide: (rideId: string) => dispatch(joinRideThunk(rideId)),

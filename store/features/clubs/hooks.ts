@@ -15,6 +15,7 @@ import {
   deleteClubThunk,
   joinClubThunk,
   leaveClubThunk,
+  type CreateClubData,
 } from './thunks'
 
 export const useClubs = () => {
@@ -34,8 +35,8 @@ export const useClubs = () => {
     fetchMyClubs: () => dispatch(fetchMyClubs()),
     discoverClubs: (page?: number) => dispatch(discoverClubsThunk(page || 1)),
     fetchClubDetails: (clubId: string) => dispatch(fetchClubDetails(clubId)),
-    createClub: (data: any) => dispatch(createClubThunk(data)),
-    updateClub: (clubId: string, data: any) =>
+    createClub: (data: CreateClubData) => dispatch(createClubThunk(data)),
+    updateClub: (clubId: string, data: Partial<CreateClubData>) =>
       dispatch(updateClubThunk({ clubId, data })),
     deleteClub: (clubId: string) => dispatch(deleteClubThunk(clubId)),
     joinClub: (clubId: string) => dispatch(joinClubThunk(clubId)),

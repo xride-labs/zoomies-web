@@ -21,6 +21,7 @@ export interface UserWithRoles {
 
 export interface AuthState {
   user: UserWithRoles | null
+  hasSession: boolean
   isAuthenticated: boolean
   isPending: boolean
   error: string | null
@@ -34,12 +35,27 @@ export function useAuth(): AuthState {
   const { data: session, isPending: sessionPending } = useBetterAuthSession()
   const { profile, isLoading, error: userError, fetchMe } = useUser()
   const [isPending, setIsPending] = useState(true)
+  const hasSession = !!session?.user
+  const debugAuth = process.env.NODE_ENV !== 'production'
 
   useEffect(() => {
     async function fetchUserWithRoles() {
+      if (debugAuth) {
+        console.log('[useAuth] sync start', {
+          sessionPending,
+          hasSession: !!session?.user,
+          hasProfile: !!profile,
+          isLoading,
+          userError,
+        })
+      }
+
       if (sessionPending) return
 
       if (!session?.user) {
+        if (debugAuth) {
+          console.log('[useAuth] no session user, auth sync complete')
+        }
         setIsPending(false)
         return
       }
@@ -47,16 +63,26 @@ export function useAuth(): AuthState {
       // If we don't have the profile in Redux yet, fetch it
       if (!profile) {
         try {
+          if (debugAuth) {
+            console.log('[useAuth] fetching /account/me profile')
+          }
           await fetchMe()
+          if (debugAuth) {
+            console.log('[useAuth] fetchMe succeeded')
+          }
         } catch (err) {
-          console.error('[useAuth] Error fetching user:', err)
+          console.error('[useAuth] fetchMe failed:', err)
         }
+      }
+
+      if (debugAuth) {
+        console.log('[useAuth] auth sync complete')
       }
       setIsPending(false)
     }
 
     fetchUserWithRoles()
-  }, [session, sessionPending, profile])
+  }, [session, sessionPending, profile, fetchMe, isLoading, userError, debugAuth])
 
   // Transform Redux profile to match the expected UserWithRoles signature
   const user = profile
@@ -78,6 +104,7 @@ export function useAuth(): AuthState {
 
   return {
     user,
+    hasSession,
     isAuthenticated: !!user,
     isPending: sessionPending || isPending || isLoading,
     error: userError,

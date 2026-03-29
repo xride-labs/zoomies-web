@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type {
   AdminStats,
+  AdminWeeklyActivityPoint,
   AdminUserRecord,
   AdminRideRecord,
   AdminClubRecord,
@@ -10,8 +11,11 @@ import type {
 } from '@/lib/server/admin'
 import {
   fetchAdminStats,
+  fetchAdminWeeklyActivity,
   fetchAdminUsers,
   updateAdminUserRole,
+  updateAdminUser,
+  createAdminUser,
   deleteAdminUser,
   fetchAdminRides,
   updateAdminRideStatus,
@@ -30,6 +34,7 @@ const defaultPagination: AdminPagination = { page: 1, limit: 20, total: 0, total
 
 interface AdminState {
   stats: AdminStats | null
+  weeklyActivity: AdminWeeklyActivityPoint[]
   users: AdminUserRecord[]
   rides: AdminRideRecord[]
   clubs: AdminClubRecord[]
@@ -48,6 +53,7 @@ interface AdminState {
 
 const initialState: AdminState = {
   stats: null,
+  weeklyActivity: [],
   users: [],
   rides: [],
   clubs: [],
@@ -87,6 +93,9 @@ const adminSlice = createSlice({
         state.isLoading = false
         state.error = action.payload as string
       })
+      .addCase(fetchAdminWeeklyActivity.fulfilled, (state, action) => {
+        state.weeklyActivity = action.payload.activity
+      })
 
     // ── Users ──
     builder
@@ -106,6 +115,16 @@ const adminSlice = createSlice({
       .addCase(updateAdminUserRole.fulfilled, (state, action) => {
         const user = state.users.find((u) => u.id === action.payload.userId)
         if (user) user.roles = [action.payload.role]
+      })
+      .addCase(createAdminUser.fulfilled, (state, action) => {
+        state.users.unshift(action.payload)
+        state.pagination.users.total += 1
+      })
+      .addCase(updateAdminUser.fulfilled, (state, action) => {
+        const index = state.users.findIndex((u) => u.id === action.payload.id)
+        if (index >= 0) {
+          state.users[index] = action.payload
+        }
       })
       .addCase(deleteAdminUser.fulfilled, (state, action) => {
         state.users = state.users.filter((u) => u.id !== action.payload)

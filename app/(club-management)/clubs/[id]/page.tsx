@@ -7,7 +7,6 @@ import { clubsApi, ridesApi } from '@/lib/services'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -54,7 +53,6 @@ import { fileToDataUrl } from '@/lib/media-utils'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 
 interface ClubOwner {
@@ -156,14 +154,14 @@ export default function ClubDetailPage() {
           ridesApi.getClubRides(clubId),
         ])
 
-        const clubData = clubResponse.club
+        const clubData = clubResponse.club as Club
 
         const fullClub = {
           ...clubData,
           rides: ridesResponse.rides || [],
         }
         setClub(fullClub)
-        setGalleryItems((clubData as any).gallery || [])
+        setGalleryItems(clubData.gallery || [])
         setEditData({
           name: clubData.name || '',
           description: clubData.description || '',

@@ -20,6 +20,8 @@ import {
   saveListingThunk,
   unsaveListingThunk,
   markAsSoldThunk,
+  type CreateListingData,
+  type ListingFilters,
 } from './thunks'
 
 export const useMarketplace = () => {
@@ -40,13 +42,14 @@ export const useMarketplace = () => {
     filters,
     isLoading,
     error,
-    fetchListings: (filters?: any) => dispatch(fetchListings(filters)),
-    fetchMoreListings: (filters?: any) => dispatch(fetchMoreListings(filters || {})),
+    fetchListings: (filters?: ListingFilters) => dispatch(fetchListings(filters || {})),
+    fetchMoreListings: (filters?: ListingFilters) =>
+      dispatch(fetchMoreListings(filters || {})),
     fetchMyListings: () => dispatch(fetchMyListings()),
     fetchSavedListings: () => dispatch(fetchSavedListings()),
     fetchListingDetails: (listingId: string) => dispatch(fetchListingDetails(listingId)),
-    createListing: (data: any) => dispatch(createListingThunk(data)),
-    updateListing: (listingId: string, data: any) =>
+    createListing: (data: CreateListingData) => dispatch(createListingThunk(data)),
+    updateListing: (listingId: string, data: Partial<CreateListingData>) =>
       dispatch(updateListingThunk({ listingId, data })),
     deleteListing: (listingId: string) => dispatch(deleteListingThunk(listingId)),
     saveListing: (listingId: string) => dispatch(saveListingThunk(listingId)),

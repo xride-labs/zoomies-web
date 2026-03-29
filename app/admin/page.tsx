@@ -1,452 +1,307 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import {
-  Users,
-  Shield,
-  MapPin,
-  ShoppingBag,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  DollarSign,
-  UserPlus,
-  AlertTriangle,
-  ArrowUpRight,
-  MoreHorizontal,
-  Loader2,
-} from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+    Activity,
+    AlertTriangle,
+    Loader2,
+    MapPin,
+    Shield,
+    ShoppingBag,
+    TrendingUp,
+    UserPlus,
+    Users,
+} from 'lucide-react'
+import {
+    Bar,
+    CartesianGrid,
+    ComposedChart,
+    Legend,
+    Line,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+    Cell,
+} from 'recharts'
 import { useAdminDashboard } from '@/store/features/admin'
 
-const activityData = [
-  { day: 'Mon', users: 45, rides: 23, sales: 12 },
-  { day: 'Tue', users: 52, rides: 31, sales: 18 },
-  { day: 'Wed', users: 49, rides: 28, sales: 15 },
-  { day: 'Thu', users: 63, rides: 42, sales: 24 },
-  { day: 'Fri', users: 78, rides: 56, sales: 32 },
-  { day: 'Sat', users: 92, rides: 71, sales: 45 },
-  { day: 'Sun', users: 88, rides: 65, sales: 38 },
-]
+const PIE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2']
 
 export default function AdminDashboardPage() {
-  const {
-    stats: dashboardStats,
-    recentUsers: rawRecentUsers,
-    pendingReports,
-    isLoading: loading,
-    error,
-    fetchStats,
-    fetchRecentUsers,
-    fetchPendingReports,
-  } = useAdminDashboard()
+    const {
+        stats,
+        weeklyActivity,
+        recentUsers,
+        pendingReports,
+        isLoading,
+        error,
+        fetchStats,
+        fetchWeeklyActivity,
+        fetchRecentUsers,
+        fetchPendingReports,
+    } = useAdminDashboard()
 
-  useEffect(() => {
-    fetchStats()
-    fetchRecentUsers()
-    fetchPendingReports()
-  }, [fetchStats, fetchRecentUsers, fetchPendingReports])
+    useEffect(() => {
+        fetchStats()
+        fetchWeeklyActivity(7)
+        fetchRecentUsers()
+        fetchPendingReports()
+    }, [fetchStats, fetchWeeklyActivity, fetchRecentUsers, fetchPendingReports])
 
-  const recentUsers = rawRecentUsers.map((user) => ({
-    id: user.id,
-    name: user.name ?? 'Unknown',
-    email: user.email ?? '',
-    roles: user.roles,
-    joinedAt: user.createdAt,
-    status: 'active',
-    createdAt: user.createdAt,
-  }))
+    const roleBreakdown = useMemo(() => {
+        if (!stats) return []
+        return Object.entries(stats.breakdown.usersByRole).map(([name, value]) => ({
+            name,
+            value,
+        }))
+    }, [stats])
 
-  const stats = dashboardStats
-    ? [
-      {
-        title: 'Total Users',
-        value: dashboardStats.overview.totalUsers.toLocaleString(),
-        change: `+${dashboardStats.recent.newUsersLast7Days}`,
-        trend: 'up' as const,
-        icon: Users,
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-100',
-      },
-      {
-        title: 'Active Clubs',
-        value: dashboardStats.overview.totalClubs.toLocaleString(),
-        change: `${dashboardStats.overview.verifiedClubs} verified`,
-        trend: 'up' as const,
-        icon: Shield,
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-100',
-      },
-      {
-        title: 'Total Rides',
-        value: dashboardStats.overview.totalRides.toLocaleString(),
-        change: `+${dashboardStats.recent.newRidesLast7Days}`,
-        trend: 'up' as const,
-        icon: MapPin,
-        color: 'text-green-600',
-        bgColor: 'bg-green-100',
-      },
-      {
-        title: 'Marketplace Listings',
-        value: dashboardStats.overview.totalListings.toLocaleString(),
-        change: `${dashboardStats.overview.activeRides} active`,
-        trend: 'up' as const,
-        icon: DollarSign,
-        color: 'text-amber-600',
-        bgColor: 'bg-amber-100',
-      },
-    ]
-    : []
+    const summaryCards = useMemo(() => {
+        if (!stats) return []
+        return [
+            {
+                title: 'Total Users',
+                value: stats.overview.totalUsers.toLocaleString(),
+                helper: `+${stats.recent.newUsersLast7Days} in last 7 days`,
+                icon: Users,
+            },
+            {
+                title: 'Clubs',
+                value: stats.overview.totalClubs.toLocaleString(),
+                helper: `${stats.overview.verifiedClubs} verified`,
+                icon: Shield,
+            },
+            {
+                title: 'Rides',
+                value: stats.overview.totalRides.toLocaleString(),
+                helper: `+${stats.recent.newRidesLast7Days} this week`,
+                icon: MapPin,
+            },
+            {
+                title: 'Listings',
+                value: stats.overview.totalListings.toLocaleString(),
+                helper: `${stats.overview.activeRides} rides in progress`,
+                icon: ShoppingBag,
+            },
+            {
+                title: 'Pending Reports',
+                value: stats.overview.pendingReports.toLocaleString(),
+                helper: `${stats.overview.highPriorityReports} high priority`,
+                icon: AlertTriangle,
+            },
+            {
+                title: 'New Reports',
+                value: stats.recent.reportsLast7Days.toLocaleString(),
+                helper: 'last 7 days',
+                icon: Activity,
+            },
+        ]
+    }, [stats])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    )
-  }
+    if (isLoading && !stats) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        )
+    }
 
-  if (error) {
-    return (
-      <div className="text-center py-8 text-destructive">
-        {error}
-        <Button onClick={() => { fetchStats(); fetchRecentUsers(); fetchPendingReports(); }} className="ml-4">
-          Retry
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-                <Badge
-                  variant={stat.trend === 'up' ? 'default' : 'destructive'}
-                  className="gap-1"
+    if (error && !stats) {
+        return (
+            <div className="text-center py-8 text-destructive">
+                {error}
+                <Button
+                    onClick={() => {
+                        fetchStats()
+                        fetchWeeklyActivity(7)
+                        fetchRecentUsers()
+                        fetchPendingReports()
+                    }}
+                    className="ml-4"
                 >
-                  {stat.trend === 'up' ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3" />
-                  )}
-                  {stat.change}
-                </Badge>
-              </div>
-              <div className="mt-4">
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                    Retry
+                </Button>
+            </div>
+        )
+    }
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Weekly Activity Chart */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Weekly Activity</CardTitle>
-                <CardDescription>User registrations, rides, and sales</CardDescription>
-              </div>
-              <Button variant="outline" size="sm">
-                View Report
-              </Button>
+    return (
+        <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {summaryCards.map((card) => (
+                    <Card key={card.title}>
+                        <CardContent className="p-5">
+                            <div className="flex items-center justify-between">
+                                <div className="p-2 rounded-lg bg-muted">
+                                    <card.icon className="w-5 h-5" />
+                                </div>
+                                <Badge variant="secondary" className="gap-1">
+                                    <TrendingUp className="w-3 h-3" />
+                                    Live
+                                </Badge>
+                            </div>
+                            <div className="mt-4">
+                                <p className="text-2xl font-bold">{card.value}</p>
+                                <p className="text-sm text-muted-foreground">{card.title}</p>
+                                <p className="text-xs text-muted-foreground mt-1">{card.helper}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {activityData.map((day) => (
-                <div key={day.day} className="flex items-center gap-4">
-                  <span className="w-8 text-sm text-muted-foreground">{day.day}</span>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-2 bg-blue-500 rounded-full"
-                        style={{ width: `${day.users}%` }}
-                      />
-                      <span className="text-xs text-muted-foreground">{day.users}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-2 bg-green-500 rounded-full"
-                        style={{ width: `${day.rides}%` }}
-                      />
-                      <span className="text-xs text-muted-foreground">{day.rides}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-2 bg-amber-500 rounded-full"
-                        style={{ width: `${day.sales}%` }}
-                      />
-                      <span className="text-xs text-muted-foreground">{day.sales}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-6 mt-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                <span className="text-xs text-muted-foreground">Users</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full" />
-                <span className="text-xs text-muted-foreground">Rides</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-amber-500 rounded-full" />
-                <span className="text-xs text-muted-foreground">Sales</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Pending Reports */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-amber-500" />
-                  Pending Reports
-                </CardTitle>
-                <CardDescription>Items requiring your attention</CardDescription>
-              </div>
-              <Button variant="outline" size="sm">
-                View All
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pendingReports.map((report) => (
-                <div
-                  key={report.id}
-                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          report.priority === 'high'
-                            ? 'destructive'
-                            : report.priority === 'medium'
-                              ? 'default'
-                              : 'secondary'
-                        }
-                        className="text-[10px]"
-                      >
-                        {report.priority}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{report.type}</span>
-                    </div>
-                    <p className="text-sm font-medium">{report.title}</p>
-                    <p className="text-xs text-muted-foreground">{report.createdAt}</p>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Weekly Platform Activity</CardTitle>
+                        <CardDescription>Registrations, rides, clubs, and moderation inflow</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-82.5">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={weeklyActivity}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="label" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="usersRegistered" fill="#2563eb" name="Users" radius={[6, 6, 0, 0]} />
+                                <Bar dataKey="ridesCreated" fill="#16a34a" name="Rides" radius={[6, 6, 0, 0]} />
+                                <Line type="monotone" dataKey="clubsCreated" stroke="#d97706" strokeWidth={2} name="Clubs" />
+                                <Line type="monotone" dataKey="reportsCreated" stroke="#dc2626" strokeWidth={2} name="Reports" />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
 
-      {/* Recent Users Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-blue-500" />
-                Recent Users
-              </CardTitle>
-              <CardDescription>Newly registered users</CardDescription>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>User Roles Distribution</CardTitle>
+                        <CardDescription>Breakdown across admin and community roles</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-82.5">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie data={roleBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+                                    {roleBreakdown.map((entry, index) => (
+                                        <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
             </div>
-            <Button variant="outline" size="sm">
-              View All Users
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="w-12.5"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs">
-                          {user.name
-                            .split(' ')
-                            .map((n) => n[0])
-                            .join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-sm">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {user.roles.map((r: string) => (
-                      <Badge key={r} variant="outline" className="mr-1">
-                        {r}
-                      </Badge>
-                    ))}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.status === 'active'
-                          ? 'default'
-                          : user.status === 'pending'
-                            ? 'secondary'
-                            : 'destructive'
-                      }
-                    >
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {user.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString()
-                      : 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Edit User</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          Suspend User
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
 
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Server Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-green-500" />
-              <span className="text-sm">All systems operational</span>
-            </div>
-            <div className="mt-3 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">API Response</span>
-                <span>124ms</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Uptime</span>
-                <span>99.9%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-amber-500" />
+                            Moderation Queue
+                        </CardTitle>
+                        <CardDescription>Most recent pending reports from users</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {pendingReports.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No pending reports.</p>
+                            ) : (
+                                pendingReports.map((report) => (
+                                    <div key={report.id} className="p-3 border rounded-lg">
+                                        <div className="flex items-center justify-between">
+                                            <p className="font-medium text-sm">{report.title}</p>
+                                            <Badge variant={report.priority === 'high' ? 'destructive' : 'secondary'}>
+                                                {report.priority}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {report.type} · {new Date(report.createdAt).toLocaleString()}
+                                        </p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Storage Usage</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Used</span>
-                <span>45.2 GB / 100 GB</span>
-              </div>
-              <Progress value={45} className="h-2" />
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <UserPlus className="w-5 h-5 text-blue-500" />
+                            Recent Registrations
+                        </CardTitle>
+                        <CardDescription>Latest users created on the platform</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Roles</TableHead>
+                                    <TableHead>Joined</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {recentUsers.map((user) => (
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className="text-xs">
+                                                        {(user.name || 'U')
+                                                            .split(' ')
+                                                            .map((part) => part[0])
+                                                            .join('')}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium text-sm">{user.name || 'Unknown'}</p>
+                                                    <p className="text-xs text-muted-foreground">{user.email || 'No email'}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-1 flex-wrap">
+                                                {user.roles.map((role) => (
+                                                    <Badge key={role} variant="outline">
+                                                        {role}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {new Date(user.createdAt).toLocaleDateString()}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Images</span>
-                <p className="font-medium">32.1 GB</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Database</span>
-                <p className="font-medium">13.1 GB</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">1,247</p>
-            <p className="text-sm text-muted-foreground">Users online right now</p>
-            <div className="mt-3 flex items-center gap-2">
-              <Badge variant="outline" className="gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                Live
-              </Badge>
-              <span className="text-xs text-muted-foreground">Peak today: 2,341</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
+        </div>
+    )
 }

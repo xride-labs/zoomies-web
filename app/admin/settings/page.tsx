@@ -27,7 +27,6 @@ import {
   Shield,
   Globe,
   Mail,
-  Database,
   Palette,
   Save,
   RotateCcw,

@@ -1,6 +1,7 @@
 import type { RootState } from '../../index'
 
 export const selectAdminStats = (state: RootState) => state.admin.stats
+export const selectAdminWeeklyActivity = (state: RootState) => state.admin.weeklyActivity
 export const selectAdminUsers = (state: RootState) => state.admin.users
 export const selectAdminRides = (state: RootState) => state.admin.rides
 export const selectAdminClubs = (state: RootState) => state.admin.clubs

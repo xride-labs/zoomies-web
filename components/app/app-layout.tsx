@@ -38,26 +38,71 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, isPending } = useAuth()
+  const { user, hasSession, isPending, error } = useAuth()
+  const debugAuth = process.env.NODE_ENV !== 'production'
 
   // Check if user has access to club management portal
-  const hasManagerAccess = hasAnyRole(user, 'CLUB_OWNER', 'SELLER', 'ADMIN')
-  const isAdmin = hasAnyRole(user, 'ADMIN')
+  const hasManagerAccess = hasAnyRole(
+    user,
+    'CLUB_OWNER',
+    'SELLER',
+    'CO_ADMIN',
+    'ADMIN',
+  )
+  const isAdmin = hasAnyRole(user, 'ADMIN', 'CO_ADMIN')
 
   useEffect(() => {
-    if (isPending) return
-    if (!user) {
-      router.push('/login')
-      return
+    if (debugAuth) {
+      console.log('[AppLayout] auth guard', {
+        pathname,
+        isPending,
+        hasSession,
+        hasUser: !!user,
+        hasManagerAccess,
+        error,
+        userRoles: user?.roles || [],
+      })
     }
-    // If user doesn't have CLUB_OWNER, SELLER, or ADMIN role, redirect to login
-    if (!hasManagerAccess) {
-      router.push('/login')
-      return
-    }
-  }, [user, isPending, router, hasManagerAccess])
 
-  if (isPending) {
+    if (isPending) return
+
+    if (!hasSession) {
+      if (debugAuth) {
+        console.warn('[AppLayout] no session -> /login')
+      }
+      router.push('/login')
+      return
+    }
+
+    if (!user) {
+      if (debugAuth) {
+        console.warn(
+          '[AppLayout] session exists but profile missing; waiting for hydration',
+        )
+      }
+      return
+    }
+
+    // If user doesn't have manager/admin access, redirect to login
+    if (!hasManagerAccess) {
+      if (debugAuth) {
+        console.warn('[AppLayout] no manager access -> /')
+      }
+      router.push('/')
+      return
+    }
+  }, [
+    user,
+    hasSession,
+    isPending,
+    router,
+    hasManagerAccess,
+    pathname,
+    error,
+    debugAuth,
+  ])
+
+  if (isPending || (hasSession && !user)) {
     return (
       <div className="min-h-screen bg-background flex">
         <aside className="hidden lg:flex lg:w-72 lg:flex-col border-r border-border bg-card">
