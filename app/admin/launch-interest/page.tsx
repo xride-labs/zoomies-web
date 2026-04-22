@@ -15,10 +15,27 @@ import {
   FileSpreadsheet,
   RefreshCw,
 } from 'lucide-react'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface LaunchInterestResponse {
   googleForm: {
     responsesUrl: string | null
+  }
+}
+
+function toEmbeddableResponsesUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+
+    // Convert Google Sheets edit URLs into preview URLs that are iframe-friendly.
+    if (parsed.hostname === 'docs.google.com' && parsed.pathname.startsWith('/spreadsheets/d/')) {
+      parsed.pathname = parsed.pathname.replace(/\/edit(?:\/.*)?$/, '/preview')
+      return parsed.toString()
+    }
+
+    return parsed.toString()
+  } catch {
+    return url
   }
 }
 
@@ -44,13 +61,21 @@ export default function AdminLaunchInterestPage() {
       })
 
       if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('You are not authorized to view launch interest responses.')
+        }
+
         throw new Error('Failed to load launch interest data')
       }
 
       const payload = (await response.json()) as LaunchInterestResponse
       setData(payload)
-    } catch {
-      setError('Unable to load launch interest data right now. Please retry.')
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to load launch interest data right now. Please retry.',
+      )
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -63,11 +88,21 @@ export default function AdminLaunchInterestPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
+      <BoneyardLoadingState
+        name="admin-launch-interest-loading"
+        fallback={
+          <div className="flex items-center justify-center h-64">
+            <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        }
+      />
     )
   }
+
+  const responsesUrl = data?.googleForm.responsesUrl || null
+  const embeddableResponsesUrl = responsesUrl
+    ? toEmbeddableResponsesUrl(responsesUrl)
+    : null
 
   return (
     <div className="space-y-6">
@@ -107,10 +142,10 @@ export default function AdminLaunchInterestPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {data?.googleForm.responsesUrl ? (
+          {responsesUrl ? (
             <>
               <Button variant="outline" asChild>
-                <a href={data.googleForm.responsesUrl} target="_blank" rel="noreferrer">
+                <a href={responsesUrl} target="_blank" rel="noreferrer">
                   Open Responses URL
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </a>
@@ -119,14 +154,18 @@ export default function AdminLaunchInterestPage() {
               <div className="overflow-hidden rounded-xl border border-border bg-background">
                 <iframe
                   title="Google form responses"
-                  src={data.googleForm.responsesUrl}
-                  className="h-[900px] w-full border-0"
+                  src={embeddableResponsesUrl || responsesUrl}
+                  className="h-225 w-full border-0"
                   loading="lazy"
                   referrerPolicy="strict-origin-when-cross-origin"
                 >
                   Loading responses...
                 </iframe>
               </div>
+
+              <p className="text-xs text-muted-foreground">
+                If the embedded view is blocked by Google, use Open Responses URL.
+              </p>
             </>
           ) : (
             <Badge variant="secondary">Set GOOGLE_FORM_RESPONSES_URL to enable embedded admin responses</Badge>

@@ -47,6 +47,7 @@ import { userApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface UserProfile {
   id: string
@@ -209,9 +210,14 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
+      <BoneyardLoadingState
+        name="profile-view-loading"
+        fallback={
+          <div className="flex justify-center py-24">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        }
+      />
     )
   }
 

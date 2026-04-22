@@ -39,6 +39,7 @@ import {
 import { Search, UserPlus, Loader2, CheckCircle, XCircle, Eye, Edit, Trash2 } from 'lucide-react'
 import { useAdminUsers } from '@/store/features/admin'
 import { useAuth, hasAnyRole } from '@/lib/use-auth'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 const ROLE_OPTIONS = ['ADMIN', 'CO_ADMIN', 'CLUB_OWNER', 'RIDER', 'SELLER'] as const
 
@@ -328,8 +329,15 @@ export default function AdminUsersPage() {
                             <TableBody>
                                 {isLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8">
-                                            <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                                        <TableCell colSpan={6} className="py-8">
+                                            <BoneyardLoadingState
+                                                name="admin-users-table-loading"
+                                                fallback={
+                                                    <div className="text-center">
+                                                        <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                                                    </div>
+                                                }
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ) : error ? (

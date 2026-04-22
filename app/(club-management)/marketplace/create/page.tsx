@@ -1,7 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { marketplaceApi, mediaApi } from '@/lib/services'
+import { fileToDataUrl } from '@/lib/media-utils'
+import { useToast } from '@/hooks/use-toast'
 import {
   Card,
   CardContent,
@@ -20,61 +23,175 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ChevronLeft, ImagePlus, X, Plus, DollarSign } from 'lucide-react'
+import { ChevronLeft, ImagePlus, X, Plus, DollarSign, Loader2 } from 'lucide-react'
+import type {
+  ListingCategory,
+  ListingCondition,
+} from '@/store/slices/marketplaceSlice'
 
-const categories = [
-  'Motorcycles',
-  'Parts & Accessories',
-  'Gear & Apparel',
-  'Helmets',
-  'Tools & Equipment',
-  'Other',
+const categories: Array<{ label: string; value: ListingCategory }> = [
+  { label: 'Bikes', value: 'bikes' },
+  { label: 'Parts', value: 'parts' },
+  { label: 'Accessories', value: 'accessories' },
+  { label: 'Gear', value: 'gear' },
+  { label: 'Apparel', value: 'apparel' },
+  { label: 'Tools', value: 'tools' },
 ]
 
-const conditions = ['New', 'Like New', 'Excellent', 'Good', 'Fair', 'For Parts']
+const conditions: Array<{ label: string; value: ListingCondition }> = [
+  { label: 'New', value: 'new' },
+  { label: 'Like New', value: 'like-new' },
+  { label: 'Excellent', value: 'excellent' },
+  { label: 'Good', value: 'good' },
+  { label: 'Fair', value: 'fair' },
+  { label: 'For Parts', value: 'parts-only' },
+]
+
+interface ListingFormData {
+  title: string
+  description: string
+  price: string
+  category: ListingCategory | ''
+  condition: ListingCondition | ''
+  location: string
+  year: string
+  make: string
+  model: string
+  mileage: string
+}
+
+const initialListingData: ListingFormData = {
+  title: '',
+  description: '',
+  price: '',
+  category: '',
+  condition: '',
+  location: '',
+  year: '',
+  make: '',
+  model: '',
+  mileage: '',
+}
 
 export default function CreateListingPage() {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const {
+    success: successToast,
+    error: errorToast,
+    loading: loadingToast,
+    dismiss: dismissToast,
+  } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [images, setImages] = useState<string[]>([])
-  const [listingData, setListingData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    category: '',
-    condition: '',
-    location: '',
-    // Motorcycle specific
-    year: '',
-    make: '',
-    model: '',
-    mileage: '',
-  })
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [listingData, setListingData] = useState<ListingFormData>(initialListingData)
 
-  const showMotorcycleFields = listingData.category === 'Motorcycles'
+  const showMotorcycleFields = listingData.category === 'bikes'
 
-  const handleImageUpload = () => {
-    // In real app, this would open file picker and upload
-    if (images.length < 10) {
-      setImages([...images, `placeholder-${images.length}`])
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files || [])
+    if (!selectedFiles.length) return
+
+    const remainingSlots = Math.max(10 - imageFiles.length, 0)
+    if (remainingSlots === 0) {
+      event.target.value = ''
+      return
     }
+
+    const acceptedFiles = selectedFiles.slice(0, remainingSlots)
+    const previewUrls = acceptedFiles.map((file) => URL.createObjectURL(file))
+
+    setImageFiles((prev) => [...prev, ...acceptedFiles])
+    setImagePreviews((prev) => [...prev, ...previewUrls])
+    event.target.value = ''
   }
 
   const handleRemoveImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index))
+    const previewUrl = imagePreviews[index]
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    setImageFiles((prev) => prev.filter((_, i) => i !== index))
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!listingData.category || !listingData.condition) return
+
+    const parsedPrice = Number(listingData.price)
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      errorToast('Invalid price', {
+        description: 'Please enter a valid amount greater than zero.',
+      })
+      return
+    }
+
     setIsSubmitting(true)
+    const loadingToastId = loadingToast('Publishing listing...', {
+      description: 'Creating your listing and uploading images.',
+    })
 
-    // API call would go here
-    console.log('Creating listing:', listingData)
+    const bikeDetails = showMotorcycleFields
+      ? [
+        listingData.year ? `Year: ${listingData.year}` : null,
+        listingData.make ? `Make: ${listingData.make}` : null,
+        listingData.model ? `Model: ${listingData.model}` : null,
+        listingData.mileage ? `Mileage: ${listingData.mileage}` : null,
+      ].filter(Boolean)
+      : []
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const descriptionWithDetails =
+      bikeDetails.length > 0
+        ? `${listingData.description.trim()}\n\nMotorcycle Details\n${bikeDetails.join('\n')}`
+        : listingData.description.trim()
 
-    router.push('/marketplace')
+    try {
+      const { listing } = await marketplaceApi.createListing({
+        title: listingData.title.trim(),
+        description: descriptionWithDetails,
+        price: parsedPrice,
+        category: listingData.category,
+        condition: listingData.condition,
+        location: listingData.location.trim(),
+        currency: 'USD',
+        images: [],
+      })
+
+      const uploadedImages: string[] = []
+      for (const file of imageFiles) {
+        const dataUrl = await fileToDataUrl(file)
+        const uploadResponse = await mediaApi.uploadListingImage(listing.id, dataUrl)
+        const imageUrl = uploadResponse.imageUrl || uploadResponse.media?.secureUrl
+        if (imageUrl) {
+          uploadedImages.push(imageUrl)
+        }
+      }
+
+      if (uploadedImages.length > 0) {
+        await marketplaceApi.updateListing(listing.id, { images: uploadedImages })
+      }
+
+      successToast('Listing published', {
+        description: 'Your listing is now live in the marketplace.',
+      })
+      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview))
+      router.push(`/marketplace/${listing.id}`)
+    } catch (err) {
+      console.error('Failed to create listing:', err)
+      errorToast('Failed to publish listing', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(loadingToastId)
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCancel = () => {
+    imagePreviews.forEach((preview) => URL.revokeObjectURL(preview))
+    router.back()
   }
 
   return (
@@ -100,13 +217,25 @@ export default function CreateListingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleImageUpload}
+            />
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-              {images.map((_, index) => (
+              {imagePreviews.map((preview, index) => (
                 <div
                   key={index}
-                  className="relative aspect-square bg-muted rounded-lg flex items-center justify-center"
+                  className="relative aspect-square bg-muted rounded-lg overflow-hidden"
                 >
-                  <ImagePlus className="w-6 h-6 text-muted-foreground/50" />
+                  <img
+                    src={preview}
+                    alt={`Listing image ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
                   <button
                     type="button"
                     className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
@@ -121,17 +250,22 @@ export default function CreateListingPage() {
                   )}
                 </div>
               ))}
-              {images.length < 10 && (
+              {imagePreviews.length < 10 && (
                 <button
                   type="button"
                   className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                  onClick={handleImageUpload}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <Plus className="w-6 h-6" />
                   <span className="text-xs">Add</span>
                 </button>
               )}
             </div>
+            {imagePreviews.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-3">
+                {imagePreviews.length} / 10 image(s) selected
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -164,7 +298,10 @@ export default function CreateListingPage() {
                 <Select
                   value={listingData.category}
                   onValueChange={(value) =>
-                    setListingData({ ...listingData, category: value })
+                    setListingData({
+                      ...listingData,
+                      category: value as ListingCategory,
+                    })
                   }
                   required
                 >
@@ -172,9 +309,9 @@ export default function CreateListingPage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
+                    {categories.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -188,7 +325,10 @@ export default function CreateListingPage() {
                 <Select
                   value={listingData.condition}
                   onValueChange={(value) =>
-                    setListingData({ ...listingData, condition: value })
+                    setListingData({
+                      ...listingData,
+                      condition: value as ListingCondition,
+                    })
                   }
                   required
                 >
@@ -196,9 +336,9 @@ export default function CreateListingPage() {
                     <SelectValue placeholder="Select condition" />
                   </SelectTrigger>
                   <SelectContent>
-                    {conditions.map((cond) => (
-                      <SelectItem key={cond} value={cond}>
-                        {cond}
+                    {conditions.map((condition) => (
+                      <SelectItem key={condition.value} value={condition.value}>
+                        {condition.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -325,7 +465,7 @@ export default function CreateListingPage() {
             type="button"
             variant="outline"
             className="flex-1"
-            onClick={() => router.back()}
+            onClick={handleCancel}
           >
             Cancel
           </Button>
@@ -342,7 +482,14 @@ export default function CreateListingPage() {
               !listingData.description
             }
           >
-            {isSubmitting ? 'Publishing...' : 'Publish Listing'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              'Publish Listing'
+            )}
           </Button>
         </div>
       </form>

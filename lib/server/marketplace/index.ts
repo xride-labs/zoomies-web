@@ -31,6 +31,18 @@ export interface ListingFilters {
   search?: string
 }
 
+interface PaginationMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+interface PaginatedResult<T> {
+  items: T[]
+  pagination: PaginationMeta
+}
+
 // ============ Marketplace API ============
 
 /**
@@ -45,23 +57,36 @@ export async function getListings(
       queryParams.append(key, String(value))
     }
   })
-  return apiAuthenticated.get<{ listings: Listing[]; hasMore: boolean }>(
+  const response = await apiAuthenticated.get<PaginatedResult<Listing>>(
     `/marketplace?${queryParams}`,
   )
+
+  return {
+    listings: response.items || [],
+    hasMore: response.pagination
+      ? response.pagination.page < response.pagination.totalPages
+      : false,
+  }
 }
 
 /**
  * Get user's own listings
  */
 export async function getMyListings(): Promise<{ listings: Listing[] }> {
-  return apiAuthenticated.get<{ listings: Listing[] }>('/marketplace/my')
+  const response = await apiAuthenticated.get<PaginatedResult<Listing>>(
+    '/marketplace/my-listings',
+  )
+
+  return {
+    listings: response.items || [],
+  }
 }
 
 /**
  * Get user's saved listings
  */
 export async function getSavedListings(): Promise<{ listings: Listing[] }> {
-  return apiAuthenticated.get<{ listings: Listing[] }>('/marketplace/saved')
+  return { listings: [] }
 }
 
 /**
@@ -118,7 +143,7 @@ export async function unsaveListing(listingId: string): Promise<void> {
  */
 export async function markAsSold(listingId: string): Promise<{ listing: Listing }> {
   return apiAuthenticated.patch<{ listing: Listing }>(`/marketplace/${listingId}`, {
-    isSold: true,
+    status: 'SOLD',
   })
 }
 

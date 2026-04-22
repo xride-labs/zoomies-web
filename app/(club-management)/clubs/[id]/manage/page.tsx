@@ -67,6 +67,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface ClubSettings {
   id: string
@@ -143,7 +144,10 @@ export default function ClubManagePage() {
         setLoading(true)
         const clubId = params.id as string
 
-        const clubResponse = await clubsApi.getClub(clubId)
+        const [clubResponse, pendingResponse] = await Promise.all([
+          clubsApi.getClub(clubId),
+          clubsApi.getPendingRequests(clubId),
+        ])
 
         const clubData = clubResponse.club
         setClubSettings({
@@ -164,11 +168,17 @@ export default function ClubManagePage() {
             userId?: string
             role: string
             joinedAt?: string
-            user?: { id: string; name: string; image: string | null }
+            user?: {
+              id: string
+              name: string
+              username?: string
+              image: string | null
+            }
           }) => ({
             id: m.id || m.userId || '',
             userId: m.userId || m.user?.id,
             name: m.user?.name || 'Unknown',
+            username: m.user?.username,
             role: m.role,
             joinedAt: m.joinedAt || new Date().toISOString(),
             user: m.user,
@@ -176,8 +186,36 @@ export default function ClubManagePage() {
         )
         setMembers(clubMembers)
 
-        // No separate pending requests endpoint - set empty
-        setPendingRequests([])
+        const mappedPendingRequests = (pendingResponse.requests || []).map(
+          (request: {
+            id: string
+            userId?: string
+            name?: string
+            username?: string
+            joinedAt?: string
+            requestedAt?: string
+            message?: string
+            user?: {
+              id?: string
+              name?: string
+              username?: string
+            }
+          }) => {
+            const requesterId = request.userId || request.user?.id || request.id
+            return {
+              id: requesterId,
+              user: {
+                id: requesterId,
+                name: request.user?.name || request.name || 'Unknown',
+                username: request.user?.username || request.username || 'unknown',
+              },
+              message: request.message || '',
+              requestedAt:
+                request.requestedAt || request.joinedAt || new Date().toISOString(),
+            }
+          },
+        )
+        setPendingRequests(mappedPendingRequests)
       } catch (err) {
         setError('Failed to load club management data')
         console.error(err)
@@ -337,9 +375,14 @@ export default function ClubManagePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <BoneyardLoadingState
+        name="club-manage-loading"
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        }
+      />
     )
   }
 

@@ -77,9 +77,11 @@ interface AdminListing {
 const statusColors: Record<string, string> = {
   ACTIVE: 'bg-green-100 text-green-700',
   SOLD: 'bg-blue-100 text-blue-700',
-  INACTIVE: 'bg-gray-100 text-gray-700',
-  FLAGGED: 'bg-red-100 text-red-700',
+  INACTIVE: 'bg-red-100 text-red-700',
 }
+
+const formatStatusLabel = (status: string) =>
+  status === 'INACTIVE' ? 'FLAGGED' : status
 
 export default function AdminMarketplacePage() {
   const {
@@ -156,7 +158,7 @@ export default function AdminMarketplacePage() {
     total: listings.length,
     active: listings.filter((l) => l.status === 'ACTIVE').length,
     sold: listings.filter((l) => l.status === 'SOLD').length,
-    flagged: listings.filter((l) => l.status === 'FLAGGED').length,
+    flagged: listings.filter((l) => l.status === 'INACTIVE').length,
     totalValue: listings
       .filter((l) => l.status === 'ACTIVE')
       .reduce((sum, l) => sum + (l.price || 0), 0),
@@ -278,7 +280,6 @@ export default function AdminMarketplacePage() {
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="SOLD">Sold</SelectItem>
                 <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="FLAGGED">Flagged</SelectItem>
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -358,10 +359,10 @@ export default function AdminMarketplacePage() {
                       <Badge
                         className={`gap-1 ${statusColors[listing.status as keyof typeof statusColors]}`}
                       >
-                        {listing.status === 'FLAGGED' && (
+                        {listing.status === 'INACTIVE' && (
                           <AlertTriangle className="w-3 h-3" />
                         )}
-                        {listing.status}
+                        {formatStatusLabel(listing.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -383,7 +384,7 @@ export default function AdminMarketplacePage() {
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          {listing.status === 'FLAGGED' && (
+                          {listing.status === 'INACTIVE' && (
                             <>
                               <DropdownMenuItem
                                 className="text-green-600"
@@ -404,7 +405,7 @@ export default function AdminMarketplacePage() {
                           {listing.status === 'ACTIVE' && (
                             <DropdownMenuItem
                               className="text-red-600"
-                              onClick={() => handleUpdateListingStatus(listing, 'FLAGGED')}
+                              onClick={() => handleUpdateListingStatus(listing, 'INACTIVE')}
                             >
                               <AlertTriangle className="w-4 h-4 mr-2" />
                               Flag Listing
@@ -474,7 +475,7 @@ export default function AdminMarketplacePage() {
                       statusColors[selectedListing.status as keyof typeof statusColors]
                     }
                   >
-                    {selectedListing.status}
+                    {formatStatusLabel(selectedListing.status)}
                   </Badge>
                 </div>
                 <p className="text-2xl font-bold mt-1">${selectedListing.price}</p>

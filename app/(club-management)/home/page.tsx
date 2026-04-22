@@ -20,6 +20,7 @@ import {
 import Link from 'next/link'
 import { feedApi } from '@/lib/services'
 import { useToast } from '@/hooks/use-toast'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface FeedPost {
   id: string
@@ -138,37 +139,59 @@ export default function FeedPage() {
     )
   }
 
+  const activeRidePosts = posts
+    .filter(
+      (post): post is FeedPost & { ride: NonNullable<FeedPost['ride']> } =>
+        post.type === 'ride' && !!post.ride,
+    )
+    .slice(0, 8)
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Stories / Active Rides - Horizontal scroll */}
-      <div className="mb-6">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-3">ACTIVE RIDES</h2>
-        <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="shrink-0 w-20 flex flex-col items-center gap-2">
-              <div className="w-16 h-16 rounded-full bg-linear-to-br from-primary to-amber-500 p-0.5">
-                <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                  <Avatar className="w-14 h-14">
-                    <AvatarFallback className="bg-muted text-muted-foreground">
-                      R{i}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              </div>
-              <span className="text-xs text-center truncate w-full">Ride {i}</span>
+      {activeRidePosts.length > 0 && (
+        <>
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3">ACTIVE RIDES</h2>
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+              {activeRidePosts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/rides/${post.ride.id}`}
+                  className="shrink-0 w-20 flex flex-col items-center gap-2"
+                >
+                  <div className="w-16 h-16 rounded-full bg-linear-to-br from-primary to-amber-500 p-0.5">
+                    <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                      <Avatar className="w-14 h-14">
+                        <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                          {post.ride.title.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </div>
+                  <span className="text-xs text-center truncate w-full">
+                    {post.ride.title}
+                  </span>
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <Separator className="mb-6" />
+          <Separator className="mb-6" />
+        </>
+      )}
 
       {/* Posts Feed */}
       <div className="space-y-6">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-          </div>
+          <BoneyardLoadingState
+            name="club-feed-loading"
+            fallback={
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            }
+          />
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-destructive mb-4">{error}</p>

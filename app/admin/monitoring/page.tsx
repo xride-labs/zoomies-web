@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 const GRAFANA_URL = process.env.NEXT_PUBLIC_GRAFANA_URL || 'http://localhost:3001'
 const PROMETHEUS_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localhost:9090'
@@ -75,12 +76,17 @@ export default function AdminMonitoringPage() {
 
   if (isPending || (hasSession && !user)) {
     return (
-      <div className="flex items-center justify-center min-h-100">
-        <div className="text-center space-y-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <BoneyardLoadingState
+        name="admin-monitoring-loading"
+        fallback={
+          <div className="flex items-center justify-center min-h-100">
+            <div className="text-center space-y-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          </div>
+        }
+      />
     )
   }
 

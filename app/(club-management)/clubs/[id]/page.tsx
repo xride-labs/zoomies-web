@@ -54,6 +54,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface ClubOwner {
   id: string
@@ -309,9 +310,14 @@ export default function ClubDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <BoneyardLoadingState
+        name="club-detail-loading"
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        }
+      />
     )
   }
 

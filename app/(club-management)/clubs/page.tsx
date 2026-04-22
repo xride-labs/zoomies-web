@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { MapPin, Users, Calendar, ChevronRight, Plus, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useClubs } from '@/store/features/clubs'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface _Club {
   id: string
@@ -33,9 +34,14 @@ export default function ClubsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
+      <BoneyardLoadingState
+        name="club-list-loading"
+        fallback={
+          <div className="flex justify-center py-24">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        }
+      />
     )
   }
 

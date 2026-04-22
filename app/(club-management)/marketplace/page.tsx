@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useMarketplace } from '@/store/features/marketplace'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface _Listing {
   id: string
@@ -40,11 +41,12 @@ interface _Listing {
 
 const categories = [
   { id: 'all', label: 'All' },
-  { id: 'parts', label: 'Parts' },
-  { id: 'gear', label: 'Gear' },
-  { id: 'accessories', label: 'Accessories' },
-  { id: 'apparel', label: 'Apparel' },
   { id: 'bikes', label: 'Bikes' },
+  { id: 'parts', label: 'Parts' },
+  { id: 'accessories', label: 'Accessories' },
+  { id: 'gear', label: 'Gear' },
+  { id: 'apparel', label: 'Apparel' },
+  { id: 'tools', label: 'Tools' },
 ]
 
 export default function MarketplacePage() {
@@ -58,7 +60,7 @@ export default function MarketplacePage() {
       params.category = activeCategory
     }
     fetchListings(params)
-  
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory])
 
@@ -107,9 +109,14 @@ export default function MarketplacePage() {
 
       {/* Listings Grid */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-        </div>
+        <BoneyardLoadingState
+          name="club-marketplace-loading"
+          fallback={
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          }
+        />
       ) : filteredListings?.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>No listings found. Try adjusting your search.</p>
@@ -121,7 +128,15 @@ export default function MarketplacePage() {
               <Card className="overflow-hidden hover:border-primary/50 transition-colors h-full">
                 {/* Image placeholder */}
                 <div className="aspect-square bg-muted flex items-center justify-center relative">
-                  <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
+                  {listing.images?.[0] ? (
+                    <img
+                      src={listing.images[0] || ''}
+                      alt={listing.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
+                  )}
                   <Badge className="absolute top-2 left-2 bg-white/90 text-foreground border-0 shadow-sm text-[10px]">
                     {listing.condition}
                   </Badge>
@@ -149,20 +164,22 @@ export default function MarketplacePage() {
                     <span className="text-xs text-muted-foreground truncate">
                       {listing.seller.name}
                     </span>
-                    <div className="flex items-center gap-0.5 ml-auto shrink-0">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span className="text-xs font-medium">{listing.seller.rating}</span>
-                    </div>
+                    {typeof listing.seller?.rating === 'number' && (
+                      <div className="flex items-center gap-0.5 ml-auto shrink-0">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span className="text-xs font-medium">{listing.seller.rating}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Location */}
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="w-3 h-3" />
-                    {listing.location}
+                    {listing.location || 'Location unavailable'}
                   </div>
 
                   {/* Club badges */}
-                  {listing.seller.clubs.length > 0 && (
+                  {Array.isArray(listing.seller?.clubs) && listing.seller.clubs.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {listing.seller.clubs.slice(0, 1).map((club) => (
                         <Badge

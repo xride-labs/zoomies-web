@@ -45,6 +45,7 @@ import {
     Cell,
 } from 'recharts'
 import { useAdminDashboard } from '@/store/features/admin'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2']
 
@@ -121,9 +122,14 @@ export default function AdminDashboardPage() {
 
     if (isLoading && !stats) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin" />
-            </div>
+            <BoneyardLoadingState
+                name="admin-dashboard-loading"
+                fallback={
+                    <div className="flex items-center justify-center h-64">
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                    </div>
+                }
+            />
         )
     }
 

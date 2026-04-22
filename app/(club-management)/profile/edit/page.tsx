@@ -19,6 +19,7 @@ import { ChevronLeft, Camera, Loader2 } from 'lucide-react'
 import { mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
 import { useToast } from '@/hooks/use-toast'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface ProfileData {
   name: string
@@ -162,9 +163,14 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <BoneyardLoadingState
+        name="profile-edit-loading"
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        }
+      />
     )
   }
 

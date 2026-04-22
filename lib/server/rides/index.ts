@@ -24,6 +24,16 @@ export interface CreateRideData {
   keepPermanently?: boolean
 }
 
+interface PaginatedResult<T> {
+  items: T[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 // ============ Rides API ============
 
 /**
@@ -147,9 +157,16 @@ export async function getClubRides(
   clubId: string,
   page = 1,
 ): Promise<{ rides: Ride[]; hasMore: boolean }> {
-  return apiAuthenticated.get<{ rides: Ride[]; hasMore: boolean }>(
+  const response = await apiAuthenticated.get<PaginatedResult<Ride>>(
     `/clubs/${clubId}/rides?page=${page}`,
   )
+
+  return {
+    rides: response.items || [],
+    hasMore: response.pagination
+      ? response.pagination.page < response.pagination.totalPages
+      : false,
+  }
 }
 
 // Export all as ridesApi object

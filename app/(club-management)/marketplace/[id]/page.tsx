@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface Seller {
   id: string
@@ -143,9 +144,14 @@ export default function ListingDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <BoneyardLoadingState
+        name="marketplace-listing-detail-loading"
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        }
+      />
     )
   }
 
@@ -198,30 +204,48 @@ export default function ListingDetailPage() {
       {/* Image Gallery */}
       <div className="relative">
         <div className="aspect-4/3 bg-muted flex items-center justify-center">
-          <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
-        </div>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              className={`w-2 h-2 rounded-full transition-colors ${index === selectedImageIndex ? 'bg-white' : 'bg-white/50'
-                }`}
-              onClick={() => setSelectedImageIndex(index)}
+          {images[selectedImageIndex] ? (
+            <img
+              src={images[selectedImageIndex] || ''}
+              alt={`${listing.title} image ${selectedImageIndex + 1}`}
+              className="h-full w-full object-cover"
             />
-          ))}
+          ) : (
+            <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
+          )}
         </div>
+        {images.length > 0 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                className={`w-2 h-2 rounded-full transition-colors ${index === selectedImageIndex ? 'bg-white' : 'bg-white/50'
+                  }`}
+                onClick={() => setSelectedImageIndex(index)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Thumbnail Gallery */}
       <div className="flex gap-2 p-4 overflow-x-auto">
-        {images.map((_, index) => (
+        {images.map((image, index) => (
           <button
             key={index}
-            className={`w-16 h-16 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center border-2 transition-colors ${index === selectedImageIndex ? 'border-primary' : 'border-transparent'
+            className={`w-16 h-16 shrink-0 rounded-lg bg-muted flex items-center justify-center border-2 transition-colors ${index === selectedImageIndex ? 'border-primary' : 'border-transparent'
               }`}
             onClick={() => setSelectedImageIndex(index)}
           >
-            <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
+            {image ? (
+              <img
+                src={image}
+                alt={`${listing.title} thumbnail ${index + 1}`}
+                className="h-full w-full rounded-lg object-cover"
+              />
+            ) : (
+              <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
+            )}
           </button>
         ))}
       </div>
@@ -337,10 +361,18 @@ export default function ListingDetailPage() {
             <div className="flex gap-3 overflow-x-auto pb-2">
               {sellerListings.map((item) => (
                 <Link key={item.id} href={`/marketplace/${item.id}`}>
-                  <Card className="w-36 flex-shrink-0">
+                  <Card className="w-36 shrink-0">
                     <CardContent className="p-2">
                       <div className="aspect-square rounded-md bg-muted flex items-center justify-center mb-2">
-                        <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="h-full w-full rounded-md object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
+                        )}
                       </div>
                       <p className="text-sm font-medium truncate">{item.title}</p>
                       <p className="text-sm text-primary font-semibold">

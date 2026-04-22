@@ -19,6 +19,7 @@ import {
 import Link from 'next/link'
 import { useRides } from '@/store/features/rides'
 import { Ride } from '@/store/slices/ridesSlice'
+import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 function formatDate(dateString: string) {
   const date = new Date(dateString)
@@ -124,9 +125,14 @@ export default function RidesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-        </div>
+        <BoneyardLoadingState
+          name="club-rides-loading"
+          fallback={
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          }
+        />
       ) : (
         activeTab === 'upcoming' && (
           <div className="space-y-4">

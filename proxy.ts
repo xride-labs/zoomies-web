@@ -3,7 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 const PUBLIC_FILE = /\.[^/]+$/
 
 function isWebDisabled(): boolean {
-  const value = process.env.NEXT_PUBLIC_WEB_DISABLED?.trim().toLowerCase()
+  const raw = process.env.WEB_DISABLED ?? process.env.NEXT_PUBLIC_WEB_DISABLED
+  console.log('WEB_DISABLED:', raw)
+  const value = raw
+    ?.trim()
+    .replace(/^['\"]|['\"]$/g, '')
+    .toLowerCase()
+
   return value === 'true' || value === '1' || value === 'yes' || value === 'on'
 }
 
@@ -37,7 +43,7 @@ export function proxy(request: NextRequest) {
   launchUrl.pathname = '/launch'
   launchUrl.searchParams.set('from', pathname)
 
-  return NextResponse.rewrite(launchUrl)
+  return NextResponse.redirect(launchUrl)
 }
 
 export const config = {
