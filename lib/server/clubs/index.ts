@@ -157,10 +157,8 @@ export async function rejectRequest(clubId: string, userId: string): Promise<voi
 export async function getClubRides(
   clubId: string,
   page = 1,
-): Promise<{ rides: any[]; hasMore: boolean }> {
-  return apiAuthenticated.get<{ rides: any[]; hasMore: boolean }>(
-    `/clubs/${clubId}/rides?page=${page}`,
-  )
+): Promise<{ items: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } } | null> {
+  return apiAuthenticated.get(`/clubs/${clubId}/rides?page=${page}`)
 }
 
 // Export all as clubsApi object

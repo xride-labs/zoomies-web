@@ -71,7 +71,7 @@ export default function ClubAnalyticsPage() {
     ]).then(([clubRes, membersRes, ridesRes]) => {
       setClub(clubRes?.club ?? clubRes ?? null)
       setMembers(membersRes?.members ?? [])
-      setRides(ridesRes?.rides ?? ridesRes?.items ?? [])
+      setRides(ridesRes?.items ?? [])
     }).finally(() => setLoading(false))
   }, [clubId])
 

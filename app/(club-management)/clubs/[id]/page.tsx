@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { clubsApi, ridesApi } from '@/lib/services'
+import { clubsApi } from '@/lib/services'
 import {
   Card,
   CardContent,
@@ -152,14 +152,14 @@ export default function ClubDetailPage() {
 
         const [clubResponse, ridesResponse] = await Promise.all([
           clubsApi.getClub(clubId),
-          ridesApi.getClubRides(clubId),
+          clubsApi.getClubRides(clubId),
         ])
 
         const clubData = clubResponse.club as Club
 
         const fullClub = {
           ...clubData,
-          rides: ridesResponse.rides || [],
+          rides: ridesResponse?.items || [],
         }
         setClub(fullClub)
         setGalleryItems(clubData.gallery || [])
