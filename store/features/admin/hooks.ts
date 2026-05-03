@@ -101,7 +101,7 @@ export const useAdminUsers = () => {
         phone?: string
         bio?: string
         location?: string
-        roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+        roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'CLUB_OWNER'>
       }) => dispatch(createAdminUser(payload)),
       [dispatch],
     ),
@@ -115,7 +115,7 @@ export const useAdminUsers = () => {
           phone?: string | null
           bio?: string | null
           location?: string | null
-          roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+          roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'CLUB_OWNER'>
         },
       ) => dispatch(updateAdminUser({ userId, data })),
       [dispatch],

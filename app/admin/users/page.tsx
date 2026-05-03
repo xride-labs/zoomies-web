@@ -41,12 +41,12 @@ import { useAdminUsers } from '@/store/features/admin'
 import { useAuth, hasAnyRole } from '@/lib/use-auth'
 import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
-const ROLE_OPTIONS = ['ADMIN', 'CO_ADMIN', 'CLUB_OWNER', 'RIDER', 'SELLER'] as const
+const ROLE_OPTIONS = ['ADMIN', 'CO_ADMIN', 'CLUB_OWNER', 'RIDER'] as const
 
 type RoleOption = (typeof ROLE_OPTIONS)[number]
 
 const PROTECTED_ROLE_OPTIONS: RoleOption[] = ['ADMIN', 'CO_ADMIN']
-const NON_PRIVILEGED_ROLE_OPTIONS: RoleOption[] = ['CLUB_OWNER', 'RIDER', 'SELLER']
+const NON_PRIVILEGED_ROLE_OPTIONS: RoleOption[] = ['CLUB_OWNER', 'RIDER']
 
 function hasPrivilegedAdminRole(roles: readonly string[]): boolean {
     return roles.some((role) => PROTECTED_ROLE_OPTIONS.includes(role as RoleOption))

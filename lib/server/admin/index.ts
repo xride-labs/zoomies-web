@@ -176,7 +176,7 @@ export interface CreateAdminUserInput {
   bio?: string
   location?: string
   activityLevel?: 'Casual' | 'Regular' | 'Enthusiast' | 'Pro'
-  roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+  roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'CLUB_OWNER'>
 }
 
 export interface UpdateAdminUserInput {
@@ -189,7 +189,7 @@ export interface UpdateAdminUserInput {
   activityLevel?: 'Casual' | 'Regular' | 'Enthusiast' | 'Pro'
   emailVerified?: boolean
   phoneVerified?: boolean
-  roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+  roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'CLUB_OWNER'>
 }
 
 export interface RideFilters {
@@ -430,6 +430,68 @@ export async function deleteListing(listingId: string): Promise<void> {
   return apiAuthenticated.delete<void>(`/admin/marketplace/${listingId}`)
 }
 
+// ============ Approvals ============
+
+export interface PendingClub {
+  id: string
+  name: string
+  description: string | null
+  location: string | null
+  clubType: string | null
+  owner: { id: string; name: string | null; image: string | null }
+  memberCount: number
+  createdAt: string
+}
+
+export interface PendingClubRequest {
+  id: string
+  clubId: string
+  clubName: string
+  userId: string
+  userName: string | null
+  userEmail: string | null
+  userAvatar: string | null
+  message: string | null
+  createdAt: string
+}
+
+export interface PendingRideRequest {
+  id: string
+  rideId: string
+  rideTitle: string
+  userId: string
+  userName: string | null
+  userEmail: string | null
+  userAvatar: string | null
+  createdAt: string
+}
+
+export interface AdminApprovalsData {
+  pendingClubs: PendingClub[]
+  pendingClubRequests: PendingClubRequest[]
+  pendingRideRequests: PendingRideRequest[]
+}
+
+export async function getApprovals(): Promise<AdminApprovalsData> {
+  return apiAuthenticated.get<AdminApprovalsData>('/admin/approvals')
+}
+
+export async function approveClubRequest(requestId: string): Promise<void> {
+  return apiAuthenticated.post<void>(`/admin/club-join-requests/${requestId}/approve`, {})
+}
+
+export async function rejectClubRequest(requestId: string): Promise<void> {
+  return apiAuthenticated.post<void>(`/admin/club-join-requests/${requestId}/reject`, {})
+}
+
+export async function acceptRideParticipant(participantId: string): Promise<void> {
+  return apiAuthenticated.post<void>(`/admin/ride-participants/${participantId}/accept`, {})
+}
+
+export async function declineRideParticipant(participantId: string): Promise<void> {
+  return apiAuthenticated.post<void>(`/admin/ride-participants/${participantId}/decline`, {})
+}
+
 // Export all as adminApi object
 export const adminApi = {
   getStats,
@@ -452,4 +514,9 @@ export const adminApi = {
   deleteClub,
   updateListingStatus,
   deleteListing,
+  getApprovals,
+  approveClubRequest,
+  rejectClubRequest,
+  acceptRideParticipant,
+  declineRideParticipant,
 }

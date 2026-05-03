@@ -10,6 +10,8 @@ export interface CreateClubData {
   location: string
   clubType?: string
   isPublic: boolean
+  image?: string
+  coverImage?: string
 }
 
 export interface ClubMembership {
@@ -149,6 +151,18 @@ export async function rejectRequest(clubId: string, userId: string): Promise<voi
   return apiAuthenticated.post<void>(`/clubs/${clubId}/requests/${userId}/reject`)
 }
 
+/**
+ * Get rides for a club
+ */
+export async function getClubRides(
+  clubId: string,
+  page = 1,
+): Promise<{ rides: any[]; hasMore: boolean }> {
+  return apiAuthenticated.get<{ rides: any[]; hasMore: boolean }>(
+    `/clubs/${clubId}/rides?page=${page}`,
+  )
+}
+
 // Export all as clubsApi object
 export const clubsApi = {
   getMyClubs,
@@ -166,4 +180,5 @@ export const clubsApi = {
   getPendingRequests,
   approveRequest,
   rejectRequest,
+  getClubRides,
 }

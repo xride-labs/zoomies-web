@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PortalBackdropArt } from '@/components/auth/portal-backdrop-art'
-import { Eye, EyeOff, Loader2, Check, Shield, Store } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Check, Shield } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/store/features/auth'
 import { useToast } from '@/hooks/use-toast'
@@ -17,7 +17,7 @@ import {
   resolveAuthCallbackURL,
 } from '@/lib/auth-client'
 
-type SignupRole = 'CLUB_OWNER' | 'SELLER'
+type SignupRole = 'CLUB_OWNER'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -157,40 +157,14 @@ export default function SignupPage() {
               </p>
             </div>
 
-            {/* Role Selection */}
-            <div className="space-y-2 mb-6">
-              <Label className="text-text-secondary text-sm font-medium">
-                I want to...
-              </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('CLUB_OWNER')}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${selectedRole === 'CLUB_OWNER'
-                    ? 'border-teal bg-teal/10 text-teal'
-                    : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
-                    }`}
-                >
-                  <Shield className="w-6 h-6" />
-                  <span className="text-sm font-medium">Manage a Club</span>
-                  <span className="text-xs text-text-secondary/50 text-center">
-                    Create & run riding clubs
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('SELLER')}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${selectedRole === 'SELLER'
-                    ? 'border-neon-green bg-neon-green/10 text-neon-green'
-                    : 'border-[#444444]/50 text-text-secondary/60 hover:border-[#555555] hover:text-text-secondary'
-                    }`}
-                >
-                  <Store className="w-6 h-6" />
-                  <span className="text-sm font-medium">Sell on Marketplace</span>
-                  <span className="text-xs text-text-secondary/50 text-center">
-                    List & sell products
-                  </span>
-                </button>
+            {/* Role notice — manager portal only signs up club owners */}
+            <div className="mb-6 rounded-2xl border-2 border-teal/40 bg-teal/5 p-4 flex items-center gap-3">
+              <Shield className="w-6 h-6 text-teal shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-teal">Club Manager Account</p>
+                <p className="text-xs text-text-secondary/70">
+                  Create & run riding clubs. Marketplace listings are available to all riders inside the mobile app.
+                </p>
               </div>
             </div>
 

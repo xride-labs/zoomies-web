@@ -1,0 +1,381 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
+import {
+  CheckCircle,
+  XCircle,
+  Shield,
+  Users,
+  MapPin,
+  RefreshCw,
+  Loader2,
+  CheckCheck,
+  Clock,
+  Building2,
+} from 'lucide-react'
+import { adminApi, type AdminApprovalsData } from '@/lib/server/admin'
+import { toast } from 'sonner'
+
+export default function AdminApprovalsPage() {
+  const [data, setData] = useState<AdminApprovalsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [actioningId, setActioningId] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const result = await adminApi.getApprovals()
+      setData(result)
+    } catch {
+      toast.error('Failed to load pending approvals')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const act = async (fn: () => Promise<void>, id: string, successMsg: string) => {
+    setActioningId(id)
+    try {
+      await fn()
+      toast.success(successMsg)
+      await load()
+    } catch {
+      toast.error('Action failed — try again')
+    } finally {
+      setActioningId(null)
+    }
+  }
+
+  const approveAllClubs = async () => {
+    if (!data?.pendingClubs.length) return
+    setActioningId('bulk-clubs')
+    let done = 0
+    for (const club of data.pendingClubs) {
+      try { await adminApi.verifyClub(club.id); done++ } catch {}
+    }
+    toast.success(`Verified ${done} clubs`)
+    await load()
+    setActioningId(null)
+  }
+
+  const approveAllClubRequests = async () => {
+    if (!data?.pendingClubRequests.length) return
+    setActioningId('bulk-club-requests')
+    let done = 0
+    for (const req of data.pendingClubRequests) {
+      try { await adminApi.approveClubRequest(req.id); done++ } catch {}
+    }
+    toast.success(`Approved ${done} club join requests`)
+    await load()
+    setActioningId(null)
+  }
+
+  const approveAllRideRequests = async () => {
+    if (!data?.pendingRideRequests.length) return
+    setActioningId('bulk-ride-requests')
+    let done = 0
+    for (const req of data.pendingRideRequests) {
+      try { await adminApi.acceptRideParticipant(req.id); done++ } catch {}
+    }
+    toast.success(`Accepted ${done} ride participants`)
+    await load()
+    setActioningId(null)
+  }
+
+  const totalPending = data
+    ? data.pendingClubs.length + data.pendingClubRequests.length + data.pendingRideRequests.length
+    : 0
+
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Approvals</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {totalPending > 0
+              ? `${totalPending} item${totalPending !== 1 ? 's' : ''} awaiting your action`
+              : 'All caught up — nothing pending'}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {totalPending === 0 && !loading && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 gap-3">
+            <CheckCheck className="w-12 h-12 text-green-500" />
+            <p className="text-lg font-semibold">All clear</p>
+            <p className="text-sm text-muted-foreground">No pending approvals right now.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Tabs defaultValue="clubs">
+        <TabsList>
+          <TabsTrigger value="clubs" className="gap-2">
+            <Building2 className="w-4 h-4" />
+            Clubs
+            {(data?.pendingClubs.length ?? 0) > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-[10px]">
+                {data!.pendingClubs.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="club-requests" className="gap-2">
+            <Users className="w-4 h-4" />
+            Club Joins
+            {(data?.pendingClubRequests.length ?? 0) > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-[10px]">
+                {data!.pendingClubRequests.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="ride-requests" className="gap-2">
+            <MapPin className="w-4 h-4" />
+            Ride Joins
+            {(data?.pendingRideRequests.length ?? 0) > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-[10px]">
+                {data!.pendingRideRequests.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── Pending clubs ── */}
+        <TabsContent value="clubs" className="mt-4 space-y-4">
+          {data?.pendingClubs.length === 0 ? (
+            <EmptyState icon={<Shield className="w-8 h-8" />} label="No unverified clubs" />
+          ) : (
+            <>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={approveAllClubs}
+                  disabled={actioningId === 'bulk-clubs'}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  {actioningId === 'bulk-clubs' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+                  Verify All ({data!.pendingClubs.length})
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {data!.pendingClubs.map((club) => (
+                  <Card key={club.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                          <Shield className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{club.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {club.location || 'No location'} · Owner: {club.owner?.name || 'Unknown'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {club.memberCount} member{club.memberCount !== 1 ? 's' : ''} · Created {new Date(club.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <ActionButton
+                            id={club.id}
+                            activeId={actioningId}
+                            variant="approve"
+                            onClick={() => act(() => adminApi.verifyClub(club.id), club.id, `${club.name} verified`)}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </TabsContent>
+
+        {/* ── Club join requests ── */}
+        <TabsContent value="club-requests" className="mt-4 space-y-4">
+          {data?.pendingClubRequests.length === 0 ? (
+            <EmptyState icon={<Users className="w-8 h-8" />} label="No pending club join requests" />
+          ) : (
+            <>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={approveAllClubRequests}
+                  disabled={actioningId === 'bulk-club-requests'}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  {actioningId === 'bulk-club-requests' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+                  Approve All ({data!.pendingClubRequests.length})
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {data!.pendingClubRequests.map((req) => (
+                  <Card key={req.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarFallback>{(req.userName || req.userEmail || 'U')[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">{req.userName || req.userEmail || 'Unknown'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Wants to join <span className="font-medium text-foreground">{req.clubName}</span>
+                          </p>
+                          {req.message && (
+                            <p className="text-xs text-muted-foreground italic mt-0.5">"{req.message}"</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            {new Date(req.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <ActionButton
+                            id={req.id}
+                            activeId={actioningId}
+                            variant="approve"
+                            onClick={() => act(() => adminApi.approveClubRequest(req.id), req.id, 'Request approved')}
+                          />
+                          <ActionButton
+                            id={`reject-${req.id}`}
+                            activeId={actioningId}
+                            variant="reject"
+                            onClick={() => act(() => adminApi.rejectClubRequest(req.id), `reject-${req.id}`, 'Request rejected')}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </TabsContent>
+
+        {/* ── Ride join requests ── */}
+        <TabsContent value="ride-requests" className="mt-4 space-y-4">
+          {data?.pendingRideRequests.length === 0 ? (
+            <EmptyState icon={<MapPin className="w-8 h-8" />} label="No pending ride join requests" />
+          ) : (
+            <>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={approveAllRideRequests}
+                  disabled={actioningId === 'bulk-ride-requests'}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  {actioningId === 'bulk-ride-requests' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+                  Accept All ({data!.pendingRideRequests.length})
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {data!.pendingRideRequests.map((req) => (
+                  <Card key={req.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarFallback>{(req.userName || req.userEmail || 'U')[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">{req.userName || req.userEmail || 'Unknown'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Wants to join ride: <span className="font-medium text-foreground">{req.rideTitle}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            {new Date(req.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <ActionButton
+                            id={req.id}
+                            activeId={actioningId}
+                            variant="approve"
+                            onClick={() => act(() => adminApi.acceptRideParticipant(req.id), req.id, 'Participant accepted')}
+                          />
+                          <ActionButton
+                            id={`decline-${req.id}`}
+                            activeId={actioningId}
+                            variant="reject"
+                            onClick={() => act(() => adminApi.declineRideParticipant(req.id), `decline-${req.id}`, 'Participant declined')}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function ActionButton({
+  id,
+  activeId,
+  variant,
+  onClick,
+}: {
+  id: string
+  activeId: string | null
+  variant: 'approve' | 'reject'
+  onClick: () => void
+}) {
+  const busy = activeId === id
+  if (variant === 'approve') {
+    return (
+      <Button size="sm" onClick={onClick} disabled={!!activeId} className="gap-1 bg-green-600 hover:bg-green-700 h-8 px-3">
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+        {busy ? '' : 'Approve'}
+      </Button>
+    )
+  }
+  return (
+    <Button size="sm" variant="outline" onClick={onClick} disabled={!!activeId} className="gap-1 border-red-200 text-red-600 hover:bg-red-50 h-8 px-3">
+      {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+      {busy ? '' : 'Reject'}
+    </Button>
+  )
+}
+
+function EmptyState({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
+        {icon}
+        <p className="text-sm">{label}</p>
+      </CardContent>
+    </Card>
+  )
+}

@@ -72,13 +72,13 @@ export default function LoginPage() {
         successToast('Welcome back Admin')
         router.push('/admin')
       } else {
-        // Manager tab - check for CLUB_OWNER, SELLER, ADMIN, or CO_ADMIN
+        // Manager tab - check for CLUB_OWNER, ADMIN, or CO_ADMIN
         const hasAccess = roles.some((role) =>
-          ['CLUB_OWNER', 'SELLER', 'ADMIN', 'CO_ADMIN'].includes(role),
+          ['CLUB_OWNER', 'ADMIN', 'CO_ADMIN'].includes(role),
         )
         if (!hasAccess) {
           errorToast('Access denied. Manager or admin role required.', {
-            description: 'Club owner, seller, admin, or co-admin account required.',
+            description: 'Club owner, admin, or co-admin account required.',
           })
           return
         }

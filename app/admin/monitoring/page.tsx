@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuth } from '@/lib/use-auth'
+import { useState, useEffect } from 'react'
 import {
   Card,
   CardContent,
@@ -11,342 +11,259 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Shield,
-  ExternalLink,
   Activity,
-  BarChart3,
-  FileText,
-  Server,
-  Database,
   AlertCircle,
+  CheckCircle2,
+  ExternalLink,
+  RefreshCw,
+  Server,
+  Shield,
+  Zap,
+  Bug,
 } from 'lucide-react'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
+import { toast } from 'sonner'
 
-const GRAFANA_URL = process.env.NEXT_PUBLIC_GRAFANA_URL || 'http://localhost:3001'
-const PROMETHEUS_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localhost:9090'
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || ''
+const SENTRY_ORG = process.env.NEXT_PUBLIC_SENTRY_ORG || ''
+const SENTRY_PROJECT = process.env.NEXT_PUBLIC_SENTRY_PROJECT || ''
+
+type HealthStatus = 'checking' | 'up' | 'down'
+
+interface ServiceHealth {
+  name: string
+  url: string
+  status: HealthStatus
+  latencyMs?: number
+}
+
+async function pingEndpoint(url: string): Promise<{ ok: boolean; latencyMs: number }> {
+  const start = Date.now()
+  try {
+    const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(5000) })
+    return { ok: res.ok || res.status < 500, latencyMs: Date.now() - start }
+  } catch {
+    return { ok: false, latencyMs: Date.now() - start }
+  }
+}
 
 export default function AdminMonitoringPage() {
-  const { user, hasSession, isPending, error } = useAuth()
-  const router = useRouter()
-  const userRoles: string[] = user?.roles || []
-  const isSuperAdmin = userRoles.includes('ADMIN')
-  const debugAuth = process.env.NODE_ENV !== 'production'
+  const [services, setServices] = useState<ServiceHealth[]>([
+    { name: 'API Server', url: `${API_URL}/health`, status: 'checking' },
+    { name: 'Auth Service', url: `${API_URL}/api/health`, status: 'checking' },
+  ])
+  const [lastChecked, setLastChecked] = useState<Date | null>(null)
+  const [checking, setChecking] = useState(false)
 
-  useEffect(() => {
-    if (debugAuth) {
-      console.log('[AdminMonitoringPage] auth guard', {
-        isPending,
-        hasSession,
-        hasUser: !!user,
-        isSuperAdmin,
-        userRoles: user?.roles || [],
-        error,
-      })
-    }
-
-    if (isPending) return
-
-    if (!hasSession) {
-      if (debugAuth) {
-        console.warn('[AdminMonitoringPage] no session -> /login')
-      }
-      router.push('/login')
-      return
-    }
-
-    if (!user) {
-      if (debugAuth) {
-        console.warn(
-          '[AdminMonitoringPage] session exists but profile missing; waiting for hydration',
-        )
-      }
-      return
-    }
-
-    if (!isSuperAdmin) {
-      if (debugAuth) {
-        console.warn('[AdminMonitoringPage] not super admin -> /admin')
-      }
-      router.push('/admin')
-    }
-  }, [user, hasSession, isPending, isSuperAdmin, router, error, debugAuth])
-
-  if (isPending || (hasSession && !user)) {
-    return (
-      <BoneyardLoadingState
-        name="admin-monitoring-loading"
-        fallback={
-          <div className="flex items-center justify-center min-h-100">
-            <div className="text-center space-y-2">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-              <p className="text-sm text-muted-foreground">Loading...</p>
-            </div>
-          </div>
-        }
-      />
+  const runChecks = async () => {
+    setChecking(true)
+    const results = await Promise.all(
+      services.map(async (svc) => {
+        const { ok, latencyMs } = await pingEndpoint(svc.url)
+        return { ...svc, status: (ok ? 'up' : 'down') as HealthStatus, latencyMs }
+      }),
     )
+    setServices(results)
+    setLastChecked(new Date())
+    setChecking(false)
   }
 
-  if (!isSuperAdmin) {
-    return (
-      <Card className="border-red-200 bg-red-50/60">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-red-600" />
-            <CardTitle>Restricted</CardTitle>
-          </div>
-          <CardDescription>
-            Monitoring dashboards are available to super admins only.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    )
-  }
+  useEffect(() => { runChecks() }, [])
+
+  const allUp = services.every((s) => s.status === 'up')
+  const hasSentry = !!SENTRY_DSN
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold">Monitoring & Metrics</h2>
-          <p className="text-sm text-muted-foreground">
-            Real-time system health, performance metrics, and observability dashboard.
+          <h2 className="text-2xl font-semibold">Monitoring</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Service health · Error tracking · Observability
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1">
-            <Activity className="w-3.5 h-3.5" />
-            Live
-          </Badge>
-          <Button variant="outline" size="sm" asChild>
-            <a href="/docs/MONITORING_GUIDE.md" target="_blank" rel="noreferrer">
-              <FileText className="mr-2 h-4 w-4" />
-              Guide
-            </a>
+        <div className="flex items-center gap-3">
+          {lastChecked && (
+            <span className="text-xs text-muted-foreground">
+              Last checked {lastChecked.toLocaleTimeString()}
+            </span>
+          )}
+          <Button variant="outline" size="sm" onClick={runChecks} disabled={checking}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
+            Check now
           </Button>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Grafana</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Dashboard</div>
-            <p className="text-xs text-muted-foreground">Visual metrics & insights</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Prometheus</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Time-Series DB</div>
-            <p className="text-xs text-muted-foreground">Metrics storage & queries</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Metrics API</CardTitle>
-            <Server className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Live Feed</div>
-            <p className="text-xs text-muted-foreground">Backend endpoint</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle>Grafana Dashboard</CardTitle>
-                <CardDescription>
-                  Zoomies backend overview with request, error, and latency panels.
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <a href={GRAFANA_URL} target="_blank" rel="noreferrer">
-                  Open
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <iframe
-              title="Grafana Dashboard"
-              src={`${GRAFANA_URL}/d/zoomies-backend/zoomies-backend-overview?kiosk=tv&theme=light`}
-              className="h-105 w-full border-0"
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle>Prometheus</CardTitle>
-                <CardDescription>
-                  Time-series database and metrics scraper.
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <a href={PROMETHEUS_URL} target="_blank" rel="noreferrer">
-                  Open
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2 text-sm">
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-muted-foreground min-w-25">URL:</span>
-                <code className="text-xs bg-muted px-2 py-1 rounded">
-                  {PROMETHEUS_URL}
-                </code>
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-muted-foreground min-w-25">Scrape:</span>
-                <code className="text-xs bg-muted px-2 py-1 rounded">
-                  /api/admin/metrics
-                </code>
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-muted-foreground min-w-25">Interval:</span>
-                <span className="text-xs">15 seconds</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Button variant="secondary" size="sm" className="w-full" asChild>
-                <a href={`${PROMETHEUS_URL}/targets`} target="_blank" rel="noreferrer">
-                  <Activity className="mr-2 h-3.5 w-3.5" />
-                  View Targets Status
-                </a>
-              </Button>
-              <Button variant="secondary" size="sm" className="w-full" asChild>
-                <a href={`${PROMETHEUS_URL}/graph`} target="_blank" rel="noreferrer">
-                  <BarChart3 className="mr-2 h-3.5 w-3.5" />
-                  Query Metrics (PromQL)
-                </a>
-              </Button>
-            </div>
-
-            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs flex gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-amber-900 dark:text-amber-100">Security:</strong>
-                <span className="text-amber-700 dark:text-amber-200 ml-1">
-                  Update METRICS_BEARER_TOKEN on backend and in Prometheus config to
-                  secure the metrics endpoint.
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Monitoring Guide */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
-          <CardDescription>Quick guide to using the monitoring stack</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                  1
-                </span>
-                Start Monitoring Stack
-              </h4>
-              <code className="block text-xs bg-muted p-3 rounded">
-                cd monitoring
-                <br />
-                docker compose up -d
-              </code>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                  2
-                </span>
-                Access Grafana
-              </h4>
-              <div className="text-xs bg-muted p-3 rounded space-y-1">
-                <div>
-                  <strong>URL:</strong> {GRAFANA_URL}
-                </div>
-                <div>
-                  <strong>User:</strong> admin
-                </div>
-                <div>
-                  <strong>Pass:</strong> admin
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                  3
-                </span>
-                View Dashboard
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                Navigate to <strong>Dashboards → Zoomies Backend Overview</strong> or use
-                the embedded view above.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                  4
-                </span>
-                Check Metrics
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                Visit Prometheus at <strong>{PROMETHEUS_URL}/targets</strong> to verify
-                backend scraping is active (status UP).
-              </p>
-            </div>
+      {/* Overall status banner */}
+      <Card className={allUp ? 'border-green-200 bg-green-50/40 dark:bg-green-950/20' : 'border-red-200 bg-red-50/40 dark:bg-red-950/20'}>
+        <CardContent className="p-4 flex items-center gap-3">
+          {allUp
+            ? <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+            : <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />}
+          <div>
+            <p className="font-semibold text-sm">
+              {checking ? 'Checking services…' : allUp ? 'All systems operational' : 'One or more services degraded'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {services.filter(s => s.status === 'up').length}/{services.length} services healthy
+            </p>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="flex gap-2 pt-2">
-            <Button variant="default" size="sm" asChild>
-              <a
-                href="https://github.com/yourusername/zoomies-backend/blob/main/docs/MONITORING_GUIDE.md"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Full Monitoring Guide
-              </a>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <a href={`${BACKEND_URL}/admin/metrics`} target="_blank" rel="noreferrer">
-                <Server className="mr-2 h-4 w-4" />
-                Raw Metrics Endpoint
-              </a>
-            </Button>
+      {/* Health checks */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Service Health</h3>
+        <div className="grid gap-3 md:grid-cols-2">
+          {services.map((svc) => (
+            <Card key={svc.name}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <Server className="w-5 h-5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{svc.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{svc.url}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {svc.latencyMs !== undefined && svc.status === 'up' && (
+                    <span className="text-xs text-muted-foreground">{svc.latencyMs}ms</span>
+                  )}
+                  {svc.status === 'checking' && (
+                    <Badge variant="secondary" className="gap-1">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> Checking
+                    </Badge>
+                  )}
+                  {svc.status === 'up' && (
+                    <Badge className="gap-1 bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-300">
+                      <CheckCircle2 className="w-3 h-3" /> UP
+                    </Badge>
+                  )}
+                  {svc.status === 'down' && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertCircle className="w-3 h-3" /> DOWN
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Sentry */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Error Tracking — Sentry</h3>
+        {hasSentry ? (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950 flex items-center justify-center shrink-0">
+                <Bug className="w-5 h-5 text-violet-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Sentry is configured</p>
+                <p className="text-xs text-muted-foreground">DSN is set — errors are being captured.</p>
+              </div>
+              {SENTRY_ORG && SENTRY_PROJECT && (
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href={`https://sentry.io/organizations/${SENTRY_ORG}/projects/${SENTRY_PROJECT}/`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open Sentry
+                    <ExternalLink className="ml-2 w-3.5 h-3.5" />
+                  </a>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-dashed">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bug className="w-5 h-5 text-violet-500" />
+                Set up Sentry (free, 5k errors/month)
+              </CardTitle>
+              <CardDescription>
+                Replaces Prometheus + Grafana for early-stage monitoring — zero infra, instant errors.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ol className="space-y-3 text-sm">
+                <li className="flex gap-3">
+                  <StepBadge n={1} />
+                  <div>
+                    <p className="font-medium">Create a free account</p>
+                    <a href="https://sentry.io/signup/" target="_blank" rel="noreferrer" className="text-xs text-violet-600 hover:underline flex items-center gap-1">
+                      sentry.io/signup <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <StepBadge n={2} />
+                  <div>
+                    <p className="font-medium">Install SDKs</p>
+                    <code className="text-xs bg-muted px-2 py-1 rounded block mt-1">
+                      bun add @sentry/nextjs @sentry/react-native
+                    </code>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <StepBadge n={3} />
+                  <div>
+                    <p className="font-medium">Add env vars</p>
+                    <code className="text-xs bg-muted px-2 py-1 rounded block mt-1 leading-relaxed">
+                      NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...<br />
+                      NEXT_PUBLIC_SENTRY_ORG=your-org<br />
+                      NEXT_PUBLIC_SENTRY_PROJECT=zoomies-web
+                    </code>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <StepBadge n={4} />
+                  <div>
+                    <p className="font-medium">Run Sentry wizard (auto-configures Next.js)</p>
+                    <code className="text-xs bg-muted px-2 py-1 rounded block mt-1">
+                      npx @sentry/wizard@latest -i nextjs
+                    </code>
+                  </div>
+                </li>
+              </ol>
+
+              <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs flex gap-2">
+                <Zap className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <span className="text-amber-800 dark:text-amber-200">
+                  Free tier covers 5,000 errors + 10,000 performance transactions per month —
+                  more than enough for beta. No Docker, no dashboards to run.
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Deprecation notice */}
+      <Card className="border-dashed opacity-60">
+        <CardContent className="p-4 flex items-center gap-3">
+          <Shield className="w-5 h-5 text-muted-foreground shrink-0" />
+          <div>
+            <p className="font-medium text-sm text-muted-foreground">Prometheus &amp; Grafana removed</p>
+            <p className="text-xs text-muted-foreground">
+              Too heavy for early-stage. Sentry covers errors + performance at zero ops cost.
+              Add Prometheus back when you hit 10k+ DAU and need custom metrics.
+            </p>
           </div>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function StepBadge({ n }: { n: number }) {
+  return (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[11px] font-bold text-white mt-0.5">
+      {n}
+    </span>
   )
 }

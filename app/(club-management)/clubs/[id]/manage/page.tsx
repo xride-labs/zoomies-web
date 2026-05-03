@@ -57,6 +57,7 @@ import {
   X,
   AlertTriangle,
   Loader2,
+  BarChart3,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -402,10 +403,14 @@ export default function ClubManagePage() {
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ChevronLeft className="w-5 h-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">Manage Club</h1>
           <p className="text-sm text-muted-foreground">{clubSettings.name}</p>
         </div>
+        <Button variant="outline" size="sm" onClick={() => router.push(`/clubs/${params.id}/analytics`)}>
+          <BarChart3 className="w-4 h-4 mr-2" />
+          Analytics
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

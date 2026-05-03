@@ -22,6 +22,7 @@ import { ChevronLeft, ImagePlus, MapPin } from 'lucide-react'
 import { clubsApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
 import { useToast } from '@/hooks/use-toast'
+import { ImageUrlInput } from '@/components/ui/image-url-input'
 
 const clubTypes = [
   'Riding Club',
@@ -50,6 +51,9 @@ export default function CreateClubPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
+  // Direct URL state — when set, bypasses Cloudinary upload
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [coverUrl, setCoverUrl] = useState<string | null>(null)
   const [clubData, setClubData] = useState({
     name: '',
     description: '',
@@ -95,12 +99,16 @@ export default function CreateClubPage() {
         isPublic: clubData.isPublic,
       })
 
-      if (logoFile) {
+      if (logoUrl) {
+        await clubsApi.updateClub(club.id, { image: logoUrl })
+      } else if (logoFile) {
         const logoDataUrl = await fileToDataUrl(logoFile)
         await mediaApi.uploadClubImage(club.id, logoDataUrl, 'logo')
       }
 
-      if (coverFile) {
+      if (coverUrl) {
+        await clubsApi.updateClub(club.id, { coverImage: coverUrl })
+      } else if (coverFile) {
         const coverDataUrl = await fileToDataUrl(coverFile)
         await mediaApi.uploadClubImage(club.id, coverDataUrl, 'cover')
       }
@@ -153,34 +161,26 @@ export default function CreateClubPage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="group flex cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-border bg-muted/20 p-5 transition-all hover:border-primary/50 hover:bg-muted/40">
-                  <div className="h-20 w-20 overflow-hidden rounded-xl bg-muted flex items-center justify-center shrink-0 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-                    {logoPreview ? (
-                      <img src={logoPreview} alt="Club logo preview" className="h-full w-full object-cover" />
-                    ) : (
-                      <ImagePlus className="w-8 h-8 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">Club Logo</p>
-                    <p className="text-xs text-muted-foreground">Square, at least 256×256px</p>
-                  </div>
-                  <Input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoChange(e.target.files?.[0] || null)} />
-                </label>
-                <label className="group flex cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-border bg-muted/20 p-5 transition-all hover:border-primary/50 hover:bg-muted/40">
-                  <div className="h-20 w-20 overflow-hidden rounded-xl bg-muted flex items-center justify-center shrink-0 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-                    {coverPreview ? (
-                      <img src={coverPreview} alt="Club cover preview" className="h-full w-full object-cover" />
-                    ) : (
-                      <ImagePlus className="w-8 h-8 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">Cover Banner</p>
-                    <p className="text-xs text-muted-foreground">Wide, at least 1200×400px</p>
-                  </div>
-                  <Input type="file" accept="image/*" className="hidden" onChange={(e) => handleCoverChange(e.target.files?.[0] || null)} />
-                </label>
+                <ImageUrlInput
+                  label="Club Logo"
+                  hint="Square, at least 256×256px"
+                  value={logoUrl}
+                  onChange={(url) => { setLogoUrl(url); if (url) setLogoFile(null); }}
+                  filePreview={logoPreview}
+                  onFileChange={async (f) => { setLogoFile(f); setLogoUrl(null); setLogoPreview(await fileToDataUrl(f)); }}
+                  searchQuery="motorcycle club logo"
+                  aspectClass="aspect-square"
+                />
+                <ImageUrlInput
+                  label="Cover Banner"
+                  hint="Wide, at least 1200×400px"
+                  value={coverUrl}
+                  onChange={(url) => { setCoverUrl(url); if (url) setCoverFile(null); }}
+                  filePreview={coverPreview}
+                  onFileChange={async (f) => { setCoverFile(f); setCoverUrl(null); setCoverPreview(await fileToDataUrl(f)); }}
+                  searchQuery="motorcycle club cover banner"
+                  aspectClass="aspect-[3/1]"
+                />
               </div>
 
               <div className="space-y-4">

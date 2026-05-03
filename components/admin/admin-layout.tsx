@@ -21,6 +21,7 @@ import {
   Bell,
   Search,
   Activity,
+  CheckSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -30,6 +31,7 @@ import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-stat
 
 const adminNavigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Approvals', href: '/admin/approvals', icon: CheckSquare, highlight: true },
   { name: 'Launch Interest', href: '/admin/launch-interest', icon: Inbox },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Clubs', href: '/admin/clubs', icon: Shield },
@@ -99,7 +101,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       const hasManagerAccess = hasAnyRole(
         user,
         'CLUB_OWNER',
-        'SELLER',
         'CO_ADMIN',
         'ADMIN',
       )
@@ -196,6 +197,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             const isActive =
               pathname === item.href ||
               (item.href !== '/admin' && pathname.startsWith(item.href))
+            const highlight = (item as any).highlight && !isActive
             return (
               <Link
                 key={item.name}
@@ -204,11 +206,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   'flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium transition-colors text-sm',
                   isActive
                     ? 'bg-red-600 text-white'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                    : highlight
+                      ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                 )}
               >
                 <item.icon className="w-5 h-5" />
                 {item.name}
+                {highlight && (
+                  <span className="ml-auto flex h-2 w-2 rounded-full bg-amber-500" />
+                )}
               </Link>
             )
           })}

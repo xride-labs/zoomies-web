@@ -88,7 +88,7 @@ export const createAdminUser = createAsyncThunk(
       phone?: string
       bio?: string
       location?: string
-      roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+      roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'CLUB_OWNER'>
     },
     { rejectWithValue },
   ) => {
@@ -117,7 +117,7 @@ export const updateAdminUser = createAsyncThunk(
         phone?: string | null
         bio?: string | null
         location?: string | null
-        roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'SELLER' | 'CLUB_OWNER'>
+        roles?: Array<'ADMIN' | 'CO_ADMIN' | 'RIDER' | 'CLUB_OWNER'>
       }
     },
     { rejectWithValue },

@@ -46,7 +46,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const hasManagerAccess = hasAnyRole(
     user,
     'CLUB_OWNER',
-    'SELLER',
     'CO_ADMIN',
     'ADMIN',
   )
