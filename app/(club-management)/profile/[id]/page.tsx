@@ -93,7 +93,7 @@ interface UserProfile {
 export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const username = params.username as string
+  const username = params.id as string
   const {
     success: successToast,
     error: errorToast,
@@ -130,7 +130,6 @@ export default function ProfilePage() {
         username === 'me'
           ? await userApi.getProfile()
           : await userApi.getPublicProfile(username)
-      // Map API response to local UserProfile type
       const userData = response.user
       setUser({
         id: userData.id,

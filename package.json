@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --bun next dev --webpack",
+    "dev:fast": "bun --bun next dev --turbo",
+    "dev:clean": "node -e \"require('fs').rmSync('.next', {force: true, recursive: true})\" && bun dev",
     "build": "next build",
     "start": "bun --bun next start",
     "preview": "bun run build && bun run start",
@@ -43,6 +45,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
     "@reduxjs/toolkit": "^2.11.2",
+    "@sentry/nextjs": "^10.51.0",
     "axios": "^1.13.2",
     "better-auth": "^1.4.18",
     "boneyard-js": "^1.7.7",

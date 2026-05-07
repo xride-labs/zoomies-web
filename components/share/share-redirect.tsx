@@ -3,93 +3,85 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowDownToLine, Smartphone, ChevronRight } from 'lucide-react'
+import { ArrowDownToLine, Smartphone, Loader2 } from 'lucide-react'
 
 export type ShareKind = 'ride' | 'listing' | 'club' | 'invite'
 
 interface ShareRedirectProps {
   kind: ShareKind
-  /** Item id (rideId, listingId, clubId, or inviter username for invite) */
   id: string
   title: string
-  /** Short tagline shown under the title */
   description?: string
-  /** Optional preview image URL */
   imageUrl?: string | null
-  /** Optional metadata bullets shown above the buttons */
   meta?: Array<{ label: string; value: string }>
 }
 
-const SEGMENT_BY_KIND: Record<ShareKind, string> = {
-  ride: 'r',
-  listing: 'm',
-  club: 'c',
-  invite: 'i',
+const SEGMENT: Record<ShareKind, string> = { ride: 'r', listing: 'm', club: 'c', invite: 'i' }
+const COPY: Record<ShareKind, { emoji: string; noun: string }> = {
+  ride:    { emoji: '🏍️', noun: 'ride' },
+  listing: { emoji: '🛒', noun: 'listing' },
+  club:    { emoji: '👥', noun: 'club' },
+  invite:  { emoji: '⚡', noun: 'invite' },
 }
 
-const APP_SCHEME = 'zoomies'
+const APP_SCHEME  = 'zoomies'
+const APP_PACKAGE = 'com.zoomies.app'
+const DOWNLOAD_URL = 'https://zoomies.xride-labs.in/download'
 
-const KIND_COPY: Record<ShareKind, { ctaApp: string; ctaWeb: string; emoji: string }> = {
-  ride: {
-    ctaApp: 'Open Ride in App',
-    ctaWeb: 'Get the App to Join',
-    emoji: '🏍️',
-  },
-  listing: {
-    ctaApp: 'Open Listing in App',
-    ctaWeb: 'Get the App to Buy',
-    emoji: '🛒',
-  },
-  club: {
-    ctaApp: 'Open Club in App',
-    ctaWeb: 'Get the App to Join',
-    emoji: '👥',
-  },
-  invite: {
-    ctaApp: 'Continue in App',
-    ctaWeb: 'Download Zoomies',
-    emoji: '⚡',
-  },
+/** Chrome on Android: opens app directly if installed, else falls back to DOWNLOAD_URL. No dialog. */
+function intentUrl(path: string) {
+  const fallback = encodeURIComponent(DOWNLOAD_URL)
+  return `intent://${path}#Intent;scheme=${APP_SCHEME};package=${APP_PACKAGE};S.browser_fallback_url=${fallback};end`
 }
 
-export function ShareRedirect({
-  kind,
-  id,
-  title,
-  description,
-  imageUrl,
-  meta,
-}: ShareRedirectProps) {
-  const [attempted, setAttempted] = useState(false)
-  const segment = SEGMENT_BY_KIND[kind]
-  const deepLink = `${APP_SCHEME}://${segment}/${id}`
-  const copy = KIND_COPY[kind]
+function isAndroid() {
+  return typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)
+}
 
-  // Auto-attempt the deep link once on mount. If the app is installed,
-  // it'll open and this page becomes a no-op. If not, the page stays
-  // and the user sees the Download CTA below.
+type Phase = 'redirecting' | 'fallback' | 'non-android'
+
+export function ShareRedirect({ kind, id, title, description, imageUrl, meta }: ShareRedirectProps) {
+  const [phase, setPhase] = useState<Phase>('redirecting')
+  const deepPath = `${SEGMENT[kind]}/${id}`
+  const copy = COPY[kind]
+
   useEffect(() => {
-    if (typeof window === 'undefined' || attempted) return
-    setAttempted(true)
-    const t = window.setTimeout(() => {
-      try {
-        window.location.href = deepLink
-      } catch {
-        /* noop — most likely scheme isn't registered on this device */
-      }
+    if (typeof window === 'undefined') return
+
+    if (!isAndroid()) {
+      // App is Android-only — skip any redirect attempt.
+      setPhase('non-android')
+      return
+    }
+
+    // Fire the intent URL after a short paint delay so the content card
+    // is visible before Chrome navigates away.
+    const fire = window.setTimeout(() => {
+      window.location.href = intentUrl(deepPath)
     }, 250)
-    return () => window.clearTimeout(t)
-  }, [attempted, deepLink])
+
+    // If the page is still visible after 1.8 s, the browser didn't handle
+    // the intent URL (e.g. Samsung Internet). Show manual buttons instead.
+    const fallback = window.setTimeout(() => {
+      if (!document.hidden) setPhase('fallback')
+    }, 1800)
+
+    return () => {
+      window.clearTimeout(fire)
+      window.clearTimeout(fallback)
+    }
+  }, [deepPath])
 
   return (
     <main className="min-h-screen bg-canvas text-white flex flex-col items-center justify-center px-6 py-16">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
         className="w-full max-w-md"
       >
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-sm overflow-hidden">
+          {/* Banner */}
           {imageUrl ? (
             <div
               className="h-44 w-full bg-cover bg-center"
@@ -97,9 +89,7 @@ export function ShareRedirect({
             />
           ) : (
             <div className="h-32 w-full bg-linear-to-br from-brand-red-light to-brand-red flex items-center justify-center">
-              <span className="text-5xl" aria-hidden>
-                {copy.emoji}
-              </span>
+              <span className="text-5xl" aria-hidden>{copy.emoji}</span>
             </div>
           )}
 
@@ -108,11 +98,11 @@ export function ShareRedirect({
               Shared on Zoomies
             </p>
             <h1 className="mt-2 text-2xl font-bold leading-tight">{title}</h1>
-            {description ? (
+            {description && (
               <p className="mt-2 text-sm text-white/70 leading-relaxed">{description}</p>
-            ) : null}
+            )}
 
-            {meta && meta.length > 0 ? (
+            {meta && meta.length > 0 && (
               <ul className="mt-4 space-y-1.5">
                 {meta.map((m) => (
                   <li key={m.label} className="text-sm text-white/70 flex gap-2">
@@ -121,30 +111,54 @@ export function ShareRedirect({
                   </li>
                 ))}
               </ul>
-            ) : null}
+            )}
 
-            <div className="mt-6 flex flex-col gap-3">
-              <a
-                href={deepLink}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-brand-teal text-canvas font-semibold py-3.5 transition-all hover:scale-[1.02] hover:bg-brand-teal/90"
-              >
-                <Smartphone size={18} />
-                {copy.ctaApp}
-              </a>
+            {/* Phase-gated CTA */}
+            <div className="mt-6">
+              {phase === 'redirecting' && (
+                <div className="flex items-center justify-center gap-3 py-4 text-white/50">
+                  <Loader2 size={18} className="animate-spin text-brand-teal" />
+                  <span className="text-sm font-medium">Opening Zoomies…</span>
+                </div>
+              )}
 
-              <Link
-                href="/download"
-                className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 text-white font-semibold py-3.5 transition-all hover:bg-white/10"
-              >
-                <ArrowDownToLine size={18} />
-                {copy.ctaWeb}
-              </Link>
+              {phase === 'fallback' && (
+                <div className="flex flex-col gap-3">
+                  <a
+                    href={intentUrl(deepPath)}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-brand-teal text-canvas font-semibold py-3.5 transition-all hover:scale-[1.02] hover:bg-brand-teal/90"
+                  >
+                    <Smartphone size={18} />
+                    Open in Zoomies
+                  </a>
+                  <Link
+                    href="/download"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 text-white font-semibold py-3.5 transition-all hover:bg-white/10"
+                  >
+                    <ArrowDownToLine size={18} />
+                    Download Zoomies
+                  </Link>
+                  <p className="mt-1 text-center text-xs text-white/40">
+                    Don't have the app yet? Download it to view this {copy.noun}.
+                  </p>
+                </div>
+              )}
+
+              {phase === 'non-android' && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-white/60 text-center leading-relaxed">
+                    Zoomies is available on Android. Open this link on your Android phone to join.
+                  </p>
+                  <Link
+                    href="/download"
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-brand-teal text-canvas font-semibold py-3.5 transition-all hover:scale-[1.02] hover:bg-brand-teal/90"
+                  >
+                    <ArrowDownToLine size={18} />
+                    Download Zoomies
+                  </Link>
+                </div>
+              )}
             </div>
-
-            <p className="mt-5 text-center text-xs text-white/40">
-              The app should open automatically. If nothing happened, tap{' '}
-              <span className="text-white/70 font-medium">{copy.ctaApp}</span> above.
-            </p>
           </div>
         </div>
 
@@ -154,7 +168,6 @@ export function ShareRedirect({
             className="text-xs text-white/40 hover:text-white/70 transition-colors inline-flex items-center gap-1"
           >
             Back to zoomies.xride-labs.in
-            <ChevronRight size={12} />
           </Link>
         </div>
       </motion.div>

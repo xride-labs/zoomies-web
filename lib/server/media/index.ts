@@ -91,6 +91,19 @@ export async function uploadListingImage(
   )
 }
 
+export async function uploadBusinessImage(
+  businessId: string,
+  file: string,
+  type: 'logo' | 'banner' = 'logo',
+): Promise<MediaUploadResponse> {
+  return apiAuthenticated.post<MediaUploadResponse>('/media/upload', {
+    folder: 'businesses',
+    file,
+    type,
+    resourceId: businessId,
+  })
+}
+
 export async function deleteMedia(
   publicId: string,
   resourceType: MediaType = 'image',
@@ -107,5 +120,6 @@ export const mediaApi = {
   uploadBikeImage,
   uploadRideMedia,
   uploadListingImage,
+  uploadBusinessImage,
   deleteMedia,
 }

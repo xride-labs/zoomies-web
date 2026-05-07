@@ -45,6 +45,7 @@ export interface AdminUserRecord {
   name: string | null
   username?: string | null
   image: string | null
+  coverImage?: string | null
   phone: string | null
   bio?: string | null
   location?: string | null
@@ -60,6 +61,79 @@ export interface AdminUserRecord {
     createdRides: number
     createdClubs: number
   }
+}
+
+export interface AdminUserDetails extends AdminUserRecord {
+  dob: string | null
+  bloodType: string | null
+  interests: string[]
+  onboardingCompleted: boolean
+  xpPoints: number | null
+  level: number
+  levelTitle: string
+  reputationScore: number | null
+  helmetVerified: boolean
+  lastSafetyCheck: string | null
+  subscriptionTier: string | null
+  rideStats: {
+    totalDistanceKm: number
+    longestRideKm: number
+    totalRides: number
+    nightRides: number
+    weekendRides: number
+    soloRides: number
+    groupRides: number
+    avgRideDistanceKm: number
+    totalRideTimeMin: number
+  } | null
+  preferences: {
+    rideReminders: boolean
+    serviceReminderKm: number
+    darkMode: boolean
+    units: string
+    openToInvite: boolean
+    pushNotifications: boolean
+    emailNotifications: boolean
+    smsNotifications: boolean
+    profileVisibility: string
+    showLocation: boolean
+    showBikes: boolean
+    lowDataMode: boolean
+    showStats: boolean
+  } | null
+  emergencyContacts: Array<{
+    id: string
+    name: string
+    phone: string
+    relationship: string | null
+    isPrimary: boolean
+  }>
+  badges: Array<{
+    earnedAt: string
+    badge: {
+      id: string
+      name: string
+      icon: string | null
+      category: string | null
+      requirement: string | null
+      auraPoints: number
+    }
+  }>
+  counts: {
+    createdRides: number
+    createdClubs: number
+    posts: number
+    comments: number
+    followers: number
+    following: number
+    marketplaceListings: number
+    clubMemberships: number
+    rideParticipations: number
+    eventParticipations: number
+    notifications: number
+  }
+  unreadNotifications: number
+  updatedAt: string
 }
 
 export interface AdminRideRecord {
@@ -215,6 +289,69 @@ export interface ReportFilters {
   status?: string
 }
 
+export interface AdminNotificationRecord {
+  id: string
+  userId: string
+  type: string
+  title: string
+  message?: string | null
+  relatedType?: string | null
+  relatedId?: string | null
+  isRead: boolean
+  readAt: string | null
+  sentViaEmail: boolean
+  sentViaPush: boolean
+  createdAt: string
+  user: {
+    id: string
+    name: string | null
+    email: string | null
+    avatar: string | null
+  }
+}
+
+export interface NotificationFilters {
+  page?: number
+  limit?: number
+  userId?: string
+  unreadOnly?: boolean
+  type?: string
+  search?: string
+}
+
+export interface AdminSettings {
+  siteName: string
+  siteUrl: string
+  supportEmail: string
+  timezone: string
+  maintenanceMode: boolean
+  allowRegistration: boolean
+  marketplaceEnabled: boolean
+  clubCreationEnabled: boolean
+  requireAdmin2FA: boolean
+  sessionTimeoutMinutes: number
+  passwordStrength: 'basic' | 'medium' | 'strong'
+  loginAttempts: number
+  notifyNewUser: boolean
+  notifyNewReports: boolean
+  notifyClubVerification: boolean
+  notifySystemAlerts: boolean
+  notifyDailySummary: boolean
+  smtpHost: string
+  smtpPort: number
+  smtpUser: string
+  smtpPass: string
+  fromEmail: string
+  fromName: string
+  welcomeEmailSubject: string
+  welcomeEmailBody: string
+  primaryColor: string
+  darkModeDefault: boolean
+  compactMode: boolean
+}
+
+export type AdminSettingsUpdate = Partial<AdminSettings>
+
 // ============ Admin API ============
 
 /**
@@ -253,8 +390,8 @@ export async function getUsers(
 /**
  * Get user details by ID
  */
-export async function getUserById(userId: string): Promise<AdminUserRecord> {
-  return apiAuthenticated.get<AdminUserRecord>(`/admin/users/${userId}`)
+export async function getUserById(userId: string): Promise<AdminUserDetails> {
+  return apiAuthenticated.get<AdminUserDetails>(`/admin/users/${userId}`)
 }
 
 /**
@@ -377,6 +514,25 @@ export async function updateReport(
 }
 
 /**
+ * Get notifications (admin)
+ */
+export async function getNotifications(
+  filters?: NotificationFilters,
+): Promise<PaginatedData<AdminNotificationRecord>> {
+  const queryParams = new URLSearchParams()
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, String(value))
+      }
+    })
+  }
+  return apiAuthenticated.get<PaginatedData<AdminNotificationRecord>>(
+    `/admin/notifications?${queryParams}`,
+  )
+}
+
+/**
  * Verify a club
  */
 export async function verifyClub(clubId: string): Promise<void> {
@@ -430,6 +586,16 @@ export async function deleteListing(listingId: string): Promise<void> {
   return apiAuthenticated.delete<void>(`/admin/marketplace/${listingId}`)
 }
 
+// ============ Settings ============
+
+export async function getSettings(): Promise<AdminSettings> {
+  return apiAuthenticated.get<AdminSettings>('/admin/settings')
+}
+
+export async function updateSettings(data: AdminSettingsUpdate): Promise<AdminSettings> {
+  return apiAuthenticated.patch<AdminSettings>('/admin/settings', data)
+}
+
 // ============ Approvals ============
 
 export interface PendingClub {
@@ -472,8 +638,47 @@ export interface AdminApprovalsData {
   pendingRideRequests: PendingRideRequest[]
 }
 
+export interface PendingBusiness {
+  id: string
+  displayName: string
+  category: string
+  slug: string
+  logoUrl: string | null
+  city: string | null
+  region: string | null
+  country: string | null
+  verificationNotes: string | null
+  createdAt: string
+  owner: { id: string; name: string | null; email: string | null }
+}
+
+export interface PendingBusinessesData {
+  items: PendingBusiness[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
 export async function getApprovals(): Promise<AdminApprovalsData> {
   return apiAuthenticated.get<AdminApprovalsData>('/admin/approvals')
+}
+
+export async function getBusinessSubmissions(): Promise<PendingBusinessesData> {
+  return apiAuthenticated.get<PendingBusinessesData>('/admin/businesses?status=SUBMITTED&limit=50')
+}
+
+export async function approveBusinessSubmission(businessId: string): Promise<void> {
+  return apiAuthenticated.patch<void>(`/admin/businesses/${businessId}`, {
+    verification: 'APPROVED',
+  })
+}
+
+export async function rejectBusinessSubmission(
+  businessId: string,
+  notes?: string,
+): Promise<void> {
+  return apiAuthenticated.patch<void>(`/admin/businesses/${businessId}`, {
+    verification: 'REJECTED',
+    verificationNotes: notes ?? null,
+  })
 }
 
 export async function approveClubRequest(requestId: string): Promise<void> {
@@ -485,11 +690,17 @@ export async function rejectClubRequest(requestId: string): Promise<void> {
 }
 
 export async function acceptRideParticipant(participantId: string): Promise<void> {
-  return apiAuthenticated.post<void>(`/admin/ride-participants/${participantId}/accept`, {})
+  return apiAuthenticated.post<void>(
+    `/admin/ride-participants/${participantId}/accept`,
+    {},
+  )
 }
 
 export async function declineRideParticipant(participantId: string): Promise<void> {
-  return apiAuthenticated.post<void>(`/admin/ride-participants/${participantId}/decline`, {})
+  return apiAuthenticated.post<void>(
+    `/admin/ride-participants/${participantId}/decline`,
+    {},
+  )
 }
 
 // Export all as adminApi object
@@ -507,6 +718,7 @@ export const adminApi = {
   getListings,
   getReports,
   updateReport,
+  getNotifications,
   verifyClub,
   deleteUser,
   updateRideStatus,
@@ -515,8 +727,13 @@ export const adminApi = {
   updateListingStatus,
   deleteListing,
   getApprovals,
+  getBusinessSubmissions,
+  approveBusinessSubmission,
+  rejectBusinessSubmission,
   approveClubRequest,
   rejectClubRequest,
   acceptRideParticipant,
   declineRideParticipant,
+  getSettings,
+  updateSettings,
 }

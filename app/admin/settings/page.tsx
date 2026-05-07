@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Card,
   CardContent,
@@ -31,13 +31,83 @@ import {
   Save,
   RotateCcw,
 } from 'lucide-react'
+import { adminApi, type AdminSettings } from '@/lib/server/admin'
+import { toast } from 'sonner'
 
 export default function AdminSettingsPage() {
+  const [settings, setSettings] = useState<AdminSettings | null>(null)
+  const [initialSettings, setInitialSettings] = useState<AdminSettings | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSave = () => {
+  useEffect(() => {
+    let isMounted = true
+    setIsLoading(true)
+    adminApi
+      .getSettings()
+      .then((data) => {
+        if (!isMounted) return
+        setSettings(data)
+        setInitialSettings(data)
+        setError(null)
+      })
+      .catch((err) => {
+        if (!isMounted) return
+        setError(err instanceof Error ? err.message : 'Failed to load settings')
+      })
+      .finally(() => {
+        if (!isMounted) return
+        setIsLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const isDirty = useMemo(() => {
+    if (!settings || !initialSettings) return false
+    return JSON.stringify(settings) !== JSON.stringify(initialSettings)
+  }, [settings, initialSettings])
+
+  const updateSetting = <K extends keyof AdminSettings>(
+    key: K,
+    value: AdminSettings[K],
+  ) => {
+    setSettings((prev) => (prev ? { ...prev, [key]: value } : prev))
+  }
+
+  const handleSave = async () => {
+    if (!settings) return
     setIsSaving(true)
-    setTimeout(() => setIsSaving(false), 1500)
+    try {
+      const updated = await adminApi.updateSettings(settings)
+      setSettings(updated)
+      setInitialSettings(updated)
+      toast.success('Settings saved')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save settings')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleReset = () => {
+    if (!initialSettings) return
+    setSettings(initialSettings)
+  }
+
+  if (isLoading) {
+    return <div className="text-sm text-muted-foreground">Loading settings...</div>
+  }
+
+  if (!settings) {
+    return (
+      <div className="text-sm text-destructive">
+        {error ?? 'Failed to load settings'}
+      </div>
+    )
   }
 
   return (
@@ -65,19 +135,34 @@ export default function AdminSettingsPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="siteName">Site Name</Label>
-                  <Input id="siteName" defaultValue="Zoomies" />
+                  <Input
+                    id="siteName"
+                    value={settings.siteName}
+                    onChange={(event) => updateSetting('siteName', event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="siteUrl">Site URL</Label>
-                  <Input id="siteUrl" defaultValue="https://zoomies.app" />
+                  <Input
+                    id="siteUrl"
+                    value={settings.siteUrl}
+                    onChange={(event) => updateSetting('siteUrl', event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="supportEmail">Support Email</Label>
-                  <Input id="supportEmail" defaultValue="support@zoomies.app" />
+                  <Input
+                    id="supportEmail"
+                    value={settings.supportEmail}
+                    onChange={(event) => updateSetting('supportEmail', event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Timezone</Label>
-                  <Select defaultValue="America/Phoenix">
+                  <Select
+                    value={settings.timezone}
+                    onValueChange={(value) => updateSetting('timezone', value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select timezone" />
                     </SelectTrigger>
@@ -109,7 +194,10 @@ export default function AdminSettingsPage() {
                         Disable access for non-admin users
                       </p>
                     </div>
-                    <Switch />
+                    <Switch
+                      checked={settings.maintenanceMode}
+                      onCheckedChange={(checked) => updateSetting('maintenanceMode', checked)}
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -118,7 +206,10 @@ export default function AdminSettingsPage() {
                         Allow new users to sign up
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      checked={settings.allowRegistration}
+                      onCheckedChange={(checked) => updateSetting('allowRegistration', checked)}
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -127,7 +218,10 @@ export default function AdminSettingsPage() {
                         Enable marketplace features
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      checked={settings.marketplaceEnabled}
+                      onCheckedChange={(checked) => updateSetting('marketplaceEnabled', checked)}
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -136,7 +230,10 @@ export default function AdminSettingsPage() {
                         Allow users to create clubs
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      checked={settings.clubCreationEnabled}
+                      onCheckedChange={(checked) => updateSetting('clubCreationEnabled', checked)}
+                    />
                   </div>
                 </div>
               </div>
@@ -165,7 +262,10 @@ export default function AdminSettingsPage() {
                       Require 2FA for admin accounts
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    checked={settings.requireAdmin2FA}
+                    onCheckedChange={(checked) => updateSetting('requireAdmin2FA', checked)}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -174,7 +274,12 @@ export default function AdminSettingsPage() {
                       Auto logout after inactivity
                     </p>
                   </div>
-                  <Select defaultValue="30">
+                  <Select
+                    value={String(settings.sessionTimeoutMinutes)}
+                    onValueChange={(value) =>
+                      updateSetting('sessionTimeoutMinutes', Number(value))
+                    }
+                  >
                     <SelectTrigger className="w-45">
                       <SelectValue />
                     </SelectTrigger>
@@ -193,7 +298,12 @@ export default function AdminSettingsPage() {
                       Minimum password strength
                     </p>
                   </div>
-                  <Select defaultValue="strong">
+                  <Select
+                    value={settings.passwordStrength}
+                    onValueChange={(value) =>
+                      updateSetting('passwordStrength', value as AdminSettings['passwordStrength'])
+                    }
+                  >
                     <SelectTrigger className="w-45">
                       <SelectValue />
                     </SelectTrigger>
@@ -211,7 +321,12 @@ export default function AdminSettingsPage() {
                       Max failed attempts before lockout
                     </p>
                   </div>
-                  <Select defaultValue="5">
+                  <Select
+                    value={String(settings.loginAttempts)}
+                    onValueChange={(value) =>
+                      updateSetting('loginAttempts', Number(value))
+                    }
+                  >
                     <SelectTrigger className="w-45">
                       <SelectValue />
                     </SelectTrigger>
@@ -236,7 +351,7 @@ export default function AdminSettingsPage() {
                         Allow sign in with Google
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch checked disabled />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -245,7 +360,7 @@ export default function AdminSettingsPage() {
                         Allow sign in with phone OTP
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch checked disabled />
                   </div>
                 </div>
               </div>
@@ -272,7 +387,10 @@ export default function AdminSettingsPage() {
                       Notify when new users sign up
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    checked={settings.notifyNewUser}
+                    onCheckedChange={(checked) => updateSetting('notifyNewUser', checked)}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -281,7 +399,10 @@ export default function AdminSettingsPage() {
                       Notify on new user reports
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    checked={settings.notifyNewReports}
+                    onCheckedChange={(checked) => updateSetting('notifyNewReports', checked)}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -290,7 +411,12 @@ export default function AdminSettingsPage() {
                       Notify on verification requests
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    checked={settings.notifyClubVerification}
+                    onCheckedChange={(checked) =>
+                      updateSetting('notifyClubVerification', checked)
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -299,7 +425,12 @@ export default function AdminSettingsPage() {
                       Critical system notifications
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    checked={settings.notifySystemAlerts}
+                    onCheckedChange={(checked) =>
+                      updateSetting('notifySystemAlerts', checked)
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -308,7 +439,10 @@ export default function AdminSettingsPage() {
                       Daily activity digest email
                     </p>
                   </div>
-                  <Switch />
+                  <Switch
+                    checked={settings.notifyDailySummary}
+                    onCheckedChange={(checked) => updateSetting('notifyDailySummary', checked)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -329,27 +463,54 @@ export default function AdminSettingsPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="smtpHost">SMTP Host</Label>
-                  <Input id="smtpHost" defaultValue="smtp.sendgrid.net" />
+                  <Input
+                    id="smtpHost"
+                    value={settings.smtpHost}
+                    onChange={(event) => updateSetting('smtpHost', event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="smtpPort">SMTP Port</Label>
-                  <Input id="smtpPort" defaultValue="587" />
+                  <Input
+                    id="smtpPort"
+                    value={String(settings.smtpPort)}
+                    onChange={(event) =>
+                      updateSetting('smtpPort', Number(event.target.value || 0))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="smtpUser">SMTP Username</Label>
-                  <Input id="smtpUser" defaultValue="apikey" />
+                  <Input
+                    id="smtpUser"
+                    value={settings.smtpUser}
+                    onChange={(event) => updateSetting('smtpUser', event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="smtpPass">SMTP Password</Label>
-                  <Input id="smtpPass" type="password" defaultValue="••••••••" />
+                  <Input
+                    id="smtpPass"
+                    type="password"
+                    value={settings.smtpPass}
+                    onChange={(event) => updateSetting('smtpPass', event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="fromEmail">From Email</Label>
-                  <Input id="fromEmail" defaultValue="noreply@zoomies.app" />
+                  <Input
+                    id="fromEmail"
+                    value={settings.fromEmail}
+                    onChange={(event) => updateSetting('fromEmail', event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="fromName">From Name</Label>
-                  <Input id="fromName" defaultValue="Zoomies" />
+                  <Input
+                    id="fromName"
+                    value={settings.fromName}
+                    onChange={(event) => updateSetting('fromName', event.target.value)}
+                  />
                 </div>
               </div>
 
@@ -359,14 +520,21 @@ export default function AdminSettingsPage() {
                 <h4 className="font-medium">Email Templates</h4>
                 <div className="space-y-2">
                   <Label htmlFor="welcomeEmail">Welcome Email Subject</Label>
-                  <Input id="welcomeEmail" defaultValue="Welcome to Zoomies! 🏍️" />
+                  <Input
+                    id="welcomeEmail"
+                    value={settings.welcomeEmailSubject}
+                    onChange={(event) =>
+                      updateSetting('welcomeEmailSubject', event.target.value)
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="welcomeBody">Welcome Email Body</Label>
                   <Textarea
                     id="welcomeBody"
                     rows={4}
-                    defaultValue="Hi {{name}},\n\nWelcome to Zoomies! We're excited to have you join our community of riders."
+                    value={settings.welcomeEmailBody}
+                    onChange={(event) => updateSetting('welcomeEmailBody', event.target.value)}
                   />
                 </div>
               </div>
@@ -395,8 +563,13 @@ export default function AdminSettingsPage() {
                       (color) => (
                         <button
                           key={color}
-                          className="w-10 h-10 rounded-lg border-2 border-transparent hover:border-foreground/20 transition-colors"
+                          className={`w-10 h-10 rounded-lg border-2 transition-colors ${
+                            settings.primaryColor === color
+                              ? 'border-foreground'
+                              : 'border-transparent hover:border-foreground/20'
+                          }`}
                           style={{ backgroundColor: color }}
+                          onClick={() => updateSetting('primaryColor', color)}
                         />
                       ),
                     )}
@@ -410,7 +583,10 @@ export default function AdminSettingsPage() {
                       Enable dark mode by default
                     </p>
                   </div>
-                  <Switch />
+                  <Switch
+                    checked={settings.darkModeDefault}
+                    onCheckedChange={(checked) => updateSetting('darkModeDefault', checked)}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -420,7 +596,10 @@ export default function AdminSettingsPage() {
                       Use smaller spacing and fonts
                     </p>
                   </div>
-                  <Switch />
+                  <Switch
+                    checked={settings.compactMode}
+                    onCheckedChange={(checked) => updateSetting('compactMode', checked)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -430,11 +609,11 @@ export default function AdminSettingsPage() {
 
       {/* Save Actions */}
       <div className="flex items-center justify-end gap-4">
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleReset} disabled={!isDirty}>
           <RotateCcw className="w-4 h-4 mr-2" />
           Reset to Defaults
         </Button>
-        <Button onClick={handleSave} disabled={isSaving}>
+        <Button onClick={handleSave} disabled={isSaving || !isDirty}>
           <Save className="w-4 h-4 mr-2" />
           {isSaving ? 'Saving...' : 'Save Changes'}
         </Button>

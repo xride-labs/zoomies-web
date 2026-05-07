@@ -40,6 +40,7 @@ import { Search, UserPlus, Loader2, CheckCircle, XCircle, Eye, Edit, Trash2 } fr
 import { useAdminUsers } from '@/store/features/admin'
 import { useAuth, hasAnyRole } from '@/lib/use-auth'
 import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
+import { adminApi, type AdminUserDetails } from '@/lib/server/admin'
 
 const ROLE_OPTIONS = ['ADMIN', 'CO_ADMIN', 'CLUB_OWNER', 'RIDER'] as const
 
@@ -104,6 +105,9 @@ export default function AdminUsersPage() {
     const [currentPage, setCurrentPage] = useState(1)
 
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+    const [selectedUserDetails, setSelectedUserDetails] = useState<AdminUserDetails | null>(null)
+    const [detailsLoading, setDetailsLoading] = useState(false)
+    const [detailsError, setDetailsError] = useState<string | null>(null)
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -138,6 +142,31 @@ export default function AdminUsersPage() {
         () => users.find((user) => user.id === selectedUserId) ?? null,
         [users, selectedUserId],
     )
+
+    useEffect(() => {
+        if (!isViewDialogOpen || !selectedUserId) return
+        let isMounted = true
+        setDetailsLoading(true)
+        setDetailsError(null)
+        adminApi
+            .getUserById(selectedUserId)
+            .then((data) => {
+                if (!isMounted) return
+                setSelectedUserDetails(data)
+            })
+            .catch((err) => {
+                if (!isMounted) return
+                setDetailsError(err instanceof Error ? err.message : 'Failed to load user details')
+            })
+            .finally(() => {
+                if (!isMounted) return
+                setDetailsLoading(false)
+            })
+
+        return () => {
+            isMounted = false
+        }
+    }, [isViewDialogOpen, selectedUserId])
 
     const stats = {
         total: pagination.total || users.length,
@@ -403,6 +432,7 @@ export default function AdminUsersPage() {
                                                             variant="ghost"
                                                             onClick={() => {
                                                                 setSelectedUserId(user.id)
+                                                                setSelectedUserDetails(null)
                                                                 setIsViewDialogOpen(true)
                                                             }}
                                                         >
@@ -465,49 +495,143 @@ export default function AdminUsersPage() {
             </Card>
 
             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
+                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+                    <DialogHeader className="shrink-0">
                         <DialogTitle>User Profile</DialogTitle>
                         <DialogDescription>Complete user profile details</DialogDescription>
                     </DialogHeader>
-                    {selectedUser && (
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                    {detailsLoading ? (
+                        <div className="text-sm text-muted-foreground">Loading user details...</div>
+                    ) : detailsError ? (
+                        <div className="text-sm text-destructive">{detailsError}</div>
+                    ) : selectedUserDetails ? (
+                        <div className="space-y-6 text-sm overflow-y-auto pr-1">
                             <div>
-                                <p className="text-muted-foreground">Name</p>
-                                <p className="font-medium">{selectedUser.name || 'N/A'}</p>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Profile</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <DetailItem label="Name" value={selectedUserDetails.name} />
+                                    <DetailItem label="Username" value={selectedUserDetails.username} />
+                                    <DetailItem label="Email" value={selectedUserDetails.email} />
+                                    <DetailItem label="Phone" value={selectedUserDetails.phone} />
+                                    <DetailItem label="Location" value={selectedUserDetails.location} />
+                                    <DetailItem label="Bio" value={selectedUserDetails.bio} />
+                                    <DetailItem label="DOB" value={selectedUserDetails.dob} />
+                                    <DetailItem label="Blood Type" value={selectedUserDetails.bloodType} />
+                                    <DetailItem label="Subscription" value={selectedUserDetails.subscriptionTier} />
+                                    <DetailItem label="Onboarding" value={selectedUserDetails.onboardingCompleted ? 'Completed' : 'Incomplete'} />
+                                </div>
+                                <div className="mt-3">
+                                    <p className="text-muted-foreground mb-1">Roles</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {selectedUserDetails.roles.map((role) => (
+                                            <Badge key={role} variant="outline">
+                                                {role}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
+
                             <div>
-                                <p className="text-muted-foreground">Username</p>
-                                <p className="font-medium">{selectedUser.username || 'N/A'}</p>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Activity & Stats</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <DetailItem label="XP" value={selectedUserDetails.xpPoints?.toString()} />
+                                    <DetailItem label="Level" value={`${selectedUserDetails.level} · ${selectedUserDetails.levelTitle}`} />
+                                    <DetailItem label="Reputation" value={selectedUserDetails.reputationScore?.toFixed?.(2)} />
+                                    <DetailItem label="Rides Completed" value={selectedUserDetails.rideStats?.totalRides?.toString()} />
+                                    <DetailItem label="Total Distance (km)" value={selectedUserDetails.rideStats?.totalDistanceKm?.toString()} />
+                                    <DetailItem label="Longest Ride (km)" value={selectedUserDetails.rideStats?.longestRideKm?.toString()} />
+                                </div>
                             </div>
+
                             <div>
-                                <p className="text-muted-foreground">Email</p>
-                                <p className="font-medium">{selectedUser.email || 'N/A'}</p>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Preferences</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <DetailItem label="Units" value={selectedUserDetails.preferences?.units} />
+                                    <DetailItem label="Dark Mode" value={selectedUserDetails.preferences?.darkMode ? 'On' : 'Off'} />
+                                    <DetailItem label="Ride Reminders" value={selectedUserDetails.preferences?.rideReminders ? 'On' : 'Off'} />
+                                    <DetailItem label="Service Reminder (km)" value={selectedUserDetails.preferences?.serviceReminderKm?.toString()} />
+                                    <DetailItem label="Profile Visibility" value={selectedUserDetails.preferences?.profileVisibility} />
+                                    <DetailItem label="Open to Invite" value={selectedUserDetails.preferences?.openToInvite ? 'Yes' : 'No'} />
+                                </div>
                             </div>
+
                             <div>
-                                <p className="text-muted-foreground">Phone</p>
-                                <p className="font-medium">{selectedUser.phone || 'N/A'}</p>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Notifications</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <DetailItem label="Push" value={selectedUserDetails.preferences?.pushNotifications ? 'On' : 'Off'} />
+                                    <DetailItem label="Email" value={selectedUserDetails.preferences?.emailNotifications ? 'On' : 'Off'} />
+                                    <DetailItem label="SMS" value={selectedUserDetails.preferences?.smsNotifications ? 'On' : 'Off'} />
+                                    <DetailItem label="Unread" value={selectedUserDetails.unreadNotifications.toString()} />
+                                    <DetailItem label="Total" value={selectedUserDetails.counts.notifications.toString()} />
+                                </div>
                             </div>
+
                             <div>
-                                <p className="text-muted-foreground">Location</p>
-                                <p className="font-medium">{selectedUser.location || 'N/A'}</p>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Safety</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <DetailItem label="Helmet Verified" value={selectedUserDetails.helmetVerified ? 'Yes' : 'No'} />
+                                    <DetailItem label="Last Safety Check" value={selectedUserDetails.lastSafetyCheck} />
+                                </div>
+                                <div className="mt-3">
+                                    <p className="text-muted-foreground mb-1">Emergency Contacts</p>
+                                    {selectedUserDetails.emergencyContacts.length ? (
+                                        <div className="space-y-2">
+                                            {selectedUserDetails.emergencyContacts.map((contact) => (
+                                                <div key={contact.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            {contact.name}
+                                                            {contact.isPrimary ? ' (Primary)' : ''}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {contact.relationship || 'Contact'}
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">{contact.phone}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground">No emergency contacts</p>
+                                    )}
+                                </div>
                             </div>
+
                             <div>
-                                <p className="text-muted-foreground">Bio</p>
-                                <p className="font-medium">{selectedUser.bio || 'N/A'}</p>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Badges</p>
+                                {selectedUserDetails.badges.length ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedUserDetails.badges.map((entry) => (
+                                            <Badge key={`${entry.badge.id}-${entry.earnedAt}`} variant="secondary">
+                                                {entry.badge.name}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground">No badges earned</p>
+                                )}
                             </div>
-                            <div className="col-span-2">
-                                <p className="text-muted-foreground mb-1">Roles</p>
-                                <div className="flex flex-wrap gap-1">
-                                    {selectedUser.roles.map((role) => (
-                                        <Badge key={role} variant="outline">
-                                            {role}
-                                        </Badge>
-                                    ))}
+
+                            <div>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Counts</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <DetailItem label="Posts" value={selectedUserDetails.counts.posts.toString()} />
+                                    <DetailItem label="Comments" value={selectedUserDetails.counts.comments.toString()} />
+                                    <DetailItem label="Followers" value={selectedUserDetails.counts.followers.toString()} />
+                                    <DetailItem label="Following" value={selectedUserDetails.counts.following.toString()} />
+                                    <DetailItem label="Created Rides" value={selectedUserDetails.counts.createdRides.toString()} />
+                                    <DetailItem label="Created Clubs" value={selectedUserDetails.counts.createdClubs.toString()} />
+                                    <DetailItem label="Marketplace Listings" value={selectedUserDetails.counts.marketplaceListings.toString()} />
+                                    <DetailItem label="Club Memberships" value={selectedUserDetails.counts.clubMemberships.toString()} />
                                 </div>
                             </div>
                         </div>
-                    )}
+                    ) : selectedUser ? (
+                        <div className="text-sm text-muted-foreground">
+                            No details loaded for {selectedUser.name || selectedUser.email || 'user'}.
+                        </div>
+                    ) : null}
                 </DialogContent>
             </Dialog>
 
@@ -637,6 +761,15 @@ function UserForm({
                     ))}
                 </div>
             </div>
+        </div>
+    )
+}
+
+function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
+    return (
+        <div>
+            <p className="text-muted-foreground">{label}</p>
+            <p className="font-medium">{value && value !== '' ? value : 'N/A'}</p>
         </div>
     )
 }

@@ -1,8 +1,7 @@
 import { cookies } from 'next/headers'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
-const AUTH_SESSION_URL =
-  API_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '') + '/api/auth/get-session'
+const AUTH_SESSION_URL = API_URL.replace(/\/+$/, '') + '/account/session'
 
 export interface SessionUser {
   id: string
@@ -46,8 +45,8 @@ export async function getServerSession(): Promise<ServerSession | null> {
       return null
     }
 
-    const data = await response.json()
-    return data || null
+    const body = await response.json()
+    return body?.data || null
   } catch (error) {
     console.error('[Auth] Failed to get server session:', error)
     return null
@@ -59,7 +58,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
  */
 export function hasRole(session: ServerSession | null, ...roles: string[]): boolean {
   if (!session) return false
-  return roles.some((role) => session.user.roles.includes(role))
+  return roles.some((role) => (session.user.roles ?? []).includes(role))
 }
 
 /**

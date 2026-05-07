@@ -18,6 +18,10 @@ export { clubsApi } from './clubs'
 export * from './rides'
 export { ridesApi } from './rides'
 
+// Re-export business API
+export * from './business'
+export { businessApi } from './business'
+
 // Re-export marketplace API (excluding conflicting exports)
 export {
   marketplaceApi,
@@ -48,6 +52,7 @@ export {
   getListings as getAdminListings,
   getReports,
   updateReport,
+  getNotifications as getAdminNotifications,
   verifyClub,
   deleteUser,
   updateRideStatus,
@@ -55,12 +60,18 @@ export {
   deleteClub as deleteAdminClub,
   updateListingStatus,
   deleteListing as deleteAdminListing,
+  getSettings as getAdminSettings,
+  updateSettings as updateAdminSettings,
   type AdminStats,
   type AdminUserRecord,
   type AdminRideRecord,
   type AdminClubRecord,
   type AdminListingRecord,
   type AdminReportRecord,
+  type AdminNotificationRecord,
+  type NotificationFilters as AdminNotificationFilters,
+  type AdminSettings,
+  type AdminSettingsUpdate,
   type AdminPagination,
   type PaginatedData as AdminPaginatedData,
   type UserFilters as AdminUserFilters,

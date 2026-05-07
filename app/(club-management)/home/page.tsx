@@ -16,10 +16,10 @@ import {
   Users,
   Image as ImageIcon,
   Loader2,
+  Zap,
 } from 'lucide-react'
 import Link from 'next/link'
 import { feedApi } from '@/lib/services'
-import { useToast } from '@/hooks/use-toast'
 import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
 interface FeedPost {
@@ -83,10 +83,8 @@ function formatDate(dateString: string) {
 }
 
 export default function FeedPage() {
-  const { error: errorToast, loading: loadingToast, dismiss: dismissToast } = useToast()
   const [posts, setPosts] = useState<FeedPost[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchFeed()
@@ -94,21 +92,14 @@ export default function FeedPage() {
   }, [])
 
   const fetchFeed = async () => {
-    const loadingToastId = loadingToast('Loading feed...', {
-      description: 'Fetching the latest posts and ride updates.',
-    })
     try {
       setLoading(true)
       const response = await feedApi.getFeed()
-      setPosts(response.posts || [])
-    } catch (err) {
-      setError('Failed to load feed')
-      console.error(err)
-      errorToast('Failed to load feed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
+      setPosts(response?.posts || [])
+    } catch {
+      // Feed not yet available — show empty state
+      setPosts([])
     } finally {
-      dismissToast(loadingToastId)
       setLoading(false)
     }
   }
@@ -192,16 +183,18 @@ export default function FeedPage() {
               </div>
             }
           />
-        ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-destructive mb-4">{error}</p>
-            <Button onClick={fetchFeed} variant="outline">
-              Retry
-            </Button>
-          </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No posts yet. Follow some clubs or riders to see their updates!</p>
+          <div className="text-center py-16 text-muted-foreground">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="font-semibold text-foreground mb-2">Nothing here yet</h3>
+            <p className="text-sm max-w-xs mx-auto">
+              Activity from your clubs, rides, and followed riders will appear here.
+            </p>
+            <Button onClick={fetchFeed} variant="outline" className="mt-4 rounded-full">
+              Refresh
+            </Button>
           </div>
         ) : (
           posts.map((post) => (

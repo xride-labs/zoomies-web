@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import {
   CheckCircle,
   XCircle,
@@ -24,20 +25,27 @@ import {
   CheckCheck,
   Clock,
   Building2,
+  Store,
 } from 'lucide-react'
-import { adminApi, type AdminApprovalsData } from '@/lib/server/admin'
+import { adminApi, type AdminApprovalsData, type PendingBusiness, type PendingBusinessesData } from '@/lib/server/admin'
 import { toast } from 'sonner'
 
 export default function AdminApprovalsPage() {
   const [data, setData] = useState<AdminApprovalsData | null>(null)
+  const [businesses, setBusinesses] = useState<PendingBusiness[]>([])
   const [loading, setLoading] = useState(true)
   const [actioningId, setActioningId] = useState<string | null>(null)
+  const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await adminApi.getApprovals()
-      setData(result)
+      const [approvals, biz] = await Promise.all([
+        adminApi.getApprovals(),
+        adminApi.getBusinessSubmissions(),
+      ])
+      setData(approvals)
+      setBusinesses(biz.items)
     } catch {
       toast.error('Failed to load pending approvals')
     } finally {
@@ -96,9 +104,21 @@ export default function AdminApprovalsPage() {
     setActioningId(null)
   }
 
-  const totalPending = data
+  const approveAllBusinesses = async () => {
+    if (!businesses.length) return
+    setActioningId('bulk-businesses')
+    let done = 0
+    for (const biz of businesses) {
+      try { await adminApi.approveBusinessSubmission(biz.id); done++ } catch {}
+    }
+    toast.success(`Approved ${done} business submissions`)
+    await load()
+    setActioningId(null)
+  }
+
+  const totalPending = (data
     ? data.pendingClubs.length + data.pendingClubRequests.length + data.pendingRideRequests.length
-    : 0
+    : 0) + businesses.length
 
   if (loading && !data) {
     return (
@@ -136,8 +156,17 @@ export default function AdminApprovalsPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="clubs">
+      <Tabs defaultValue="businesses">
         <TabsList>
+          <TabsTrigger value="businesses" className="gap-2">
+            <Store className="w-4 h-4" />
+            Businesses
+            {businesses.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-[10px]">
+                {businesses.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="clubs" className="gap-2">
             <Building2 className="w-4 h-4" />
             Clubs
@@ -166,6 +195,85 @@ export default function AdminApprovalsPage() {
             )}
           </TabsTrigger>
         </TabsList>
+
+        {/* ── Business submissions ── */}
+        <TabsContent value="businesses" className="mt-4 space-y-4">
+          {businesses.length === 0 ? (
+            <EmptyState icon={<Store className="w-8 h-8" />} label="No pending business submissions" />
+          ) : (
+            <>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={approveAllBusinesses}
+                  disabled={actioningId === 'bulk-businesses'}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  {actioningId === 'bulk-businesses' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+                  Approve All ({businesses.length})
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {businesses.map((biz) => (
+                  <Card key={biz.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12 rounded-xl shrink-0">
+                          <AvatarImage src={biz.logoUrl ?? undefined} alt={biz.displayName} className="object-cover" />
+                          <AvatarFallback className="rounded-xl">{biz.displayName[0]?.toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-sm">{biz.displayName}</p>
+                            <Badge variant="outline" className="text-[10px] h-4 px-1">{biz.category.replace(/_/g, ' ')}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Owner: {biz.owner.name || biz.owner.email || 'Unknown'}
+                            {(biz.city || biz.country) && ` · ${[biz.city, biz.country].filter(Boolean).join(', ')}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            Submitted {new Date(biz.createdAt).toLocaleDateString()}
+                          </p>
+                          <div className="mt-2">
+                            <Textarea
+                              placeholder="Rejection notes (optional)"
+                              className="text-xs h-14 resize-none"
+                              value={rejectNotes[biz.id] ?? ''}
+                              onChange={(e) => setRejectNotes((prev) => ({ ...prev, [biz.id]: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <ActionButton
+                            id={biz.id}
+                            activeId={actioningId}
+                            variant="approve"
+                            onClick={() =>
+                              act(() => adminApi.approveBusinessSubmission(biz.id), biz.id, `${biz.displayName} approved`)
+                            }
+                          />
+                          <ActionButton
+                            id={`reject-${biz.id}`}
+                            activeId={actioningId}
+                            variant="reject"
+                            onClick={() =>
+                              act(
+                                () => adminApi.rejectBusinessSubmission(biz.id, rejectNotes[biz.id] || undefined),
+                                `reject-${biz.id}`,
+                                `${biz.displayName} rejected`,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </TabsContent>
 
         {/* ── Pending clubs ── */}
         <TabsContent value="clubs" className="mt-4 space-y-4">

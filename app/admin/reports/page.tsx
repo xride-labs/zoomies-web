@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import {
   Card,
   CardContent,
@@ -18,6 +18,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   AlertTriangle,
@@ -34,6 +41,7 @@ import {
 } from 'lucide-react'
 import { useAdminReports } from '@/store/features/admin'
 import { AdminCRUDPopover, CRUDActionBuilders } from '@/components/admin/crud-popover'
+import type { AdminReportRecord } from '@/lib/server/admin'
 
 const typeIcons: Record<string, LucideIcon> = {
   user: User,
@@ -63,6 +71,7 @@ export default function AdminReportsPage() {
   } = useAdminReports()
 
   const [activeTab, setActiveTab] = useState('all')
+  const [viewReport, setViewReport] = useState<AdminReportRecord | null>(null)
 
   useEffect(() => {
     const params: Record<string, string> = {}
@@ -249,9 +258,7 @@ export default function AdminReportsPage() {
                       <TableCell>
                         <AdminCRUDPopover
                           actions={[
-                            CRUDActionBuilders.view(() => {
-                              // TODO: Open report details dialog
-                            }),
+                            CRUDActionBuilders.view(() => setViewReport(report)),
                             ...(report.status === 'pending'
                               ? [
                                 CRUDActionBuilders.custom(
@@ -294,6 +301,84 @@ export default function AdminReportsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!viewReport} onOpenChange={(open) => { if (!open) setViewReport(null) }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Report Details</DialogTitle>
+            <DialogDescription>Full details for this moderation report</DialogDescription>
+          </DialogHeader>
+          {viewReport && (
+            <div className="space-y-4 text-sm">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-muted rounded-lg shrink-0">
+                  {(() => {
+                    const TypeIcon = typeIcons[viewReport.type as keyof typeof typeIcons] || AlertTriangle
+                    return <TypeIcon className="w-4 h-4 text-muted-foreground" />
+                  })()}
+                </div>
+                <div>
+                  <p className="font-semibold text-base">{viewReport.title}</p>
+                  {viewReport.description && (
+                    <p className="text-muted-foreground mt-1">{viewReport.description}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <ReportField label="Status">
+                  <Badge className={statusColors[viewReport.status as keyof typeof statusColors]}>
+                    {viewReport.status}
+                  </Badge>
+                </ReportField>
+                <ReportField label="Priority">
+                  <Badge className={priorityColors[viewReport.priority as keyof typeof priorityColors]}>
+                    {viewReport.priority}
+                  </Badge>
+                </ReportField>
+                <ReportField label="Type">
+                  <span className="font-medium capitalize">{viewReport.type}</span>
+                </ReportField>
+                <ReportField label="Date">
+                  <span className="font-medium">{formatDate(viewReport.createdAt)}</span>
+                </ReportField>
+              </div>
+
+              <div className="rounded-md border p-3 space-y-1">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Reported Item</p>
+                <p className="font-medium">{viewReport.reportedItem.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  ID: {viewReport.reportedItem.id} · Type: {viewReport.reportedItem.type}
+                </p>
+              </div>
+
+              <div className="rounded-md border p-3 space-y-1">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Reported By</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="text-[10px]">
+                      {viewReport.reporter.name.split(' ').map((n) => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{viewReport.reporter.name}</p>
+                    <p className="text-xs text-muted-foreground">ID: {viewReport.reporter.id}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function ReportField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs mb-1">{label}</p>
+      {children}
     </div>
   )
 }

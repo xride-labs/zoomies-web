@@ -464,9 +464,22 @@ export default function AdminMarketplacePage() {
           </DialogHeader>
           {selectedListing && (
             <div className="space-y-4">
-              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                <ShoppingBag className="w-12 h-12 text-muted-foreground" />
-              </div>
+              {selectedListing.images?.length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {selectedListing.images.map((img: string, i: number) => (
+                    <img
+                      key={i}
+                      src={img.startsWith("http://") ? "https://" + img.slice(7) : img}
+                      alt={`${selectedListing.title} ${i + 1}`}
+                      className="h-40 w-40 shrink-0 rounded-lg object-cover"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                  <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+                </div>
+              )}
               <div>
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">{selectedListing.title}</h3>

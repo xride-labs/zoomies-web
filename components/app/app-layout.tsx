@@ -14,6 +14,8 @@ import {
   Search,
   LogOut,
   Shield,
+  Store,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -46,10 +48,17 @@ export function AppLayout({ children }: AppLayoutProps) {
   const hasManagerAccess = hasAnyRole(
     user,
     'CLUB_OWNER',
+    'CLUB_ADMIN',
+    'CLUB_MODERATOR',
+    'BRAND_OWNER',
+    'BRAND_ADMIN',
+    'BRAND_MODERATOR',
     'CO_ADMIN',
     'ADMIN',
+    'MODERATOR'
   )
-  const isAdmin = hasAnyRole(user, 'ADMIN', 'CO_ADMIN')
+  const isAdmin = hasAnyRole(user, 'ADMIN', 'CO_ADMIN', 'MODERATOR')
+  const hasBrandAccess = hasAnyRole(user, 'BRAND_OWNER', 'BRAND_ADMIN', 'BRAND_MODERATOR', 'ADMIN', 'CO_ADMIN')
 
   useEffect(() => {
     if (debugAuth) {
@@ -195,6 +204,17 @@ export function AppLayout({ children }: AppLayoutProps) {
               Create Club
             </Link>
           </Button>
+          {hasBrandAccess && (
+            <Button
+              className="w-full justify-start gap-2"
+              variant="outline"
+              onClick={() => router.push('/brand/dashboard')}
+            >
+              <Store className="w-4 h-4" />
+              Brand Portal
+              <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
+            </Button>
+          )}
           {isAdmin && (
             <Button
               className="w-full justify-start gap-2"

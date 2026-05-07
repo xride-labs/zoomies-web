@@ -1,0 +1,33 @@
+import * as Sentry from '@sentry/nextjs'
+
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./sentry.server.config')
+  }
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./sentry.edge.config')
+  }
+}
+
+export function onRequestError(
+  error: unknown,
+  request: Request,
+  context: { route: string },
+) {
+  Sentry.captureRequestError(error, request, context)
+}
+
+// export const onRouterTransitionStart = (url: string) => {
+//   Sentry.addBreadcrumb({
+//     category: 'navigation',
+//     message: `Navigating to ${url}`,
+//     level: Sentry.Severity.Info,
+//   })
+// }
+
+// export const onRouterTransitionError = (error: unknown, url: string) => {
+//   Sentry.captureException(error, {
+//     tags: { navigation: 'error' },
+//     extra: { url },
+//   })
+// }

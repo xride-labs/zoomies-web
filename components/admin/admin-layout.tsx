@@ -29,7 +29,14 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-state'
 
-const adminNavigation = [
+type AdminNavItem = {
+  name: string
+  href: string
+  icon: typeof LayoutDashboard
+  highlight?: boolean
+}
+
+const adminNavigation: AdminNavItem[] = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Approvals', href: '/admin/approvals', icon: CheckSquare, highlight: true },
   { name: 'Launch Interest', href: '/admin/launch-interest', icon: Inbox },
@@ -37,6 +44,7 @@ const adminNavigation = [
   { name: 'Clubs', href: '/admin/clubs', icon: Shield },
   { name: 'Rides', href: '/admin/rides', icon: MapPin },
   { name: 'Marketplace', href: '/admin/marketplace', icon: ShoppingBag },
+  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
   { name: 'Reports', href: '/admin/reports', icon: Flag },
   { name: 'Monitoring', href: '/admin/monitoring', icon: Activity },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
@@ -62,9 +70,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   // Get user roles from the user object
   const userRoles: string[] = user?.roles || []
-  const hasAdminAccess = hasAnyRole(user, 'ADMIN', 'CO_ADMIN')
+  const hasAdminAccess = hasAnyRole(user, 'ADMIN', 'CO_ADMIN', 'MODERATOR')
   const isSuperAdmin = userRoles.includes('ADMIN')
   const isCoAdmin = userRoles.includes('CO_ADMIN') && !isSuperAdmin
+  const isModerator = userRoles.includes('MODERATOR') && !isSuperAdmin && !isCoAdmin
 
   useEffect(() => {
     if (debugAuth) {
@@ -101,8 +110,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       const hasManagerAccess = hasAnyRole(
         user,
         'CLUB_OWNER',
+        'CLUB_ADMIN',
+        'CLUB_MODERATOR', 
+        'BRAND_OWNER',
+        'BRAND_ADMIN',
+        'BRAND_MODERATOR',
         'CO_ADMIN',
         'ADMIN',
+        'MODERATOR'
       )
       if (debugAuth) {
         console.warn('[AdminLayout] user is not admin', {
@@ -197,7 +212,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             const isActive =
               pathname === item.href ||
               (item.href !== '/admin' && pathname.startsWith(item.href))
-            const highlight = (item as any).highlight && !isActive
+            const highlight = item.highlight && !isActive
             return (
               <Link
                 key={item.name}
@@ -256,7 +271,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   ? 'Super Administrator'
                   : isCoAdmin
                     ? 'Co-Administrator'
-                    : 'Administrator'}
+                    : isModerator
+                      ? 'Platform Moderator'
+                      : 'Administrator'}
               </p>
             </div>
           </div>
@@ -289,11 +306,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <Button variant="ghost" size="icon">
                 <Search className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => router.push('/admin/notifications')}
+              >
                 <Bell className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-red-600">
-                  5
-                </Badge>
               </Button>
             </div>
           </div>
