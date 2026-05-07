@@ -225,7 +225,7 @@ export default function AdminApprovalsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-sm">{biz.displayName}</p>
-                            <Badge variant="outline" className="text-[10px] h-4 px-1">{biz.category.replace(/_/g, ' ')}</Badge>
+                            <Badge variant="outline" className="text-[10px] h-4 px-1">{biz.categories.map(c => c.replace(/_/g, ' ')).join(', ')}</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             Owner: {biz.owner.name || biz.owner.email || 'Unknown'}

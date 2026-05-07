@@ -106,7 +106,7 @@ export default function BusinessDetailPage() {
         if (!active) return
         setBusiness(data)
         setForm({
-          category: data.category,
+          category: data.categories[0] ?? '',
           displayName: data.displayName,
           tagline: data.tagline ?? '',
           description: data.description ?? '',
@@ -184,7 +184,7 @@ export default function BusinessDetailPage() {
     })
 
     const payload: UpdateBusinessInput = {
-      category: form.category || undefined,
+      categories: form.category ? [form.category as BusinessCategory] : undefined,
       displayName: form.displayName.trim() || undefined,
       tagline: toNull(form.tagline),
       description: toNull(form.description),

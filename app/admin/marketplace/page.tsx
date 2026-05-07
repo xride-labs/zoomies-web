@@ -464,9 +464,9 @@ export default function AdminMarketplacePage() {
           </DialogHeader>
           {selectedListing && (
             <div className="space-y-4">
-              {selectedListing.images?.length > 0 ? (
+              {(selectedListing.images?.length ?? 0) > 0 ? (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {selectedListing.images.map((img: string, i: number) => (
+                  {(selectedListing.images ?? []).map((img: string, i: number) => (
                     <img
                       key={i}
                       src={img.startsWith("http://") ? "https://" + img.slice(7) : img}

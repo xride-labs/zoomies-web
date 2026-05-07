@@ -11,8 +11,8 @@ export async function register() {
 
 export function onRequestError(
   error: unknown,
-  request: Request,
-  context: { route: string },
+  request: Parameters<typeof Sentry.captureRequestError>[1],
+  context: Parameters<typeof Sentry.captureRequestError>[2],
 ) {
   Sentry.captureRequestError(error, request, context)
 }

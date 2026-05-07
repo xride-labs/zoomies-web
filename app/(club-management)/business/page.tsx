@@ -116,7 +116,7 @@ export default function BusinessPortalPage() {
                         {statusBadge(business.verification)}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {CATEGORY_LABELS[business.category] ?? business.category}
+                        {business.categories.map((c) => CATEGORY_LABELS[c] ?? c).join(', ')}
                       </p>
                     </div>
                   </div>

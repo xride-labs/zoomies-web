@@ -18,7 +18,9 @@ export default withSentryConfig(nextConfig, {
   org: process.env.NEXT_PUBLIC_SENTRY_ORG,
   project: process.env.NEXT_PUBLIC_SENTRY_PROJECT,
   widenClientFileUpload: true,
-  hideSourceMaps: true,
-  disableLogger: true,
-  automaticVercelMonitors: false,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  webpack: {
+    treeshake: { removeDebugLogging: true },
+    automaticVercelMonitors: false,
+  },
 })

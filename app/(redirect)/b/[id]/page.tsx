@@ -66,7 +66,7 @@ export default function PublicBusinessPage() {
                 <p className="text-muted-foreground mt-2">{business.tagline}</p>
               ) : null}
               <div className="mt-3">
-                <Badge variant="outline">{business.category}</Badge>
+                <Badge variant="outline">{business.categories.join(', ')}</Badge>
               </div>
             </div>
           </div>

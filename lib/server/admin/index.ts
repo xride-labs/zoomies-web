@@ -641,7 +641,7 @@ export interface AdminApprovalsData {
 export interface PendingBusiness {
   id: string
   displayName: string
-  category: string
+  categories: string[]
   slug: string
   logoUrl: string | null
   city: string | null

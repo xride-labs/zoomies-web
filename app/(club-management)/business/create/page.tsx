@@ -55,7 +55,7 @@ export default function CreateBusinessPage() {
 
     try {
       const business = await businessApi.createBusiness({
-        category,
+        categories: [category as BusinessCategory],
         displayName: displayName.trim(),
         tagline: tagline.trim() || undefined,
       })
