@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Upload, CheckCircle2, Clock, AlertCircle, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { businessApi, type BusinessProfile, type BusinessCategory } from '@/lib/server/business'
+import { mapApiError } from '@/lib/errors'
 
 const BRAND_CATEGORIES: { value: BusinessCategory; label: string }[] = [
   { value: 'BRAND', label: 'Brand / Manufacturer' },
@@ -38,6 +39,9 @@ export default function BrandSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Per-field validation errors surfaced inline on the form. Cleared on
+  // every save attempt — a successful save also clears them implicitly.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [profile, setProfile] = useState({
     displayName: '',
     tagline: '',
@@ -91,6 +95,7 @@ export default function BrandSettingsPage() {
     e.preventDefault()
     if (!business) return
     setIsSaving(true)
+    setFieldErrors({})
     try {
       const updated = await businessApi.updateBusiness(business.id, {
         displayName: profile.displayName || undefined,
@@ -105,8 +110,10 @@ export default function BrandSettingsPage() {
       })
       setBusiness(updated)
       successToast('Brand profile saved')
-    } catch {
-      errorToast('Failed to save profile')
+    } catch (err) {
+      const mapped = mapApiError(err)
+      if (mapped.fieldErrors) setFieldErrors(mapped.fieldErrors)
+      errorToast(mapped.message)
     } finally {
       setIsSaving(false)
     }
@@ -180,7 +187,11 @@ export default function BrandSettingsPage() {
                   placeholder="Your brand name"
                   value={profile.displayName}
                   onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
+                  aria-invalid={!!fieldErrors.displayName}
                 />
+                {fieldErrors.displayName && (
+                  <p className="text-xs text-destructive">{fieldErrors.displayName}</p>
+                )}
               </div>
 
               <div className="col-span-2 space-y-1.5">
@@ -232,7 +243,11 @@ export default function BrandSettingsPage() {
                   placeholder="contact@brand.com"
                   value={profile.email}
                   onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                  aria-invalid={!!fieldErrors.email}
                 />
+                {fieldErrors.email && (
+                  <p className="text-xs text-destructive">{fieldErrors.email}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>Phone</Label>
@@ -240,7 +255,11 @@ export default function BrandSettingsPage() {
                   placeholder="+91 98765 43210"
                   value={profile.phone}
                   onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  aria-invalid={!!fieldErrors.phone}
                 />
+                {fieldErrors.phone && (
+                  <p className="text-xs text-destructive">{fieldErrors.phone}</p>
+                )}
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label>Website</Label>
@@ -248,7 +267,11 @@ export default function BrandSettingsPage() {
                   placeholder="https://yourbrand.com"
                   value={profile.websiteUrl}
                   onChange={(e) => setProfile({ ...profile, websiteUrl: e.target.value })}
+                  aria-invalid={!!fieldErrors.websiteUrl}
                 />
+                {fieldErrors.websiteUrl && (
+                  <p className="text-xs text-destructive">{fieldErrors.websiteUrl}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>City</Label>

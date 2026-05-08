@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { clubsApi } from '@/lib/services'
+import { mapApiError } from '@/lib/errors'
 import {
   Card,
   CardContent,
@@ -129,6 +130,8 @@ export default function ClubManagePage() {
   const [clubSettings, setClubSettings] = useState<ClubSettings | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
+  const [isSavingSettings, setIsSavingSettings] = useState(false)
+  const [settingsFieldErrors, setSettingsFieldErrors] = useState<Record<string, string>>({})
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
   const [isDeleteClubDialogOpen, setIsDeleteClubDialogOpen] = useState(false)
@@ -345,7 +348,9 @@ export default function ClubManagePage() {
   }
 
   const handleSaveSettings = async () => {
-    if (!clubSettings) return
+    if (!clubSettings || isSavingSettings) return
+    setIsSavingSettings(true)
+    setSettingsFieldErrors({})
     const loadingToastId = loadingToast('Saving settings...', {
       description: 'Updating club configuration.',
     })
@@ -366,11 +371,14 @@ export default function ClubManagePage() {
       successToast('Club settings saved')
     } catch (err) {
       console.error('Failed to update club settings:', err)
-      errorToast('Failed to save settings', {
-        description: err instanceof Error ? err.message : 'Please try again.',
+      const mapped = mapApiError(err)
+      if (mapped.fieldErrors) setSettingsFieldErrors(mapped.fieldErrors)
+      errorToast(mapped.message, {
+        description: mapped.title,
       })
     } finally {
       dismissToast(loadingToastId)
+      setIsSavingSettings(false)
     }
   }
 
@@ -635,7 +643,11 @@ export default function ClubManagePage() {
                     onChange={(e) =>
                       setClubSettings({ ...clubSettings, name: e.target.value })
                     }
+                    aria-invalid={!!settingsFieldErrors.name}
                   />
+                  {settingsFieldErrors.name && (
+                    <p className="text-xs text-destructive">{settingsFieldErrors.name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
@@ -646,7 +658,11 @@ export default function ClubManagePage() {
                       setClubSettings({ ...clubSettings, description: e.target.value })
                     }
                     rows={4}
+                    aria-invalid={!!settingsFieldErrors.description}
                   />
+                  {settingsFieldErrors.description && (
+                    <p className="text-xs text-destructive">{settingsFieldErrors.description}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
@@ -656,9 +672,19 @@ export default function ClubManagePage() {
                     onChange={(e) =>
                       setClubSettings({ ...clubSettings, location: e.target.value })
                     }
+                    aria-invalid={!!settingsFieldErrors.location}
                   />
+                  {settingsFieldErrors.location && (
+                    <p className="text-xs text-destructive">{settingsFieldErrors.location}</p>
+                  )}
                 </div>
-                <Button onClick={handleSaveSettings}>Save Changes</Button>
+                <Button onClick={handleSaveSettings} disabled={isSavingSettings}>
+                  {isSavingSettings ? (
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" />Saving…</>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
               </CardContent>
             </Card>
 
