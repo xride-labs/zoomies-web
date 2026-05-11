@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession as useBetterAuthSession } from '@/lib/auth-client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useUser } from '@/store/features/user'
 
 export interface UserWithRoles {
@@ -33,56 +33,44 @@ export interface AuthState {
  */
 export function useAuth(): AuthState {
   const { data: session, isPending: sessionPending } = useBetterAuthSession()
-  const { profile, isLoading, error: userError, fetchMe } = useUser()
+  const { profile, error: userError, fetchMe } = useUser()
   const [isPending, setIsPending] = useState(true)
   const hasSession = !!session?.user
-  const debugAuth = process.env.NODE_ENV !== 'production'
+  // Track which session user we've already initiated a fetch for, to prevent
+  // concurrent fetchMe calls caused by unstable function references in deps.
+  const fetchedForUserId = useRef<string | null>(null)
 
   useEffect(() => {
-    async function fetchUserWithRoles() {
-      if (debugAuth) {
-        console.log('[useAuth] sync start', {
-          sessionPending,
-          hasSession: !!session?.user,
-          hasProfile: !!profile,
-          isLoading,
-          userError,
-        })
-      }
+    if (sessionPending) return
 
-      if (sessionPending) return
+    const sessionUserId = session?.user?.id ?? null
 
-      if (!session?.user) {
-        if (debugAuth) {
-          console.log('[useAuth] no session user, auth sync complete')
-        }
-        setIsPending(false)
-        return
-      }
-
-      // If we don't have the profile in Redux yet, fetch it
-      if (!profile) {
-        try {
-          if (debugAuth) {
-            console.log('[useAuth] fetching /account/me profile')
-          }
-          await fetchMe()
-          if (debugAuth) {
-            console.log('[useAuth] fetchMe succeeded')
-          }
-        } catch (err) {
-          console.error('[useAuth] fetchMe failed:', err)
-        }
-      }
-
-      if (debugAuth) {
-        console.log('[useAuth] auth sync complete')
-      }
+    if (!sessionUserId) {
+      fetchedForUserId.current = null
       setIsPending(false)
+      return
     }
 
-    fetchUserWithRoles()
-  }, [session, sessionPending, profile, fetchMe, isLoading, userError, debugAuth])
+    // Already fetching or fetched for this user — don't call fetchMe again.
+    if (fetchedForUserId.current === sessionUserId) {
+      if (profile) setIsPending(false)
+      return
+    }
+
+    fetchedForUserId.current = sessionUserId
+
+    if (!profile) {
+      fetchMe()
+        .catch((err) => console.error('[useAuth] fetchMe failed:', err))
+        .finally(() => setIsPending(false))
+    } else {
+      setIsPending(false)
+    }
+    // Only re-run when session identity or pending state changes.
+    // fetchMe is intentionally excluded — it's a new ref each render but
+    // the ref guard above ensures it's only called once per session user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, sessionPending])
 
   // Transform Redux profile to match the expected UserWithRoles signature
   const user = profile
@@ -106,7 +94,10 @@ export function useAuth(): AuthState {
     user,
     hasSession,
     isAuthenticated: !!user,
-    isPending: sessionPending || isPending || isLoading,
+    // isLoading intentionally excluded: the local isPending already tracks
+    // the initial profile resolution. Including isLoading caused the layout
+    // to toggle skeleton on every subsequent Redux fetch (render loop).
+    isPending: sessionPending || isPending,
     error: userError,
   }
 }

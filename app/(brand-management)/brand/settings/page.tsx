@@ -80,7 +80,11 @@ export default function BrandSettingsPage() {
       }
     }
     load()
-  }, [errorToast])
+  // errorToast is intentionally excluded: it's a new ref each render and
+  // adding it caused a GET request on every keystroke (re-ran load() each
+  // time the user typed something and triggered a re-render).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const toggleCategory = (cat: BusinessCategory) => {
     setProfile((p) => ({
