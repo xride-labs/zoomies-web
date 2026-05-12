@@ -147,6 +147,43 @@ export async function verifyOtp(
   })
 }
 
+function getAuthBase(): string {
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api')
+  return apiUrl.replace(/\/+$/, '').replace(/\/api\/?$/, '') + '/api/auth'
+}
+
+/**
+ * Send a sign-in OTP to an email address via Better Auth emailOTP plugin
+ */
+export async function sendEmailOtp(email: string): Promise<void> {
+  const res = await fetch(`${getAuthBase()}/email-otp/send-verification-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || 'Failed to send code')
+  }
+}
+
+/**
+ * Sign in with an email OTP code via Better Auth emailOTP plugin
+ */
+export async function signInWithEmailOtp(email: string, otp: string): Promise<void> {
+  const res = await fetch(`${getAuthBase()}/sign-in/email-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, otp }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || 'Invalid or expired code')
+  }
+}
+
 // Export all as authApi object for convenience
 export const authApi = {
   register,
@@ -159,4 +196,6 @@ export const authApi = {
   verifyEmail,
   sendOtp,
   verifyOtp,
+  sendEmailOtp,
+  signInWithEmailOtp,
 }

@@ -8,6 +8,8 @@ export interface CreateClubData {
   name: string
   description: string
   location: string
+  latitude?: number
+  longitude?: number
   clubType?: string
   isPublic: boolean
   image?: string

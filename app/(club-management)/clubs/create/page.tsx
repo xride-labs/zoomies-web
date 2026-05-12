@@ -18,11 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ChevronLeft, ImagePlus, MapPin } from 'lucide-react'
+import { ChevronLeft, ImagePlus } from 'lucide-react'
 import { clubsApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
 import { useToast } from '@/hooks/use-toast'
 import { ImageUrlInput } from '@/components/ui/image-url-input'
+import { LocationPicker } from '@/components/ui/location-picker'
+import type { LocationValue } from '@/components/ui/location-picker'
 
 const clubTypes = [
   'Riding Club',
@@ -54,10 +56,10 @@ export default function CreateClubPage() {
   // Direct URL state — when set, bypasses Cloudinary upload
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [coverUrl, setCoverUrl] = useState<string | null>(null)
+  const [homeBase, setHomeBase] = useState<LocationValue | null>(null)
   const [clubData, setClubData] = useState({
     name: '',
     description: '',
-    location: '',
     clubType: '',
     isPublic: true,
     requireApproval: true,
@@ -94,7 +96,9 @@ export default function CreateClubPage() {
       const { club } = await clubsApi.createClub({
         name: clubData.name,
         description: clubData.description,
-        location: clubData.location,
+        location: homeBase?.name ?? '',
+        latitude: homeBase?.lat,
+        longitude: homeBase?.lng,
         clubType: clubData.clubType || undefined,
         isPublic: clubData.isPublic,
       })
@@ -219,11 +223,11 @@ export default function CreateClubPage() {
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-                  <MapPin className="w-8 h-8 text-primary" />
+                  <span className="text-3xl">📍</span>
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight">Set the scene</h1>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Tell riders what your club is about and where you ride.
+                  Tell riders what your club is about and where you ride from.
                 </p>
               </div>
 
@@ -240,20 +244,17 @@ export default function CreateClubPage() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location" className="text-base font-semibold">Home base</Label>
-                  <Input
-                    id="location"
-                    placeholder="e.g., Phoenix, AZ"
-                    value={clubData.location}
-                    onChange={(e) => setClubData({ ...clubData, location: e.target.value })}
-                    className="h-12 text-base"
-                    required
-                  />
-                </div>
+                <LocationPicker
+                  label="Home Base"
+                  placeholder="Search your city or meeting spot…"
+                  value={homeBase}
+                  onChange={setHomeBase}
+                  pinColor="blue"
+                  required
+                />
               </div>
 
-              <Button type="button" className="w-full h-12 text-base" disabled={!clubData.description || !clubData.location} onClick={() => setStep(3)}>
+              <Button type="button" className="w-full h-12 text-base" disabled={!clubData.description || !homeBase} onClick={() => setStep(3)}>
                 Almost there...
               </Button>
             </div>
@@ -288,7 +289,7 @@ export default function CreateClubPage() {
                     </div>
                     <div className="pb-1">
                       <p className="font-bold text-lg leading-tight">{clubData.name || 'Your Club'}</p>
-                      <p className="text-xs text-muted-foreground">{clubData.location || 'Everywhere'} · {clubData.clubType || 'Riding Club'}</p>
+                      <p className="text-xs text-muted-foreground">{homeBase?.name || 'Everywhere'} · {clubData.clubType || 'Riding Club'}</p>
                     </div>
                   </div>
                   {clubData.description && (
@@ -314,7 +315,7 @@ export default function CreateClubPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-14 text-lg font-bold" disabled={isSubmitting || !clubData.name || !clubData.description || !clubData.location}>
+              <Button type="submit" className="w-full h-14 text-lg font-bold" disabled={isSubmitting || !clubData.name || !clubData.description || !homeBase}>
                 {isSubmitting ? 'Launching...' : '🔥 Launch Your Club'}
               </Button>
             </div>

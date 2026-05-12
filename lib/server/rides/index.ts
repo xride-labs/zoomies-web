@@ -10,18 +10,34 @@ import type {
 // Re-export types from slice
 export type { Ride, RideDetails, RideParticipant, RideStatus, RideType }
 
+export interface WaypointData {
+  latitude: number
+  longitude: number
+  name?: string
+  address?: string
+}
+
 export interface CreateRideData {
   title: string
   description?: string
   startLocation: string
   endLocation?: string
+  startLat?: number
+  startLng?: number
+  endLat?: number
+  endLng?: number
+  waypoints?: WaypointData[]
   experienceLevel?: string
   xpRequired?: number
   pace?: string
+  terrain?: string
   distance?: number
   duration?: number
+  maxParticipants?: number
   scheduledAt?: string
   keepPermanently?: boolean
+  isPrivate?: boolean
+  requiresApproval?: boolean
 }
 
 

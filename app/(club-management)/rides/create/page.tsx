@@ -22,6 +22,8 @@ import { ChevronLeft, MapPin, Plus, X, Calendar, Route, ImagePlus } from 'lucide
 import { ridesApi, mediaApi } from '@/lib/services'
 import { fileToDataUrl } from '@/lib/media-utils'
 import { useToast } from '@/hooks/use-toast'
+import { LocationPicker } from '@/components/ui/location-picker'
+import type { LocationValue } from '@/components/ui/location-picker'
 
 const difficulties = ['Beginner', 'Intermediate', 'Advanced', 'Expert']
 
@@ -46,14 +48,18 @@ export default function CreateRidePage() {
   } = useToast()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [waypoints, setWaypoints] = useState<string[]>([])
-  const [newWaypoint, setNewWaypoint] = useState('')
+
+  // Map-based location state
+  const [startPoint, setStartPoint] = useState<LocationValue | null>(null)
+  const [endPoint, setEndPoint] = useState<LocationValue | null>(null)
+  const [waypoints, setWaypoints] = useState<LocationValue[]>([])
+  const [isAddingWaypoint, setIsAddingWaypoint] = useState(false)
+  const [pendingWaypoint, setPendingWaypoint] = useState<LocationValue | null>(null)
+
   const [rideMediaFiles, setRideMediaFiles] = useState<File[]>([])
   const [rideData, setRideData] = useState({
     title: '',
     description: '',
-    startLocation: '',
-    endLocation: '',
     date: '',
     time: '',
     estimatedDuration: '',
@@ -68,9 +74,10 @@ export default function CreateRidePage() {
   })
 
   const handleAddWaypoint = () => {
-    if (newWaypoint.trim()) {
-      setWaypoints([...waypoints, newWaypoint.trim()])
-      setNewWaypoint('')
+    if (pendingWaypoint) {
+      setWaypoints([...waypoints, pendingWaypoint])
+      setPendingWaypoint(null)
+      setIsAddingWaypoint(false)
     }
   }
 
@@ -80,6 +87,10 @@ export default function CreateRidePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!startPoint) {
+      errorToast('Missing start location', { description: 'Please search and select a starting point on the map.' })
+      return
+    }
     setIsSubmitting(true)
     const loadingToastId = loadingToast('Creating ride...', {
       description: 'Saving ride details and uploading media.',
@@ -102,10 +113,23 @@ export default function CreateRidePage() {
       const { ride } = await ridesApi.createRide({
         title: rideData.title,
         description: rideData.description || undefined,
-        startLocation: rideData.startLocation,
-        endLocation: rideData.endLocation || undefined,
+        startLocation: startPoint.name,
+        endLocation: endPoint?.name,
+        startLat: startPoint.lat,
+        startLng: startPoint.lng,
+        endLat: endPoint?.lat,
+        endLng: endPoint?.lng,
+        waypoints: waypoints.map((w) => ({
+          latitude: w.lat,
+          longitude: w.lng,
+          name: w.name,
+        })),
         experienceLevel: rideData.difficulty || undefined,
         pace: rideData.pace || undefined,
+        terrain: rideData.terrain || undefined,
+        maxParticipants: rideData.maxParticipants ? Number(rideData.maxParticipants) : undefined,
+        isPrivate: rideData.isPrivate,
+        requiresApproval: rideData.requiresApproval,
         distance,
         duration: durationMinutes,
         scheduledAt,
@@ -193,49 +217,106 @@ export default function CreateRidePage() {
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight">Chart the course</h1>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Where does the journey begin and where does the road take you?
+                  Search for locations to pin your route on the map.
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startLocation" className="text-base font-semibold">Starting Point</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
-                    <Input id="startLocation" className="pl-9 h-12" placeholder="Meeting point address" value={rideData.startLocation} onChange={(e) => setRideData({ ...rideData, startLocation: e.target.value })} required />
-                  </div>
-                </div>
+              <div className="space-y-6">
+                {/* Starting Point */}
+                <LocationPicker
+                  label="Starting Point"
+                  placeholder="Search meeting point…"
+                  value={startPoint}
+                  onChange={setStartPoint}
+                  pinColor="green"
+                  required
+                />
 
-                {/* Waypoints */}
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold">Pit Stops (Optional)</Label>
-                  <div className="flex gap-2">
-                    <Input placeholder="Add a stop or waypoint" value={newWaypoint} onChange={(e) => setNewWaypoint(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddWaypoint(); } }} />
-                    <Button type="button" variant="outline" onClick={handleAddWaypoint}><Plus className="w-4 h-4" /></Button>
-                  </div>
+                {/* Waypoints / Pit Stops */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Pit Stops</Label>
+
                   {waypoints.length > 0 && (
-                    <div className="space-y-2 mt-2">
-                      {waypoints.map((waypoint, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                          <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center text-xs font-medium text-amber-600">{index + 1}</div>
-                          <span className="flex-1 text-sm">{waypoint}</span>
-                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveWaypoint(index)}><X className="w-3 h-3" /></Button>
+                    <div className="space-y-2">
+                      {waypoints.map((wp, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2.5 bg-muted/40 rounded-lg border">
+                          <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center text-xs font-bold text-amber-600 shrink-0">
+                            {index + 1}
+                          </div>
+                          <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span className="flex-1 text-sm truncate">{wp.name}</span>
+                          <p className="text-xs text-muted-foreground font-mono shrink-0">
+                            {wp.lat.toFixed(4)}, {wp.lng.toFixed(4)}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={() => handleRemoveWaypoint(index)}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
                         </div>
                       ))}
                     </div>
                   )}
+
+                  {isAddingWaypoint ? (
+                    <div className="space-y-2 p-3 border rounded-xl bg-muted/10">
+                      <LocationPicker
+                        placeholder="Search pit stop location…"
+                        value={pendingWaypoint}
+                        onChange={setPendingWaypoint}
+                        pinColor="amber"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={!pendingWaypoint}
+                          onClick={handleAddWaypoint}
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Add Stop
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setIsAddingWaypoint(false); setPendingWaypoint(null) }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setIsAddingWaypoint(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> Add Pit Stop
+                    </Button>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="endLocation" className="text-base font-semibold">Destination</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
-                    <Input id="endLocation" className="pl-9 h-12" placeholder="Final stop (or same as start for loops)" value={rideData.endLocation} onChange={(e) => setRideData({ ...rideData, endLocation: e.target.value })} required />
-                  </div>
-                </div>
+                {/* Destination */}
+                <LocationPicker
+                  label="Destination"
+                  placeholder="Search final stop (or same as start for loops)…"
+                  value={endPoint}
+                  onChange={setEndPoint}
+                  pinColor="red"
+                />
               </div>
 
-              <Button type="button" className="w-full h-12 text-base" disabled={!rideData.startLocation || !rideData.endLocation} onClick={() => setStep(3)}>
+              <Button
+                type="button"
+                className="w-full h-12 text-base"
+                disabled={!startPoint}
+                onClick={() => setStep(3)}
+              >
                 Set the Vibes →
               </Button>
             </div>
@@ -272,7 +353,7 @@ export default function CreateRidePage() {
                     <Input id="duration" type="number" step="0.5" placeholder="e.g., 3" value={rideData.estimatedDuration} onChange={(e) => setRideData({ ...rideData, estimatedDuration: e.target.value })} className="h-11" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="distance" className="font-semibold">Distance (miles)</Label>
+                    <Label htmlFor="distance" className="font-semibold">Distance (km)</Label>
                     <Input id="distance" type="number" placeholder="e.g., 85" value={rideData.estimatedDistance} onChange={(e) => setRideData({ ...rideData, estimatedDistance: e.target.value })} className="h-11" />
                   </div>
                 </div>
@@ -334,15 +415,23 @@ export default function CreateRidePage() {
                   <h3 className="text-lg font-bold">{rideData.title}</h3>
                 </div>
                 <CardContent className="p-4 space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="w-4 h-4 text-green-500" /> {rideData.startLocation}
+                  <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
+                    <MapPin className="w-4 h-4 text-green-500 shrink-0" />
+                    <span className="truncate max-w-40">{startPoint?.name ?? '—'}</span>
                     <span className="mx-1">→</span>
-                    <MapPin className="w-4 h-4 text-red-500" /> {rideData.endLocation}
+                    <MapPin className="w-4 h-4 text-red-500 shrink-0" />
+                    <span className="truncate max-w-40">{endPoint?.name ?? 'Same as start'}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-muted-foreground">
+                  {waypoints.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {waypoints.length} pit stop{waypoints.length > 1 ? 's' : ''}: {waypoints.map(w => w.name).join(' → ')}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
                     <span>{rideData.date} at {rideData.time}</span>
                     {rideData.difficulty && <span>· {rideData.difficulty}</span>}
                     {rideData.pace && <span>· {rideData.pace}</span>}
+                    {rideData.terrain && <span>· {rideData.terrain}</span>}
                   </div>
                   {rideData.description && <p className="text-muted-foreground line-clamp-2">{rideData.description}</p>}
                 </CardContent>

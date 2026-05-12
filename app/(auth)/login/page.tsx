@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PortalBackdropArt } from '@/components/auth/portal-backdrop-art'
-import { Eye, EyeOff, Loader2, Shield, Users, Store } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Eye, EyeOff, Loader2, Shield, Users, Store, Mail, Lock } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@/store/features/user'
 import { useAuth } from '@/store/features/auth'
 import { useToast } from '@/hooks/use-toast'
@@ -16,8 +16,11 @@ import {
   signIn as betterAuthSignIn,
   resolveAuthCallbackURL,
 } from '@/lib/auth-client'
+import { sendEmailOtp, signInWithEmailOtp } from '@/lib/server/auth'
 
 type LoginTab = 'club' | 'brand' | 'admin'
+type AuthMode = 'password' | 'otp'
+type OtpStep = 'request' | 'verify'
 
 const TAB_CONFIG: Record<LoginTab, {
   label: string
@@ -80,6 +83,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [authMode, setAuthMode] = useState<AuthMode>('password')
+  const [otpStep, setOtpStep] = useState<OtpStep>('request')
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(''))
+  const otpRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null))
 
   const tab = TAB_CONFIG[activeTab]
 
@@ -92,10 +99,17 @@ export default function LoginPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const switchMode = (mode: AuthMode) => {
+    setAuthMode(mode)
+    setOtpStep('request')
+    setOtpDigits(Array(6).fill(''))
+  }
+
+  // ── Password sign-in ──────────────────────────────────────────────────────
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    const loadingToastId = loadingToast('Signing you in...', {
+    const toastId = loadingToast('Signing you in...', {
       description: 'Verifying credentials and loading your role access.',
     })
 
@@ -105,27 +119,115 @@ export default function LoginPage() {
 
       const hasAccess = roles.some((r) => tab.roles.includes(r))
       if (!hasAccess) {
-        errorToast('Access denied', {
-          description: `${tab.label} account required.`,
-        })
+        errorToast('Access denied', { description: `${tab.label} account required.` })
         return
       }
 
-      successToast(`Welcome back`)
+      successToast('Welcome back')
       router.push(tab.redirectTo)
     } catch (err) {
       errorToast(err instanceof Error ? err.message : 'Invalid email or password', {
         description: 'Please try again.',
       })
     } finally {
-      dismissToast(loadingToastId)
+      dismissToast(toastId)
       setIsLoading(false)
     }
   }
 
+  // ── OTP: send code (core logic) ──────────────────────────────────────────
+  const doSendOtp = async () => {
+    if (!email) return
+    setIsLoading(true)
+    const toastId = loadingToast('Sending code...', {
+      description: `We'll send a 6-digit code to ${email}`,
+    })
+
+    try {
+      await sendEmailOtp(email)
+      setOtpStep('verify')
+      setOtpDigits(Array(6).fill(''))
+      setTimeout(() => otpRefs.current[0]?.focus(), 120)
+      successToast('Code sent!', { description: `Check ${email} for your sign-in code.` })
+    } catch (err) {
+      errorToast('Failed to send code', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dismissToast(toastId)
+      setIsLoading(false)
+    }
+  }
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await doSendOtp()
+  }
+
+  // ── OTP: verify code ──────────────────────────────────────────────────────
+  const handleOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const otp = otpDigits.join('')
+    if (otp.length < 6) return
+    setIsLoading(true)
+    const toastId = loadingToast('Verifying code...', { description: 'Almost there!' })
+
+    try {
+      await signInWithEmailOtp(email, otp)
+      const roles = await fetchUserRoles()
+
+      const hasAccess = roles.some((r) => tab.roles.includes(r))
+      if (!hasAccess) {
+        errorToast('Access denied', { description: `${tab.label} account required.` })
+        return
+      }
+
+      successToast('Welcome back')
+      router.push(tab.redirectTo)
+    } catch (err) {
+      errorToast('Invalid code', {
+        description: err instanceof Error ? err.message : 'Please check and try again.',
+      })
+      setOtpDigits(Array(6).fill(''))
+      otpRefs.current[0]?.focus()
+    } finally {
+      dismissToast(toastId)
+      setIsLoading(false)
+    }
+  }
+
+  // ── OTP digit input helpers ───────────────────────────────────────────────
+  const handleOtpDigit = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1)
+    const next = [...otpDigits]
+    next[index] = digit
+    setOtpDigits(next)
+    if (digit && index < 5) {
+      otpRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus()
+    }
+  }
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (!pasted) return
+    const next = Array(6).fill('')
+    pasted.split('').forEach((ch, i) => { next[i] = ch })
+    setOtpDigits(next)
+    const focusIdx = Math.min(pasted.length, 5)
+    otpRefs.current[focusIdx]?.focus()
+  }
+
+  // ── Google ────────────────────────────────────────────────────────────────
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    const loadingToastId = loadingToast('Connecting to Google...', {
+    const toastId = loadingToast('Connecting to Google...', {
       description: 'You will be redirected to complete authentication.',
     })
     try {
@@ -134,9 +236,9 @@ export default function LoginPage() {
         callbackURL: resolveAuthCallbackURL(tab.redirectTo),
       })
     } catch {
-      dismissToast(loadingToastId)
+      dismissToast(toastId)
       errorToast('Google sign-in failed', {
-        description: 'Please try again or continue with email and password.',
+        description: 'Please try again or continue with email.',
       })
       setIsLoading(false)
     }
@@ -240,80 +342,208 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-text-secondary text-sm">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={tab.placeholder}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="h-12 rounded-2xl bg-[#1a1a1a] border-[#444444]/50 text-white placeholder:text-text-secondary/40 focus:border-teal/60 focus:ring-teal/30"
-                />
-              </div>
+            {/* Auth method toggle */}
+            <div className="flex rounded-xl bg-[#1a1a1a] p-1 gap-1 mb-5">
+              {(['password', 'otp'] as AuthMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => switchMode(mode)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                    authMode === mode
+                      ? 'bg-surface text-white shadow'
+                      : 'text-text-secondary/60 hover:text-text-secondary'
+                  }`}
+                >
+                  {mode === 'password' ? (
+                    <><Lock className="w-3.5 h-3.5" /> Password</>
+                  ) : (
+                    <><Mail className="w-3.5 h-3.5" /> Email Code</>
+                  )}
+                </button>
+              ))}
+            </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-text-secondary text-sm">
-                    Password
-                  </Label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-teal hover:text-teal/80 transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+            <AnimatePresence mode="wait">
+              {/* ── Password form ── */}
+              {authMode === 'password' && (
+                <motion.form
+                  key="password-form"
+                  onSubmit={handlePasswordSubmit}
+                  className="space-y-4"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-text-secondary text-sm">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder={tab.placeholder}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-12 rounded-2xl bg-[#1a1a1a] border-[#444444]/50 text-white placeholder:text-text-secondary/40 focus:border-teal/60 focus:ring-teal/30"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-text-secondary text-sm">Password</Label>
+                      <Link href="/forgot-password" className="text-sm text-teal hover:text-teal/80 transition-colors">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        className="h-12 rounded-2xl bg-[#1a1a1a] border-[#444444]/50 text-white placeholder:text-text-secondary/40 focus:border-teal/60 focus:ring-teal/30 pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/50 hover:text-white transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm bg-linear-to-r ${tab.accentClass} text-white transition-shadow`}
                     disabled={isLoading}
-                    className="h-12 rounded-2xl bg-[#1a1a1a] border-[#444444]/50 text-white placeholder:text-text-secondary/40 focus:border-teal/60 focus:ring-teal/30 pr-10"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/50 hover:text-white transition-colors"
-                    onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+                    {isLoading ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing in...</>
+                    ) : (
+                      `Sign In as ${tab.label}`
+                    )}
+                  </Button>
+                </motion.form>
+              )}
 
-              <Button
-                type="submit"
-                className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm bg-linear-to-r ${tab.accentClass} text-white transition-shadow`}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  `Sign In as ${tab.label}`
-                )}
-              </Button>
-            </form>
+              {/* ── OTP: request step ── */}
+              {authMode === 'otp' && otpStep === 'request' && (
+                <motion.form
+                  key="otp-request"
+                  onSubmit={handleSendOtp}
+                  className="space-y-4"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="otp-email" className="text-text-secondary text-sm">Email</Label>
+                    <Input
+                      id="otp-email"
+                      type="email"
+                      placeholder={tab.placeholder}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-12 rounded-2xl bg-[#1a1a1a] border-[#444444]/50 text-white placeholder:text-text-secondary/40 focus:border-teal/60 focus:ring-teal/30"
+                    />
+                  </div>
+                  <p className="text-xs text-text-secondary/50">
+                    We&apos;ll send a 6-digit sign-in code to your email. No password needed.
+                  </p>
+                  <Button
+                    type="submit"
+                    className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm bg-linear-to-r ${tab.accentClass} text-white transition-shadow`}
+                    disabled={isLoading || !email}
+                  >
+                    {isLoading ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</>
+                    ) : (
+                      'Send Sign-In Code'
+                    )}
+                  </Button>
+                </motion.form>
+              )}
+
+              {/* ── OTP: verify step ── */}
+              {authMode === 'otp' && otpStep === 'verify' && (
+                <motion.form
+                  key="otp-verify"
+                  onSubmit={handleOtpVerify}
+                  className="space-y-5"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="text-center space-y-1">
+                    <p className="text-sm text-text-secondary">Code sent to</p>
+                    <p className="text-teal font-semibold text-sm">{email}</p>
+                    <button
+                      type="button"
+                      onClick={() => setOtpStep('request')}
+                      className="text-xs text-text-secondary/50 hover:text-text-secondary underline transition-colors"
+                    >
+                      Change email
+                    </button>
+                  </div>
+
+                  {/* 6-digit OTP boxes */}
+                  <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
+                    {otpDigits.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => { otpRefs.current[i] = el }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpDigit(i, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                        disabled={isLoading}
+                        className="w-11 h-14 text-center text-xl font-bold rounded-xl bg-[#1a1a1a] border border-[#444444]/50 text-white focus:border-teal/60 focus:ring-1 focus:ring-teal/30 focus:outline-none transition-colors disabled:opacity-50"
+                      />
+                    ))}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className={`w-full h-12 rounded-2xl font-bold uppercase tracking-wide text-sm bg-linear-to-r ${tab.accentClass} text-white transition-shadow`}
+                    disabled={isLoading || otpDigits.join('').length < 6}
+                  >
+                    {isLoading ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
+                    ) : (
+                      'Verify & Sign In'
+                    )}
+                  </Button>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={doSendOtp}
+                      disabled={isLoading}
+                      className="text-xs text-text-secondary/50 hover:text-teal transition-colors disabled:opacity-40"
+                    >
+                      Didn&apos;t get it? Resend code
+                    </button>
+                  </div>
+                </motion.form>
+              )}
+            </AnimatePresence>
 
             {tab.registerHref && (
               <p className="text-center text-sm text-text-secondary/60 mt-6">
                 New here?{' '}
-                <Link
-                  href={tab.registerHref}
-                  className="text-teal font-medium hover:text-teal/80 transition-colors"
-                >
+                <Link href={tab.registerHref} className="text-teal font-medium hover:text-teal/80 transition-colors">
                   {tab.registerLabel}
                 </Link>
               </p>
