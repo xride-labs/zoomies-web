@@ -17,6 +17,8 @@ import {
   CreditCard,
   Ticket,
   MessageCircle,
+  Users,
+  Wrench,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -30,10 +32,12 @@ const navigation = [
   { name: 'Dashboard', href: '/brand/dashboard', icon: LayoutDashboard },
   { name: 'Messages', href: '/brand/messages', icon: MessageCircle },
   { name: 'Products', href: '/brand/products', icon: Package },
+  { name: 'Services', href: '/brand/services', icon: Wrench },
   { name: 'Marketplace', href: '/brand/marketplace', icon: ShoppingBag },
   { name: 'Campaigns', href: '/brand/campaigns', icon: Tag },
   { name: 'Discounts', href: '/brand/discounts', icon: Ticket },
   { name: 'Analytics', href: '/brand/analytics', icon: BarChart3 },
+  { name: 'Team', href: '/brand/team', icon: Users },
   { name: 'Billing', href: '/brand/billing', icon: CreditCard },
   { name: 'Settings', href: '/brand/settings', icon: Settings },
 ]

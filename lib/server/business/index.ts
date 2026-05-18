@@ -284,6 +284,136 @@ export async function createBrandCheckout(businessId: string): Promise<{ checkou
   return apiAuthenticated.post<{ checkoutUrl: string }>('/payments/brand-checkout', { businessId })
 }
 
+// ─── Brand Team ──────────────────────────────────────────────────────────────
+
+export type BrandMemberRole = 'OWNER' | 'ADMIN' | 'MODERATOR' | 'MEMBER'
+
+export interface BrandTeamMember {
+  id: string
+  businessId: string
+  userId: string
+  role: BrandMemberRole
+  invitedBy?: string | null
+  joinedAt: string
+  user: { id: string; name?: string | null; email?: string | null; avatar?: string | null }
+}
+
+export async function getTeamMembers(businessId: string): Promise<BrandTeamMember[]> {
+  return apiAuthenticated.get<BrandTeamMember[]>(`/business/${businessId}/members`)
+}
+
+export async function inviteTeamMember(
+  businessId: string,
+  email: string,
+  role: Exclude<BrandMemberRole, 'OWNER'> = 'MEMBER',
+): Promise<BrandTeamMember> {
+  return apiAuthenticated.post<BrandTeamMember>(`/business/${businessId}/members`, { email, role })
+}
+
+export async function updateTeamMemberRole(
+  businessId: string,
+  userId: string,
+  role: Exclude<BrandMemberRole, 'OWNER'>,
+): Promise<BrandTeamMember> {
+  return apiAuthenticated.patch<BrandTeamMember>(`/business/${businessId}/members/${userId}/role`, { role })
+}
+
+export async function removeTeamMember(businessId: string, userId: string): Promise<void> {
+  return apiAuthenticated.delete<void>(`/business/${businessId}/members/${userId}`)
+}
+
+// ─── Services ────────────────────────────────────────────────────────────────
+
+export type ServiceCategory =
+  | 'GENERAL_SERVICE'
+  | 'OIL_CHANGE'
+  | 'BRAKE_SERVICE'
+  | 'TYRE_CHANGE'
+  | 'ELECTRICAL'
+  | 'SUSPENSION'
+  | 'ENGINE_WORK'
+  | 'CUSTOM_MODIFICATION'
+  | 'INSPECTION'
+  | 'ROADSIDE_ASSISTANCE'
+  | 'CONSULTATION'
+
+export interface ServiceListing {
+  id: string
+  businessId: string
+  title: string
+  description?: string | null
+  category: ServiceCategory
+  priceRange?: string | null
+  duration?: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateServiceInput {
+  title: string
+  description?: string | null
+  category?: ServiceCategory
+  priceRange?: string | null
+  duration?: string | null
+  isActive?: boolean
+}
+
+export async function getServices(businessId: string): Promise<ServiceListing[]> {
+  return apiAuthenticated.get<ServiceListing[]>(`/business/${businessId}/services`)
+}
+
+export async function createService(businessId: string, data: CreateServiceInput): Promise<ServiceListing> {
+  return apiAuthenticated.post<ServiceListing>(`/business/${businessId}/services`, data)
+}
+
+export async function updateService(
+  businessId: string,
+  serviceId: string,
+  data: Partial<CreateServiceInput>,
+): Promise<ServiceListing> {
+  return apiAuthenticated.patch<ServiceListing>(`/business/${businessId}/services/${serviceId}`, data)
+}
+
+export async function deleteService(businessId: string, serviceId: string): Promise<void> {
+  return apiAuthenticated.delete<void>(`/business/${businessId}/services/${serviceId}`)
+}
+
+// ─── Inquiries ───────────────────────────────────────────────────────────────
+
+export type InquiryStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
+
+export interface BusinessInquiry {
+  id: string
+  businessId: string
+  fromUserId: string
+  subject: string
+  message: string
+  status: InquiryStatus
+  fromUser: { id: string; name?: string | null; email?: string | null; avatar?: string | null }
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getInquiries(businessId: string): Promise<BusinessInquiry[]> {
+  return apiAuthenticated.get<BusinessInquiry[]>(`/business/${businessId}/inquiries`)
+}
+
+export async function sendInquiry(
+  businessId: string,
+  data: { subject: string; message: string },
+): Promise<BusinessInquiry> {
+  return apiAuthenticated.post<BusinessInquiry>(`/business/${businessId}/inquiries`, data)
+}
+
+export async function updateInquiryStatus(
+  businessId: string,
+  inquiryId: string,
+  status: InquiryStatus,
+): Promise<BusinessInquiry> {
+  return apiAuthenticated.patch<BusinessInquiry>(`/business/${businessId}/inquiries/${inquiryId}`, { status })
+}
+
 export const businessApi = {
   listBusinesses,
   getMyBusinesses,
@@ -304,4 +434,15 @@ export const businessApi = {
   deleteDiscount,
   getBrandBillingStatus,
   createBrandCheckout,
+  getTeamMembers,
+  inviteTeamMember,
+  updateTeamMemberRole,
+  removeTeamMember,
+  getServices,
+  createService,
+  updateService,
+  deleteService,
+  getInquiries,
+  sendInquiry,
+  updateInquiryStatus,
 }

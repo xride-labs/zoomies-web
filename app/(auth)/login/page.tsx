@@ -17,6 +17,9 @@ import {
   resolveAuthCallbackURL,
 } from '@/lib/auth-client'
 import { sendEmailOtp, signInWithEmailOtp } from '@/lib/server/auth'
+import { businessApi } from '@/lib/server/business'
+
+const PENDING_BRAND_KEY = 'zoomies_pending_brand'
 
 type LoginTab = 'club' | 'brand' | 'admin'
 type AuthMode = 'password' | 'otp'
@@ -99,6 +102,24 @@ export default function LoginPage() {
     }
   }
 
+  // After login, check if the user came from brand-register with email
+  // verification required. If so, complete the business creation now that
+  // a session exists and assign the BRAND_OWNER role.
+  const completePendingBrandSetup = async (): Promise<boolean> => {
+    if (typeof window === 'undefined') return false
+    const raw = localStorage.getItem(PENDING_BRAND_KEY)
+    if (!raw) return false
+    try {
+      const data = JSON.parse(raw)
+      await businessApi.createBusiness(data)
+      localStorage.removeItem(PENDING_BRAND_KEY)
+      return true
+    } catch {
+      localStorage.removeItem(PENDING_BRAND_KEY)
+      return false
+    }
+  }
+
   const switchMode = (mode: AuthMode) => {
     setAuthMode(mode)
     setOtpStep('request')
@@ -115,7 +136,18 @@ export default function LoginPage() {
 
     try {
       await login({ email, password })
+
+      // Complete any pending brand setup before fetching roles, so the new
+      // BRAND_OWNER role is already in the DB when we check access.
+      const completedBrandSetup = await completePendingBrandSetup()
+
       const roles = await fetchUserRoles()
+
+      if (completedBrandSetup) {
+        successToast('Brand setup complete!', { description: 'Welcome to your brand portal.' })
+        router.push('/brand/dashboard?onboarding=1')
+        return
+      }
 
       const hasAccess = roles.some((r) => tab.roles.includes(r))
       if (!hasAccess) {
@@ -174,7 +206,15 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailOtp(email, otp)
+
+      const completedBrandSetup = await completePendingBrandSetup()
       const roles = await fetchUserRoles()
+
+      if (completedBrandSetup) {
+        successToast('Brand setup complete!', { description: 'Welcome to your brand portal.' })
+        router.push('/brand/dashboard?onboarding=1')
+        return
+      }
 
       const hasAccess = roles.some((r) => tab.roles.includes(r))
       if (!hasAccess) {

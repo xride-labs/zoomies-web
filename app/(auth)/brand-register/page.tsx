@@ -72,6 +72,8 @@ export default function BrandRegisterPage() {
     setStep('brand')
   }
 
+  const PENDING_KEY = 'zoomies_pending_brand'
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.category) { errorToast('Select a brand category'); return }
@@ -85,14 +87,40 @@ export default function BrandRegisterPage() {
         email: formData.email,
         password: formData.password,
       })
-      // Create the business profile immediately — this triggers BRAND_OWNER role assignment on the backend
-      await businessApi.createBusiness({
-        categories: [formData.category as import('@/lib/server/business').BusinessCategory],
+
+      // Store the pending brand data so post-login can pick it up if the
+      // session isn't established yet (email verification required in prod).
+      const pendingData = {
+        categories: [formData.category],
         displayName: formData.brandName,
         tagline: formData.tagline || undefined,
-      })
-      successToast('Brand account created!', { description: 'Complete your brand profile in the portal.' })
-      router.push('/brand/dashboard?onboarding=1')
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PENDING_KEY, JSON.stringify(pendingData))
+      }
+
+      // Attempt immediate creation. In dev (no email verification) this
+      // succeeds and assigns BRAND_OWNER. In prod the session may not exist
+      // yet — the login page picks up the localStorage key after verification.
+      try {
+        await businessApi.createBusiness({
+          categories: [formData.category as import('@/lib/server/business').BusinessCategory],
+          displayName: formData.brandName,
+          tagline: formData.tagline || undefined,
+        })
+        // Success — clear the pending marker since it's no longer needed.
+        if (typeof window !== 'undefined') localStorage.removeItem(PENDING_KEY)
+        successToast('Brand account created!', { description: 'Complete your brand profile in the portal.' })
+        router.push('/brand/dashboard?onboarding=1')
+      } catch {
+        // Business creation failed — likely because email verification is
+        // required and no session cookie exists yet. The pending data saved
+        // above will be consumed by the login page after verification.
+        successToast('Account created!', {
+          description: 'Check your email to verify your account, then sign in to complete your brand setup.',
+        })
+        router.push('/login?pendingBrand=1')
+      }
     } catch (err) {
       errorToast(err instanceof Error ? err.message : 'Registration failed', { description: 'Please try again.' })
     } finally {
