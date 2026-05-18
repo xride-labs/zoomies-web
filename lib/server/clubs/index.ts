@@ -163,8 +163,43 @@ export async function getClubRides(
   return apiAuthenticated.get(`/clubs/${clubId}/rides?page=${page}`)
 }
 
+export interface ClubMemberActivity {
+  userId: string
+  user: { id: string; name?: string; avatar?: string | null; email?: string }
+  role: string
+  status: 'ACTIVE' | 'MUTED' | 'SUSPENDED' | 'BANNED'
+  joinedAt: string
+  lastInteractionAt: string | null
+  lastMessageAt: string | null
+  messageCount: number
+}
+
+export interface ClubAnalytics {
+  club: { name?: string; memberCount?: number }
+  summary: {
+    totalMembers: number
+    activeToday: number
+    activeWeek: number
+    dormant: number
+    totalMessages: number
+    groupCount: number
+    moderated: number
+  }
+  members: ClubMemberActivity[]
+}
+
+/**
+ * Club-admin analytics: per-member activity + community aggregates.
+ */
+export async function getClubAnalytics(
+  clubId: string,
+): Promise<ClubAnalytics> {
+  return apiAuthenticated.get<ClubAnalytics>(`/clubs/${clubId}/analytics`)
+}
+
 // Export all as clubsApi object
 export const clubsApi = {
+  getClubAnalytics,
   getMyClubs,
   discoverClubs,
   getClub,

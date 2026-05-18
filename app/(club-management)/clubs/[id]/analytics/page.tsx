@@ -61,6 +61,7 @@ export default function ClubAnalyticsPage() {
   const [club, setClub] = useState<any>(null)
   const [members, setMembers] = useState<any[]>([])
   const [rides, setRides] = useState<any[]>([])
+  const [analytics, setAnalytics] = useState<any>(null)
 
   useEffect(() => {
     if (!clubId) return
@@ -68,12 +69,34 @@ export default function ClubAnalyticsPage() {
       clubsApi.getClub(clubId).catch(() => null),
       clubsApi.getMembers(clubId).catch(() => null),
       clubsApi.getClubRides(clubId).catch(() => null),
-    ]).then(([clubRes, membersRes, ridesRes]) => {
+      clubsApi.getClubAnalytics(clubId).catch(() => null),
+    ]).then(([clubRes, membersRes, ridesRes, analyticsRes]) => {
       setClub(clubRes?.club ?? clubRes ?? null)
       setMembers(membersRes?.members ?? [])
       setRides(ridesRes?.items ?? [])
+      setAnalytics(analyticsRes ?? null)
     }).finally(() => setLoading(false))
   }, [clubId])
+
+  const fmtAgo = (iso?: string | null) => {
+    if (!iso) return 'Never'
+    const diff = Date.now() - new Date(iso).getTime()
+    const m = Math.floor(diff / 60000)
+    if (m < 1) return 'Just now'
+    if (m < 60) return `${m}m ago`
+    const h = Math.floor(m / 60)
+    if (h < 24) return `${h}h ago`
+    const d = Math.floor(h / 24)
+    if (d < 30) return `${d}d ago`
+    return new Date(iso).toLocaleDateString()
+  }
+
+  const STATUS_BADGE: Record<string, string> = {
+    ACTIVE: 'text-green-600 border-green-600/40',
+    MUTED: 'text-amber-600 border-amber-600/40',
+    SUSPENDED: 'text-orange-600 border-orange-600/40',
+    BANNED: 'text-red-600 border-red-600/40',
+  }
 
   if (loading) {
     return (
@@ -288,6 +311,115 @@ export default function ClubAnalyticsPage() {
                 Showing first 20 of {members.length} members
               </p>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Community engagement (chat activity) ── */}
+      {analytics?.summary && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Active Today"
+            value={analytics.summary.activeToday}
+            icon={<Clock className="w-5 h-5" />}
+            color="green"
+            sub={`${analytics.summary.activeWeek} active this week`}
+          />
+          <StatCard
+            label="Messages Sent"
+            value={analytics.summary.totalMessages}
+            icon={<TrendingUp className="w-5 h-5" />}
+            color="blue"
+            sub={`across ${analytics.summary.groupCount} groups`}
+          />
+          <StatCard
+            label="Dormant Members"
+            value={analytics.summary.dormant}
+            icon={<Users className="w-5 h-5" />}
+            color="amber"
+            sub="no activity in 30d"
+          />
+          <StatCard
+            label="Moderated"
+            value={analytics.summary.moderated}
+            icon={<CheckCircle2 className="w-5 h-5" />}
+            color="purple"
+            sub="muted / suspended / banned"
+          />
+        </div>
+      )}
+
+      {/* ── Member activity table ── */}
+      {analytics?.members?.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Member Activity
+            </CardTitle>
+            <CardDescription>
+              When each member last interacted, last messaged, and their total
+              message volume
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Active</TableHead>
+                  <TableHead>Last Message</TableHead>
+                  <TableHead className="text-right">Messages</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {analytics.members
+                  .slice(0, 100)
+                  .map((m: any) => {
+                    const name =
+                      m.user?.name ?? m.user?.email ?? 'Member'
+                    return (
+                      <TableRow key={m.userId}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {name[0]?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {m.role}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-[11px] ${
+                              STATUS_BADGE[m.status] ?? ''
+                            }`}
+                          >
+                            {m.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {fmtAgo(m.lastInteractionAt)}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {fmtAgo(m.lastMessageAt)}
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-medium">
+                          {m.messageCount ?? 0}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       )}

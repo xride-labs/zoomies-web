@@ -16,6 +16,7 @@ import {
   Tag,
   CreditCard,
   Ticket,
+  MessageCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -27,6 +28,7 @@ import { BoneyardLoadingState } from '@/components/loading/boneyard-loading-stat
 
 const navigation = [
   { name: 'Dashboard', href: '/brand/dashboard', icon: LayoutDashboard },
+  { name: 'Messages', href: '/brand/messages', icon: MessageCircle },
   { name: 'Products', href: '/brand/products', icon: Package },
   { name: 'Marketplace', href: '/brand/marketplace', icon: ShoppingBag },
   { name: 'Campaigns', href: '/brand/campaigns', icon: Tag },
